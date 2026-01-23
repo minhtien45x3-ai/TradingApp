@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINIMALIST PRO v17.1 (Modular)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { slate: { 850: '#1e293b' } } } }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col">
+
+    <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-50 dark:bg-[#020617] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]">
+        <div class="glass-panel w-full max-w-md p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div class="text-center mb-8">
+                <div class="inline-flex p-3 rounded-full bg-emerald-500/10 mb-4"><i data-lucide="cloud-lightning" class="w-10 h-10 text-emerald-500"></i></div>
+                <h1 class="text-3xl font-bold mb-2 font-mono">MINIMALIST<span class="text-emerald-500">_PRO</span></h1>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">Hệ thống Trading (Modular v17.1)</p>
+            </div>
+            <div id="login-form" class="space-y-4 fade-in">
+                <div><label class="block text-xs font-bold uppercase mb-1 text-slate-500">Tài khoản</label><input type="text" id="login-user" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 outline-none focus:border-emerald-500 transition" placeholder="Username"></div>
+                <div><label class="block text-xs font-bold uppercase mb-1 text-slate-500">Mật khẩu</label><input type="password" id="login-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 outline-none focus:border-emerald-500 transition" placeholder="••••••••"></div>
+                <button onclick="authLogin()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition transform active:scale-95">ĐĂNG NHẬP</button>
+                <p class="text-center text-xs text-slate-500 mt-4">Chưa có tài khoản? <a href="#" onclick="toggleAuth()" class="text-emerald-500 hover:underline">Đăng ký</a></p>
+            </div>
+            <div id="register-form" class="space-y-4 hidden fade-in">
+                <div><label class="block text-xs font-bold uppercase mb-1 text-slate-500">Tên tài khoản mới</label><input type="text" id="reg-user" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 outline-none"></div>
+                <div><label class="block text-xs font-bold uppercase mb-1 text-slate-500">Mật khẩu</label><input type="password" id="reg-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 outline-none"></div>
+                <button onclick="authRegister()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/20 transition transform active:scale-95">ĐĂNG KÝ NGAY</button>
+                <p class="text-center text-xs text-slate-500 mt-4"><a href="#" onclick="toggleAuth()" class="text-emerald-500 hover:underline">Quay lại Đăng nhập</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden flex-col h-screen">
+        <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md">
+            <div class="max-w-[1920px] mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="switchTab('dashboard')">
+                    <div class="bg-gradient-to-tr from-emerald-600 to-teal-500 p-2 rounded-lg shadow-lg shadow-emerald-500/30"><i data-lucide="layers" class="text-white h-5 w-5"></i></div>
+                    <div><h1 class="font-bold text-lg tracking-wide leading-tight font-mono">MINIMALIST<span class="text-emerald-600 dark:text-emerald-500">_PRO</span></h1><p class="text-[10px] text-slate-500 font-mono tracking-widest">USER: <span id="current-username" class="text-emerald-600 dark:text-emerald-500 font-bold uppercase">...</span></p></div>
+                </div>
+                <nav class="hidden lg:flex bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200 dark:border-slate-800 backdrop-blur-sm">
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Tổng Quan</button>
+                    <button onclick="switchTab('journal')" id="btn-journal" class="nav-btn px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"><i data-lucide="book" class="w-4 h-4"></i> Nhật Ký</button>
+                    <button onclick="switchTab('wiki')" id="btn-wiki" class="nav-btn px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"><i data-lucide="library" class="w-4 h-4"></i> Wiki AI</button>
+                    <button onclick="switchTab('capital')" id="btn-capital" class="nav-btn px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4"></i> Quản Lý Vốn</button>
+                </nav>
+                <div class="flex items-center gap-3">
+                      <div class="hidden md:block text-right"><p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Balance</p><p class="text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400" id="header-balance">$20,000</p></div>
+                    <button onclick="openBgModal()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition hover:scale-110" title="Đổi hình nền"><i data-lucide="palette" class="w-5 h-5 text-blue-500"></i></button>
+                    <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition hover:scale-110"><i id="theme-icon" data-lucide="moon" class="w-5 h-5 text-yellow-500"></i></button>
+                    <button onclick="authLogout()" class="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 flex items-center justify-center transition hover:scale-110"><i data-lucide="log-out" class="w-4 h-4 text-rose-500"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-[1920px] mx-auto px-4 py-4 w-full relative h-[calc(100vh-64px)] overflow-hidden">
+            
+            <div id="tab-dashboard" class="space-y-4 fade-in flex flex-col h-full">
+                <div class="glass-panel h-12 rounded-xl border-l-4 border-emerald-500 bg-slate-100 dark:bg-slate-900/50 shadow-md shrink-0 flex items-center px-4 overflow-hidden relative">
+                    <div class="marquee-wrapper w-full">
+                        <div id="dynamic-quote" class="marquee-content text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">Loading Market Data...</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
+                    <div class="glass-panel p-4 rounded-xl border-t-4 border-t-emerald-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Vốn Hiện Tại</p><h2 class="text-2xl font-mono font-bold text-slate-900 dark:text-white mt-1" id="dash-balance">$0</h2></div>
+                    <div class="glass-panel p-4 rounded-xl border-t-4 border-t-blue-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Tỷ Lệ Thắng</p><h2 class="text-2xl font-mono font-bold text-blue-600 dark:text-blue-400 mt-1" id="dash-winrate">0%</h2><p class="text-[10px] text-slate-500 mt-0.5" id="dash-total">0 Lệnh</p></div>
+                    <div class="glass-panel p-4 rounded-xl border-t-4 border-t-purple-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Tổng Lợi Nhuận</p><h2 class="text-2xl font-mono font-bold text-purple-600 dark:text-purple-400 mt-1" id="dash-pnl">$0.00</h2></div>
+                    <div class="glass-panel p-4 rounded-xl border-t-4 border-t-rose-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Max Drawdown</p><h2 class="text-2xl font-mono font-bold text-rose-600 dark:text-rose-400 mt-1" id="dash-dd">0%</h2></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 pb-2">
+                    <div class="glass-panel p-4 rounded-xl flex flex-col bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"><h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Biểu Đồ Tăng Trưởng</h3><div class="flex-1 relative w-full h-full"><canvas id="chart-equity"></canvas></div></div>
+                    <div class="glass-panel p-4 rounded-xl flex flex-col bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"><h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Tỷ Lệ Win/Loss</h3><div class="flex-1 relative w-full h-full flex justify-center items-center"><canvas id="chart-winloss"></canvas></div></div>
+                </div>
+            </div>
+
+            <div id="tab-wiki" class="hidden fade-in flex flex-col h-full pb-4">
+                <div class="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between shrink-0">
+                    <div class="relative w-full md:w-1/2">
+                        <i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-slate-400"></i>
+                        <input type="text" id="wiki-search" onkeyup="filterWiki()" placeholder="Tìm kiếm Wiki..." class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-800 dark:text-white outline-none">
+                    </div>
+                    <button onclick="openWikiEditor()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all"><i data-lucide="plus-square" class="w-5 h-5"></i> Tạo Mới</button>
+                </div>
+                <div class="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar shrink-0" id="wiki-filter-container"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto custom-scrollbar pr-2 pb-10 flex-1" id="wiki-grid"></div>
+            </div>
+
+            <div id="tab-journal" class="hidden fade-in flex flex-col h-full pb-4">
+                <div class="flex justify-between items-center mb-4 shrink-0">
+                    <div class="flex gap-2"><button onclick="openEntryModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm flex items-center gap-2"><i data-lucide="plus"></i> Thêm Lệnh</button></div>
+                    <div class="text-right"><p class="text-[10px] text-slate-500 uppercase">P&L Today</p><p class="text-sm font-mono font-bold text-slate-800 dark:text-white" id="journal-pnl-today">$0.00</p></div>
+                </div>
+                <div class="glass-panel rounded-xl overflow-hidden flex-1 flex flex-col">
+                    <div class="overflow-auto custom-scrollbar flex-1"><table class="w-full text-left table-fixed"><thead class="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur z-10"><tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800"><th class="p-4 text-center">Ngày</th><th class="p-4 text-center">Cặp/Hướng</th><th class="p-4 text-center">Chiến Lược</th><th class="p-4 text-center">Rủi Ro</th><th class="p-4 text-center">Trạng Thái</th><th class="p-4 text-right">PnL</th><th class="p-4 text-center">Xóa</th></tr></thead><tbody id="journal-list" class="text-sm text-slate-700 dark:text-slate-300 divide-y divide-slate-200 dark:divide-slate-800 font-mono"></tbody></table></div>
+                </div>
+            </div>
+
+            <div id="tab-capital" class="hidden fade-in h-full flex items-center justify-center text-slate-500">Capital Management Tab (Coming soon in modular version)</div>
+             <div id="tab-analysis" class="hidden fade-in h-full flex items-center justify-center text-slate-500">Analysis Tab (Coming soon in modular version)</div>
+        </main>
+
+        <div id="wiki-editor-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[120] flex items-center justify-center p-4"><div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[95vh]"><div class="p-4 border-b dark:border-slate-800 flex justify-between"><h3 class="font-bold" id="wiki-editor-title">Editor</h3><button onclick="closeModal('wiki-editor-modal')"><i data-lucide="x"></i></button></div><div class="p-6 overflow-y-auto space-y-4"><input type="hidden" id="edit-id"><div class="grid grid-cols-2 gap-4"><input type="text" id="edit-code" placeholder="Mã" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700"><input type="text" list="cat-suggestions" id="edit-cat" placeholder="Danh mục" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700"><datalist id="cat-suggestions"></datalist></div><input type="text" id="edit-title" placeholder="Tiêu đề" class="w-full border p-2 rounded dark:bg-slate-800 dark:border-slate-700"><div class="flex gap-2 items-center"><input type="text" id="edit-image-url" placeholder="Link ảnh" class="flex-1 border p-2 rounded dark:bg-slate-800 dark:border-slate-700" onchange="previewImage(this.value)"><label class="cursor-pointer bg-slate-100 dark:bg-slate-800 p-2 rounded"><i data-lucide="upload"></i><input type="file" class="hidden" id="edit-file" onchange="handleImageUpload(this)"></label></div><img id="edit-preview" class="hidden w-full h-40 object-contain bg-black/10"><textarea id="edit-content" class="w-full h-32 border p-2 rounded dark:bg-slate-800 dark:border-slate-700"></textarea></div><div class="p-4 border-t dark:border-slate-800 flex justify-end"><button onclick="saveWiki()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold">Lưu</button></div></div></div>
+
+        <div id="wiki-detail-modal" class="fixed inset-0 bg-black/50 dark:bg-black/95 hidden z-[100] flex items-center justify-center p-4"><div class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col max-h-[95vh]"><div class="p-4 border-b dark:border-slate-800 flex justify-between"><h2 id="view-title" class="font-bold text-xl"></h2><div class="flex gap-2"><button id="btn-edit-entry" class="p-2 bg-slate-100 dark:bg-slate-800 rounded"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button id="btn-delete-entry" class="p-2 bg-slate-100 dark:bg-slate-800 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button><button onclick="closeModal('wiki-detail-modal')"><i data-lucide="x" class="w-4 h-4"></i></button></div></div><div class="overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="bg-slate-100 dark:bg-black/40 rounded flex justify-center p-4"><img id="view-image" class="max-h-[50vh] object-contain"></div><div><div id="view-content" class="text-sm whitespace-pre-line mb-4"></div><div id="wiki-ai-container" class="hidden"></div></div></div></div></div>
+
+        <div id="entry-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"><div class="p-4 border-b dark:border-slate-800 flex justify-between"><h3 class="font-bold">Nhật Ký</h3><button onclick="closeModal('entry-modal')"><i data-lucide="x"></i></button></div><div class="p-6 overflow-y-auto space-y-4"><div class="grid grid-cols-3 gap-4"><select id="inp-pair" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700"></select><select id="inp-dir" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700"><option>BUY</option><option>SELL</option></select><select id="inp-session" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700"><option>ASIA</option><option>LONDON</option><option>NEWYORK</option></select></div><select id="inp-strategy" class="w-full border p-2 rounded dark:bg-slate-800 dark:border-slate-700"></select><div class="grid grid-cols-2 gap-4"><div class="flex"><input type="number" id="inp-risk" class="w-full border rounded-l p-2 dark:bg-slate-800 dark:border-slate-700" value="1" oninput="calcRiskPreview()"><select id="inp-risk-mode" class="border rounded-r bg-slate-100 dark:bg-slate-700 px-2" onchange="calcRiskPreview()"><option value="%">% NAV</option><option value="$">$ USD</option></select></div><input type="number" id="inp-rr" class="w-full border p-2 rounded dark:bg-slate-800 dark:border-slate-700" value="2" oninput="calcRiskPreview()"></div><div class="flex justify-between items-center text-xs text-slate-500 font-bold"><span id="risk-preview"></span><span id="reward-preview" class="text-emerald-500"></span></div><textarea id="inp-note" class="w-full border p-2 rounded h-24 dark:bg-slate-800 dark:border-slate-700"></textarea></div><div class="p-4 border-t dark:border-slate-800 flex justify-end"><button onclick="saveEntry()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold">Lưu</button></div></div></div>
+
+        <div id="bg-settings-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[150] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center"><h3 class="font-bold">Giao Diện Nền</h3><button onclick="closeModal('bg-settings-modal')"><i data-lucide="x"></i></button></div>
+                <div class="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <button onclick="setBackground('bg-theme-default')" class="p-2 border rounded hover:border-emerald-500 text-xs">Mặc Định</button>
+                    <button onclick="setBackground('bg-theme-galaxy')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-r from-indigo-900 to-purple-800 text-white text-xs">Galaxy</button>
+                    <button onclick="setBackground('bg-theme-emerald')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-r from-teal-900 to-emerald-900 text-white text-xs">Emerald</button>
+                    <button onclick="setBackground('bg-theme-midnight')" class="p-2 border rounded hover:border-emerald-500 bg-slate-900 text-white text-xs">Midnight</button>
+                    <button onclick="setBackground('bg-theme-sunset')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-r from-rose-900 to-slate-900 text-white text-xs">Sunset</button>
+                    <button onclick="setBackground('bg-theme-aurora')" class="p-2 border rounded hover:border-emerald-500 bg-black text-white text-xs">Aurora</button>
+                    <button onclick="setBackground('bg-theme-nebula')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-r from-purple-800 to-pink-600 text-white text-xs">Nebula (Tím)</button>
+                    <button onclick="setBackground('bg-theme-oceanic')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-b from-slate-900 to-cyan-700 text-white text-xs">Oceanic (Biển)</button>
+                    <button onclick="setBackground('bg-theme-forest')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-br from-green-900 to-green-700 text-white text-xs">Forest (Rừng)</button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script type="module" src="app.js"></script>
+
+</body>
+</html>

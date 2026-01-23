@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+body { font-family: 'Inter', sans-serif; transition: background-image 0.5s ease, background-color 0.5s ease; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* THEMES */
+body.bg-theme-default { background-color: #f8fafc; background-image: url('https://grainy-gradients.vercel.app/noise.svg'); }
+html.dark body.bg-theme-default { background-color: #020617; background-image: url('https://grainy-gradients.vercel.app/noise.svg'); }
+body.bg-theme-galaxy { background-image: linear-gradient(-45deg, #1e1b4b, #312e81, #4c1d95, #1e1b4b); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: white; }
+body.bg-theme-emerald { background-image: linear-gradient(-45deg, #022c22, #115e59, #0f766e, #042f2e); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: white; }
+body.bg-theme-midnight { background-image: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a); background-size: cover; color: #cbd5e1; }
+body.bg-theme-sunset { background-image: linear-gradient(120deg, #4a044e, #881337, #0f172a); color: white; }
+body.bg-theme-aurora { background-color: black; background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%); color: white; }
+body.bg-theme-nebula { background-image: linear-gradient(135deg, #2e1065, #db2777); color: white; }
+body.bg-theme-oceanic { background-image: linear-gradient(to bottom, #0f172a, #0e7490); color: white; }
+body.bg-theme-forest { background-image: linear-gradient(to bottom right, #022c22, #14532d); color: white; }
+
+@keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+/* Glass Panel */
+.glass-panel { transition: all 0.3s ease; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+html:not(.dark) .glass-panel { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+html.dark .glass-panel { background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+html.dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+/* Animations */
+.fade-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Marquee */
+.marquee-wrapper { width: 100%; overflow: hidden; white-space: nowrap; box-sizing: border-box; }
+.marquee-content { display: inline-block; padding-left: 100%; animation: marquee 25s linear infinite; }
+@keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+
+/* AI Typing & Prose */
+.typing-cursor::after { content: '▋'; animation: blink 1s step-start infinite; color: #10B981; margin-left: 2px; }
+@keyframes blink { 50% { opacity: 0; } }
+.prose strong { color: #10B981; font-weight: 700; }
+.prose ul { list-style-type: disc; padding-left: 1.5rem; margin-top: 0.5rem; }
