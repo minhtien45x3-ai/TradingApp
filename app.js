@@ -6,6 +6,18 @@ const DEFAULT_WIKI = [
     { id: "BB02", code: "BB02", cat: "Setup", title: "Bounce Breakout", image: "https://placehold.co/800x400/1e293b/10b981?text=Setup", content: "Mua khi giá quay lại test vùng phá vỡ (Retest)." }
 ];
 const DEFAULT_PAIRS = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "BTCUSD", "US30", "ETHUSD"];
+const CRITERIA_LIST = [
+    { id: "c1", name: "1. XU HƯỚNG", desc: "H4/H1 có cấu trúc rõ ràng" },
+    { id: "c2", name: "2. KEYLEVEL", desc: "Phản ứng tại cản cứng" },
+    { id: "c3", name: "3. TRENDLINE", desc: "Tôn trọng/Phá vỡ TL" },
+    { id: "c4", name: "4. EMA 50", desc: "Vị trí giá vs EMA" },
+    { id: "c5", name: "5. HỢP QUY 3 YẾU TỐ", desc: "KL + TL + EMA" },
+    { id: "c6", name: "6. MÔ HÌNH NẾN", desc: "Pinbar/Engulfing" },
+    { id: "c7", name: "7. MÔ HÌNH BIỂU ĐỒ", desc: "2 Đỉnh/Đáy, Vai Đầu Vai" },
+    { id: "c8", name: "8. FIBONACCI", desc: "Vùng vàng 0.5-0.618" },
+    { id: "c9", name: "9. HỢP QUY THỜI GIAN", desc: "Nến đóng cửa" },
+    { id: "c10", name: "10. GIÁ KHÔNG ĐI QUÁ XA", desc: "Entry an toàn" }
+];
 
 // --- STATE ---
 let journalData = [];
@@ -16,6 +28,8 @@ let currentBgTheme = 'bg-theme-default';
 let currentFilter = 'all';
 let currentViewedWikiId = null;
 let chartInstances = {};
+let selectedStrategy = null; // Lưu chiến lược đang chọn ở tab Phân tích
+let tempJournalImage = null; // Biến tạm lưu ảnh khi chuyển từ Phân tích -> Nhật ký
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -136,7 +150,7 @@ window.toggleAuth = function() {
     document.getElementById('register-form').classList.toggle('hidden');
 }
 
-// --- JOURNAL LOGIC (FIXED) ---
+// --- JOURNAL LOGIC (WITH IMAGE SUPPORT) ---
 window.openEntryModal = function() { document.getElementById('entry-modal').classList.remove('hidden'); }
 window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
 
@@ -160,14 +174,18 @@ window.saveEntry = function() {
         date: new Date().toLocaleDateString('vi-VN'),
         pair, dir, session, strategy: strat,
         risk: finalRiskUSD.toFixed(2),
-        rr, status: 'OPEN', pnl: 0, note
+        rr, status: 'OPEN', pnl: 0, note,
+        image: tempJournalImage || null // LƯU ẢNH (NẾU CÓ)
     };
 
     journalData.unshift(newEntry);
     saveDataToCloud();
     renderJournalList();
     renderDashboard();
+    
+    tempJournalImage = null; // Reset ảnh tạm
     window.closeModal('entry-modal');
+    window.switchTab('journal'); // Chuyển về tab nhật ký để xem
 }
 
 window.updateEntryStatus = function(id, newStatus) {
@@ -203,11 +221,19 @@ window.renderJournalList = function() {
         const statusColor = t.status === 'WIN' ? 'text-emerald-500' : (t.status === 'LOSS' ? 'text-rose-500' : 'text-blue-500');
         const pnlVal = parseFloat(t.pnl);
         const pnlColor = pnlVal > 0 ? 'text-emerald-500' : (pnlVal < 0 ? 'text-rose-500' : 'text-slate-500');
+        
+        // Hiển thị icon ảnh nếu có
+        const imageIcon = t.image 
+            ? `<button onclick="viewImageFull('${t.image}')" class="ml-1 text-indigo-500 hover:text-indigo-400" title="Xem ảnh"><i data-lucide="image" class="w-4 h-4 inline"></i></button>` 
+            : '';
+
         return `
         <tr class="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30">
             <td class="p-4 text-center text-xs text-slate-500"><div>${t.date}</div><div>${t.session}</div></td>
             <td class="p-4 text-center font-bold text-slate-800 dark:text-white">${t.pair} <span class="block text-[10px] ${t.dir==='BUY'?'text-emerald-500':'text-rose-500'} font-extrabold">${t.dir}</span></td>
-            <td class="p-4 text-center text-xs text-slate-500 truncate max-w-[120px]" title="${t.strategy}">${t.strategy}</td>
+            <td class="p-4 text-center text-xs text-slate-500 truncate max-w-[150px]" title="${t.strategy}">
+                ${t.strategy} ${imageIcon}
+            </td>
             <td class="p-4 text-center text-xs font-mono text-slate-600 dark:text-slate-300">-$${t.risk} | 1:${t.rr}</td>
             <td class="p-4 text-center">
                 <select onchange="updateEntryStatus('${t.id}', this.value)" class="bg-transparent text-xs font-bold outline-none cursor-pointer ${statusColor} text-center border rounded border-slate-200 dark:border-slate-700 p-1">
@@ -234,7 +260,81 @@ function updateDailyPnL() {
     }
 }
 
-// --- WIKI LOGIC (FIXED) ---
+// --- ANALYSIS LOGIC (TRANSFER TO JOURNAL) ---
+window.selectAnalysisStrategy = function(id) {
+    const item = wikiData.find(x => x.id.toString() === id.toString());
+    if(!item) return;
+    selectedStrategy = item; // Lưu chiến lược đang chọn
+    
+    document.getElementById('current-setup-name').innerText = item.title;
+    document.getElementById('ana-theory-img').src = item.image;
+    document.getElementById('ana-theory-content').innerText = item.content;
+    document.getElementById('analysis-empty-state').classList.add('hidden');
+    document.getElementById('analysis-grid').classList.remove('hidden');
+    document.getElementById('analysis-grid').classList.add('flex'); // Ensure flex
+    
+    // Render Checklist
+    document.getElementById('ana-checklist-container').innerHTML = CRITERIA_LIST.map(c => `
+        <label class="flex items-start gap-2 p-1.5 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700/80 cursor-pointer transition h-full">
+            <input type="checkbox" class="mt-0.5 accent-emerald-500 w-3 h-3 shrink-0">
+            <div class="leading-tight"><p class="text-[10px] font-bold text-slate-700 dark:text-white">${c.name}</p><p class="text-[8px] text-slate-500 dark:text-slate-400 line-clamp-2">${c.desc}</p></div>
+        </label>`).join('');
+}
+
+// HÀM CHUYỂN DỮ LIỆU TỪ PHÂN TÍCH -> NHẬT KÝ
+window.transferAnalysisToJournal = function() {
+    if (!selectedStrategy) return alert("Vui lòng chọn chiến lược trước!");
+
+    // 1. Lấy ảnh thực tế
+    const imgReal = document.getElementById('ana-real-img');
+    if (imgReal.src && !imgReal.classList.contains('hidden')) {
+        tempJournalImage = imgReal.src;
+    } else {
+        tempJournalImage = null;
+    }
+
+    // 2. Mở Modal
+    openEntryModal();
+
+    // 3. Tự động chọn Strategy trong dropdown
+    const stratSelect = document.getElementById('inp-strategy');
+    const targetValue = `${selectedStrategy.code}: ${selectedStrategy.title}`;
+    let found = false;
+    for (let i = 0; i < stratSelect.options.length; i++) {
+        if (stratSelect.options[i].value === targetValue) {
+            stratSelect.selectedIndex = i;
+            found = true;
+            break;
+        }
+    }
+    // Fallback nếu không khớp chính xác
+    if (!found) {
+        for (let i = 0; i < stratSelect.options.length; i++) {
+            if (stratSelect.options[i].text.includes(selectedStrategy.code)) {
+                stratSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+    
+    if(tempJournalImage) alert("✅ Đã chuyển Chiến lược & Ảnh sang form nhập lệnh. Vui lòng điền nốt thông tin.");
+    else alert("⚠️ Đã chuyển Chiến lược (Chưa có ảnh).");
+}
+
+window.handleAnalysisUpload = function(input) {
+    if (input.files && input.files[0]) {
+        const r = new FileReader();
+        r.onload = function(e) {
+            const img = document.getElementById('ana-real-img');
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+            document.getElementById('ana-upload-hint').classList.add('hidden');
+        };
+        r.readAsDataURL(input.files[0]);
+    }
+}
+
+// --- WIKI LOGIC ---
 window.openWikiEditor = function(id = null) {
     const cats = [...new Set(wikiData.map(i => i.cat))];
     document.getElementById('cat-suggestions').innerHTML = cats.map(c => `<option value="${c}">`).join('');
@@ -457,7 +557,16 @@ window.calcRiskPreview = function() {
 
 window.populateStrategies = function() {
     const setups = wikiData.filter(i => i.cat === 'Setup' || i.cat === 'Chiến Lược' || i.cat === 'Strategy');
-    document.getElementById('inp-strategy').innerHTML = setups.map(s => `<option value="${s.code}: ${s.title}">${s.code}: ${s.title}</option>`).join('');
+    const options = setups.map(s => `<option value="${s.code}: ${s.title}">${s.code}: ${s.title}</option>`).join('');
+    document.getElementById('inp-strategy').innerHTML = options;
+    
+    // Render list in Analysis Tab
+    const list = document.getElementById('strategy-list-container');
+    if(list) list.innerHTML = setups.map(s => `
+        <div onclick="selectAnalysisStrategy('${s.id}')" class="p-3 bg-white dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/50 rounded mb-2 cursor-pointer transition">
+            <span class="text-xs font-bold text-slate-800 dark:text-white block">${s.code}</span>
+            <span class="text-[10px] text-slate-500">${s.title}</span>
+        </div>`).join('');
 }
 window.renderPairSelects = function() {
     const html = pairsData.map(p => `<option value="${p}">${p}</option>`).join('');
@@ -473,14 +582,12 @@ window.filterWikiCat = function(c) { currentFilter = c; renderWikiGrid(); render
 window.filterWiki = function() { renderWikiGrid(); }
 function initQuote() { document.getElementById('dynamic-quote').innerText = "Trade what you see, not what you think."; }
 
-window.selectAnalysisStrategy = function(id) { /* Stub */ }
-window.addNewPair = function() {}
+window.addNewPair = function() { alert("Tính năng đang bảo trì."); }
 window.removePair = function(i) {}
 window.openPairManager = function() {}
 window.updateCapitalCalc = function() {}
 window.askGeminiCoach = function() {}
 window.runAIAnalysis = function() {}
-window.handleAnalysisUpload = function() {}
 window.resetAI = function() {}
 window.analyzeJournalWithAI = function() {}
 window.explainWikiWithAI = function() {}
