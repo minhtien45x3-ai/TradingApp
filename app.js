@@ -1,8 +1,7 @@
 import { db, doc, getDoc, setDoc } from './firebase.js';
 
-// --- 1. CONFIG & CONSTANTS ---
-const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E"; // Key của bạn
-
+// --- CONFIG ---
+const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E"; // KEY MỚI CỦA BẠN
 const DEFAULT_WIKI = [
     { id: "XH01", code: "XH01", cat: "Xu Hướng", title: "Uptrend & Downtrend", image: "https://placehold.co/800x400/1e293b/10b981?text=XuHuong", content: "Đỉnh sau cao hơn đỉnh trước (HH), đáy sau cao hơn đáy trước (HL)." },
     { id: "BB02", code: "BB02", cat: "Setup", title: "Bounce Breakout", image: "https://placehold.co/800x400/1e293b/10b981?text=Setup", content: "Mua khi giá quay lại test vùng phá vỡ (Retest)." }
@@ -17,7 +16,7 @@ const CRITERIA_LIST = [
 ];
 const ALL_THEMES = ['bg-theme-default', 'bg-theme-galaxy', 'bg-theme-emerald', 'bg-theme-midnight', 'bg-theme-sunset', 'bg-theme-aurora', 'bg-theme-nebula', 'bg-theme-oceanic', 'bg-theme-forest'];
 
-// --- 2. STATE ---
+// --- STATE ---
 let journalData = [], wikiData = [], pairsData = [];
 let initialCapital = 20000;
 let currentBgTheme = 'bg-theme-default';
@@ -28,36 +27,26 @@ let currentAnalysisTabImg = null;
 let selectedAnalysisStrategy = null;
 let chartInstances = {};
 
-// --- 3. INIT LOGIC (FIXED BLANK SCREEN) ---
+// --- INIT (SỬA LỖI MÀN HÌNH XÁM) ---
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
     
-    // Logic hiển thị Landing Page
-    const landing = document.getElementById('landing-page');
+    // Luôn đảm bảo auth-screen hiện nếu chưa đăng nhập
     const authScreen = document.getElementById('auth-screen');
     const storedUser = localStorage.getItem('min_sys_current_user');
-
-    if (landing) {
-        // Có Landing Page -> Hiện Landing, Ẩn Auth
-        landing.classList.remove('hidden');
-        if(authScreen) authScreen.classList.add('hidden');
+    
+    if (storedUser) {
+        document.getElementById('login-user').value = storedUser;
+        window.authLogin(); // Tự động login
     } else {
-        // Không có Landing Page -> Check User
-        if (storedUser) {
-            document.getElementById('login-user').value = storedUser;
-            window.authLogin(); // Tự động login nếu đã lưu
-        } else {
-            if(authScreen) authScreen.classList.remove('hidden');
-        }
+        authScreen.classList.remove('hidden'); // Force hiện login
     }
 });
 
-// --- 4. DATA CORE ---
+// --- CORE ---
 window.loadData = async function() {
     if (!window.currentUser) return;
-    updateMarquee("🔄 Đang tải dữ liệu...");
-    
     try {
         const userRef = doc(db, "users", window.currentUser);
         const userSnap = await getDoc(userRef);
@@ -75,11 +64,7 @@ window.loadData = async function() {
         if (!wikiSnap.exists()) await saveWikiData();
 
         initUI();
-        updateMarquee("✅ Hệ thống sẵn sàng!");
-    } catch (e) { 
-        console.error(e);
-        alert("Lỗi tải dữ liệu: " + e.message); 
-    }
+    } catch (e) { alert("Lỗi tải: " + e.message); }
 }
 
 async function saveUserData() {
@@ -105,12 +90,7 @@ function initUI() {
     lucide.createIcons();
 }
 
-function updateMarquee(text) {
-    const el = document.getElementById('dashboard-marquee');
-    if(el) el.innerText = text;
-}
-
-// --- 5. DASHBOARD ---
+// --- DASHBOARD ---
 window.renderDashboard = function() {
     const closedTrades = journalData.filter(t => t.status !== 'OPEN').sort((a, b) => a.id - b.id);
     let wins = 0, totalPnl = 0;
@@ -136,7 +116,7 @@ window.renderDashboard = function() {
     const balance = initialCapital + totalPnl;
     const winRate = closedTrades.length ? Math.round((wins / closedTrades.length) * 100) : 0;
 
-    // Update UI
+    // Update Desktop Elements
     if(document.getElementById('dash-balance')) document.getElementById('dash-balance').innerText = `$${balance.toLocaleString()}`;
     if(document.getElementById('header-balance')) document.getElementById('header-balance').innerText = `$${balance.toLocaleString()}`;
     if(document.getElementById('dash-winrate')) document.getElementById('dash-winrate').innerText = `${winRate}%`;
@@ -144,6 +124,16 @@ window.renderDashboard = function() {
     if(document.getElementById('dash-pnl')) document.getElementById('dash-pnl').innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toLocaleString()}`;
     if(document.getElementById('dash-dd')) document.getElementById('dash-dd').innerText = `${(maxDrawdown * 100).toFixed(2)}%`;
     if(document.getElementById('dash-max-loss-streak')) document.getElementById('dash-max-loss-streak').innerText = `Streak: ${maxLossStreak}`;
+
+    // Update Mobile Elements
+    if(document.getElementById('dash-balance-mobile')) document.getElementById('dash-balance-mobile').innerText = `$${balance.toLocaleString()}`;
+    if(document.getElementById('dash-pnl-mobile')) {
+        const pnlMob = document.getElementById('dash-pnl-mobile');
+        pnlMob.innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toLocaleString()}`;
+        pnlMob.className = `text-lg font-mono font-bold ${totalPnl>=0 ? 'text-emerald-500' : 'text-rose-500'}`;
+    }
+    if(document.getElementById('dash-winrate-mobile')) document.getElementById('dash-winrate-mobile').innerText = `${winRate}%`;
+    if(document.getElementById('dash-total-mobile')) document.getElementById('dash-total-mobile').innerText = closedTrades.length;
 
     // Best/Worst
     let best = {n:'-', v:-Infinity}, worst = {n:'-', v:Infinity};
@@ -184,7 +174,7 @@ window.renderCharts = function(data, startCap) {
     }
 }
 
-// --- 6. AI GEMINI LOGIC (FIXED ERROR HANDLING) ---
+// --- 6. AI GEMINI LOGIC (SỬA LỖI UNDEFINED) ---
 async function callGeminiAPI(prompt, imageBase64 = null) {
     const model = "gemini-1.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
@@ -195,7 +185,7 @@ async function callGeminiAPI(prompt, imageBase64 = null) {
         const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts }] }) });
         const data = await response.json();
         
-        // Error Check
+        // FIX LỖI Ở ĐÂY
         if (!response.ok) throw new Error(data.error?.message || `Lỗi API (${response.status})`);
         if (!data.candidates || data.candidates.length === 0) throw new Error("AI không trả về kết quả.");
 
@@ -321,7 +311,7 @@ window.saveWiki = function() {
     if(idx !== -1) wikiData[idx] = item; else wikiData.push(item);
     saveWikiData(); renderWikiGrid(); populateStrategies(); window.closeModal('wiki-editor-modal');
 }
-window.deleteWikiItem = function(id) { if(confirm("Xóa (Chung)?")) { wikiData = wikiData.filter(i => i.id.toString() !== id.toString()); saveWikiData(); renderWikiGrid(); populateStrategies(); window.closeModal('wiki-detail-modal'); } }
+window.deleteWikiItem = function(id) { if(confirm("Xóa vĩnh viễn mục này khỏi hệ thống chung?")) { wikiData = wikiData.filter(i => i.id.toString() !== id.toString()); saveWikiData(); renderWikiGrid(); populateStrategies(); window.closeModal('wiki-detail-modal'); } }
 window.viewWikiDetail = function(id) {
     const item = wikiData.find(x => x.id.toString() === id.toString()); if(!item) return;
     document.getElementById('view-title').innerText = item.title; document.getElementById('view-image').src = item.image; document.getElementById('view-content').innerText = item.content;
@@ -343,7 +333,7 @@ window.renderWikiGrid = function() {
     lucide.createIcons();
 }
 
-// --- UTILS ---
+// --- UTILS & HELPERS ---
 window.authLogin = async function() {
     const u = document.getElementById('login-user').value; const p = document.getElementById('login-pass').value;
     const users = JSON.parse(localStorage.getItem('min_sys_users_db') || '[]');
@@ -353,7 +343,7 @@ window.authLogin = async function() {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
         document.getElementById('app-container').classList.add('flex');
-        window.enterSystem = function() {}; window.loadData();
+        window.loadData();
     } else alert("Sai thông tin");
 }
 window.authRegister = async function() {
@@ -364,14 +354,52 @@ window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); loc
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(el => el.classList.add('hidden')); document.getElementById(`tab-${id}`).classList.remove('hidden'); if(id==='dashboard') renderDashboard(); }
-window.setBackground = (theme, s=true) => { document.body.classList.remove(...ALL_THEMES); document.body.classList.add(theme); currentBgTheme = theme; if(theme !== 'bg-theme-default') document.documentElement.classList.add('dark'); else if(localStorage.theme === 'light') document.documentElement.classList.remove('dark'); if(s) saveUserData(); window.closeModal('bg-settings-modal'); renderCharts(); }
+window.setBackground = (theme, s=true) => { 
+    document.body.classList.remove(...ALL_THEMES);
+    document.body.classList.add(theme);
+    currentBgTheme = theme;
+    if(theme !== 'bg-theme-default') document.documentElement.classList.add('dark');
+    else if(localStorage.theme === 'light') document.documentElement.classList.remove('dark');
+    if(s) saveUserData(); 
+    window.closeModal('bg-settings-modal'); 
+    renderCharts();
+}
 window.openBgModal = () => document.getElementById('bg-settings-modal').classList.remove('hidden');
-window.toggleTheme = () => { const html = document.documentElement; if (html.classList.contains('dark')) { html.classList.remove('dark'); localStorage.theme = 'light'; } else { html.classList.add('dark'); localStorage.theme = 'dark'; } renderCharts(); }
-function initTheme() { if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); }
+window.toggleTheme = () => { 
+    const html = document.documentElement;
+    if (html.classList.contains('dark')) { html.classList.remove('dark'); localStorage.theme = 'light'; } 
+    else { html.classList.add('dark'); localStorage.theme = 'dark'; }
+    renderCharts(); 
+}
+function initTheme() { 
+    if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); 
+}
 function getCurrentBalance() { let pnl=0; journalData.forEach(t=>pnl+=parseFloat(t.pnl)); return initialCapital+pnl; }
-window.saveInitialCapital = function() { const val = parseFloat(document.getElementById('real-init-capital').value); if(isNaN(val)) return; initialCapital = val; saveUserData(); renderDashboard(); document.getElementById('cap-sim-start').value = val; updateCapitalCalc(); alert("Đã lưu!"); }
-window.updateCapitalCalc = function() { const start = parseFloat(document.getElementById('cap-sim-start').value)||0; const pct = parseFloat(document.getElementById('cap-risk-pct').value)||1; const rr = parseFloat(document.getElementById('cap-rr').value)||2; const n = parseInt(document.getElementById('cap-sim-count').value)||20; let bal = start, html = ''; for(let i=1; i<=n; i++) { const risk = bal*(pct/100); const profit = risk*rr; const end = bal+profit; html += `<tr class="border-b dark:border-slate-800"><td class="p-3 text-center text-slate-500">${i}</td><td class="p-3 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-3 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-3 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`; bal = end; } document.getElementById('cap-projection-list').innerHTML = html; }
-window.populateStrategies = () => { const list = wikiData.filter(i=>i.cat==='Setup'||i.cat==='Chiến Lược'||i.cat==='Strategy'); document.getElementById('inp-strategy').innerHTML = list.map(s=>`<option value="${s.code}: ${s.title}">${s.code}: ${s.title}</option>`).join(''); document.getElementById('strategy-list-container').innerHTML = list.map(s=>`<div onclick="selectAnalysisStrategy('${s.id}')" class="p-3 bg-white dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-700 border rounded cursor-pointer mb-2"><span class="font-bold block">${s.code}</span><span class="text-xs text-slate-500">${s.title}</span></div>`).join(''); }
+window.saveInitialCapital = function() {
+    const val = parseFloat(document.getElementById('real-init-capital').value);
+    if(isNaN(val)) return;
+    initialCapital = val; saveUserData(); renderDashboard();
+    document.getElementById('cap-sim-start').value = val; updateCapitalCalc();
+    alert("Đã lưu!");
+}
+window.updateCapitalCalc = function() {
+    const start = parseFloat(document.getElementById('cap-sim-start').value) || 0;
+    const pct = parseFloat(document.getElementById('cap-risk-pct').value) || 1;
+    const rr = parseFloat(document.getElementById('cap-rr').value) || 2;
+    const n = parseInt(document.getElementById('cap-sim-count').value) || 20;
+    let bal = start, html = '';
+    for(let i=1; i<=n; i++) {
+        const risk = bal * (pct/100); const profit = risk * rr; const end = bal + profit;
+        html += `<tr class="border-b dark:border-slate-800"><td class="p-3 text-center text-slate-500">${i}</td><td class="p-3 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-3 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-3 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`;
+        bal = end;
+    }
+    document.getElementById('cap-projection-list').innerHTML = html;
+}
+window.populateStrategies = () => { 
+    const list = wikiData.filter(i=>i.cat==='Setup'||i.cat==='Chiến Lược'||i.cat==='Strategy'); 
+    document.getElementById('inp-strategy').innerHTML = list.map(s=>`<option value="${s.code}: ${s.title}">${s.code}: ${s.title}</option>`).join('');
+    document.getElementById('strategy-list-container').innerHTML = list.map(s=>`<div onclick="selectAnalysisStrategy('${s.id}')" class="p-3 bg-white dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-700 border rounded cursor-pointer mb-2"><span class="font-bold block">${s.code}</span><span class="text-xs text-slate-500">${s.title}</span></div>`).join('');
+}
 window.renderPairSelects = () => { const h = pairsData.map(p=>`<option value="${p}">${p}</option>`).join(''); document.getElementById('ai-pair-input').innerHTML=h; document.getElementById('inp-pair').innerHTML=h; }
 window.renderCategoryFilters = () => { const cats = [...new Set(wikiData.map(i=>i.cat))].sort(); document.getElementById('wiki-filter-container').innerHTML = `<button onclick="filterWikiCat('all')" class="px-4 py-1.5 rounded-lg text-xs border ${currentFilter==='all'?'bg-emerald-500 text-white':''}">All</button>` + cats.map(c=>`<button onclick="filterWikiCat('${c}')" class="px-4 py-1.5 rounded-lg text-xs border ${currentFilter===c?'bg-emerald-500 text-white':''}">${c}</button>`).join(''); }
 window.filterWikiCat = (c) => { currentFilter=c; renderWikiGrid(); renderCategoryFilters(); }
@@ -380,4 +408,3 @@ window.previewImage = (url) => { document.getElementById('edit-preview').src = u
 window.handleImageUpload = (inp) => { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('edit-preview').src=e.target.result; document.getElementById('edit-preview').classList.remove('hidden'); document.getElementById('edit-image-url').value=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.viewImageFull = (src) => { document.getElementById('image-viewer-img').src=src; document.getElementById('image-viewer-modal').classList.remove('hidden'); }
 window.calcRiskPreview = () => { const v=parseFloat(document.getElementById('inp-risk').value)||0; const mode=document.getElementById('inp-risk-mode').value; const rr=parseFloat(document.getElementById('inp-rr').value)||0; const r=mode==='%'?getCurrentBalance()*(v/100):v; document.getElementById('risk-preview').innerText=`Risk: $${r.toFixed(1)}`; document.getElementById('reward-preview').innerText=`Reward: $${(r*rr).toFixed(1)}`; }
-window.enterSystem = function() { const landing = document.getElementById('landing-page'); landing.classList.add('fade-out-up'); setTimeout(() => { const user = localStorage.getItem('min_sys_current_user'); if (user) window.authLogin(); else { document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('auth-screen').classList.add('fade-in'); } }, 600); }
