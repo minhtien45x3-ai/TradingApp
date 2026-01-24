@@ -317,16 +317,28 @@ window.updateCapitalCalc = function() {
     document.getElementById('cap-projection-list').innerHTML = html;
 }
 
-// --- JOURNAL ---
+// --- JOURNAL LOGIC (ĐÃ NÂNG CẤP CHỌN NGÀY) ---
+
 window.openEntryModal = function() { 
     document.getElementById('entry-modal').classList.remove('hidden');
+    
+    // 1. Reset Ảnh & Form
     if(!currentEntryImgBase64) {
         document.getElementById('entry-img-preview').classList.add('hidden');
         document.getElementById('entry-upload-hint').classList.remove('hidden');
         document.getElementById('inp-note').value = "";
     }
+    
+    // 2. Tự động điền ngày hôm nay vào ô input (Format YYYY-MM-DD cho input type=date)
+    // Lưu ý: Cần chỉnh timezone để không bị lệch ngày
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    document.getElementById('inp-date').value = localDate;
+
+    // 3. Tính toán lại preview
     calcRiskPreview();
 }
+
 window.handleEntryImage = function(input) {
     if (input.files[0]) {
         const r = new FileReader();
@@ -339,24 +351,62 @@ window.handleEntryImage = function(input) {
         r.readAsDataURL(input.files[0]);
     }
 }
+
 window.saveEntry = function() {
+    // Lấy dữ liệu từ Form
+    const rawDate = document.getElementById('inp-date').value;
     const pair = document.getElementById('inp-pair').value;
     const strat = document.getElementById('inp-strategy').value;
     const riskVal = parseFloat(document.getElementById('inp-risk').value);
     const rr = parseFloat(document.getElementById('inp-rr').value);
-    if(!pair) return alert("Chọn cặp tiền!");
+    
+    // Validation
+    if(!pair) return alert("Vui lòng chọn cặp tiền!");
+    if(!rawDate) return alert("Vui lòng chọn ngày!");
+    if(isNaN(riskVal) || riskVal <= 0) return alert("Rủi ro không hợp lệ!");
+
+    // Chuyển đổi ngày từ YYYY-MM-DD sang DD/MM/YYYY để hiển thị đẹp
+    const [y, m, d] = rawDate.split('-');
+    const formattedDate = `${d}/${m}/${y}`;
+
+    // Tính Risk ra USD
     const riskUSD = document.getElementById('inp-risk-mode').value === '%' ? getCurrentBalance() * (riskVal/100) : riskVal;
     
-    journalData.unshift({
-        id: Date.now().toString(), date: new Date().toLocaleDateString('vi-VN'),
-        pair, dir: document.getElementById('inp-dir').value, session: document.getElementById('inp-session').value,
-        strategy: strat, risk: riskUSD.toFixed(2), rr, status: 'OPEN', pnl: 0,
-        note: document.getElementById('inp-note').value, image: currentEntryImgBase64
+    // Tạo object lệnh mới
+    const newEntry = {
+        id: Date.now().toString(), 
+        date: formattedDate, // Sử dụng ngày người dùng chọn
+        pair, 
+        dir: document.getElementById('inp-dir').value, 
+        session: document.getElementById('inp-session').value,
+        strategy: strat, 
+        risk: riskUSD.toFixed(2), 
+        rr, 
+        status: 'OPEN', 
+        pnl: 0,
+        note: document.getElementById('inp-note').value, 
+        image: currentEntryImgBase64
+    };
+    
+    // Lưu và Reset
+    journalData.unshift(newEntry);
+    
+    // Sắp xếp lại Nhật ký theo thời gian (Mới nhất lên đầu)
+    // Logic sort: Convert DD/MM/YYYY về Date object để so sánh
+    journalData.sort((a, b) => {
+        const [d1, m1, y1] = a.date.split('/');
+        const [d2, m2, y2] = b.date.split('/');
+        return new Date(`${y2}-${m2}-${d2}`) - new Date(`${y1}-${m1}-${d1}`);
     });
-    saveUserData(); renderJournalList(); renderDashboard();
+
+    saveUserData(); 
+    renderJournalList(); 
+    renderDashboard();
+    
     window.closeModal('entry-modal');
-    currentEntryImgBase64 = null;
+    currentEntryImgBase64 = null; // Reset ảnh tạm
 }
+
 window.updateEntryStatus = function(id, status) {
     const idx = journalData.findIndex(e => e.id.toString() === id.toString());
     if(idx !== -1) {
@@ -368,30 +418,34 @@ window.updateEntryStatus = function(id, status) {
         saveUserData(); renderJournalList(); renderDashboard();
     }
 }
+
 window.deleteEntry = function(id) {
-    if(confirm('Xóa?')) { journalData = journalData.filter(e => e.id.toString() !== id.toString()); saveUserData(); renderJournalList(); renderDashboard(); }
+    if(confirm('Bạn có chắc chắn muốn xóa lệnh này?')) { 
+        journalData = journalData.filter(e => e.id.toString() !== id.toString()); 
+        saveUserData(); 
+        renderJournalList(); 
+        renderDashboard(); 
+    }
 }
+
 window.renderJournalList = function() {
     const list = document.getElementById('journal-list');
     list.innerHTML = journalData.map(t => `
-        <tr class="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 group">
-            <td class="p-4 text-center text-xs text-slate-500"><div>${t.date}</div><div>${t.session}</div></td>
-            <td class="p-4 text-center">${t.image ? `<div class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 overflow-hidden cursor-pointer mx-auto" onclick="viewImageFull('${t.image}')"><img src="${t.image}" class="w-full h-full object-cover"></div>` : '-'}</td>
+        <tr class="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 group transition">
+            <td class="p-4 text-center text-xs text-slate-500">
+                <div class="font-bold text-slate-700 dark:text-slate-300">${t.date}</div>
+                <div class="text-[10px] uppercase tracking-wider opacity-70">${t.session}</div>
+            </td>
+            <td class="p-4 text-center">${t.image ? `<div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 overflow-hidden cursor-pointer mx-auto shadow-sm hover:scale-110 transition" onclick="viewImageFull('${t.image}')"><img src="${t.image}" class="w-full h-full object-cover"></div>` : '<span class="text-slate-300">-</span>'}</td>
             <td class="p-4 text-center font-bold text-slate-800 dark:text-white">${t.pair} <span class="block text-[10px] ${t.dir==='BUY'?'text-emerald-500':'text-rose-500'} font-extrabold">${t.dir}</span></td>
-            <td class="p-4 text-center text-xs text-slate-500 truncate max-w-[120px]">${t.strategy}</td>
-            <td class="p-4 text-center text-xs font-mono text-slate-600 dark:text-slate-300">-$${t.risk} | 1:${t.rr}</td>
+            <td class="p-4 text-center text-xs text-slate-500 truncate max-w-[120px]" title="${t.strategy}">${t.strategy}</td>
+            <td class="p-4 text-center text-xs font-mono text-slate-600 dark:text-slate-300">-$${t.risk} <span class="text-slate-400">|</span> 1:${t.rr}</td>
             <td class="p-4 text-center"><select onchange="updateEntryStatus('${t.id}', this.value)" class="bg-transparent text-xs font-bold outline-none cursor-pointer ${t.status==='WIN'?'text-emerald-500':t.status==='LOSS'?'text-rose-500':'text-blue-500'} text-center border rounded border-slate-200 dark:border-slate-700 p-1"><option value="OPEN" ${t.status==='OPEN'?'selected':''}>OPEN</option><option value="WIN" ${t.status==='WIN'?'selected':''}>WIN</option><option value="LOSS" ${t.status==='LOSS'?'selected':''}>LOSS</option></select></td>
             <td class="p-4 text-right font-bold ${parseFloat(t.pnl)>0?'text-emerald-500':parseFloat(t.pnl)<0?'text-rose-500':'text-slate-500'} font-mono">${parseFloat(t.pnl)>0?'+':''}${parseFloat(t.pnl).toLocaleString()}</td>
-            <td class="p-4 text-center"><button onclick="deleteEntry('${t.id}')" class="text-slate-400 hover:text-rose-500 opacity-50 group-hover:opacity-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+            <td class="p-4 text-center"><button onclick="deleteEntry('${t.id}')" class="text-slate-400 hover:text-rose-500 opacity-50 group-hover:opacity-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
         </tr>`).join('');
     lucide.createIcons();
     updateDailyPnL();
-}
-function updateDailyPnL() {
-    const today = new Date().toLocaleDateString('vi-VN');
-    const pnl = journalData.filter(t => t.date === today).reduce((sum, t) => sum + parseFloat(t.pnl), 0);
-    const el = document.getElementById('journal-pnl-today');
-    if(el) { el.innerText = (pnl >= 0 ? '+' : '') + `$${pnl.toFixed(2)}`; el.className = `text-sm font-mono font-bold ${pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`; }
 }
 
 // --- WIKI & UTILS ---
