@@ -1,7 +1,9 @@
 import { db, doc, getDoc, setDoc } from './firebase.js';
 
-// --- CONFIG ---
-const GEMINI_API_KEY = "AIzaSyA5rkECrtH8rEVgFyhq80dz6XGAKYwTQYc"; 
+// --- 1. CONFIG & CONSTANTS ---
+// ĐÃ CHÈN KEY CỦA BẠN TẠI ĐÂY:
+const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E"; 
+
 const DEFAULT_WIKI = [
     { id: "XH01", code: "XH01", cat: "Xu Hướng", title: "Uptrend & Downtrend", image: "https://placehold.co/800x400/1e293b/10b981?text=XuHuong", content: "Đỉnh sau cao hơn đỉnh trước (HH), đáy sau cao hơn đáy trước (HL)." },
     { id: "BB02", code: "BB02", cat: "Setup", title: "Bounce Breakout", image: "https://placehold.co/800x400/1e293b/10b981?text=Setup", content: "Mua khi giá quay lại test vùng phá vỡ (Retest)." }
@@ -20,26 +22,34 @@ const CRITERIA_LIST = [
     { name: "10. R:R", desc: "Tỷ lệ tốt" }
 ];
 
-// --- STATE ---
+// --- 2. STATE ---
 let journalData = [], wikiData = [], pairsData = [];
 let initialCapital = 20000;
 let currentBgTheme = 'bg-theme-default';
 let currentFilter = 'all';
-let currentAnalysisImageBase64 = null; // Ảnh tab AI
-let currentEntryImgBase64 = null; // Ảnh tab Journal
-let currentAnalysisTabImg = null; // Ảnh tab Analysis (Upload)
+let currentAnalysisImageBase64 = null; 
+let currentEntryImgBase64 = null; 
+let currentAnalysisTabImg = null; 
 let selectedAnalysisStrategy = null;
 let chartInstances = {};
 
-// --- INIT ---
+// --- 3. INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
+    
+    // Ẩn auth-screen ban đầu để nhường chỗ cho Landing Page
+    document.getElementById('auth-screen').classList.add('hidden');
+    
     const storedUser = localStorage.getItem('min_sys_current_user');
-    if(storedUser) document.getElementById('login-user').value = storedUser;
+    if(storedUser) {
+        document.getElementById('login-user').value = storedUser;
+        // Tự động điền user nhưng KHÔNG tự động login ngay, 
+        // để người dùng bấm "Truy cập hệ thống" xong mới xử lý tiếp.
+    }
 });
 
-// --- CORE ---
+// --- 4. CORE ---
 window.loadData = async function() {
     if (!window.currentUser) return;
     document.getElementById('dynamic-quote').innerText = "🔄 Đang tải dữ liệu...";
@@ -83,7 +93,7 @@ function initUI() {
     lucide.createIcons();
 }
 
-// --- ANALYSIS TAB LOGIC (NEW) ---
+// --- ANALYSIS TAB LOGIC ---
 window.selectAnalysisStrategy = function(id) {
     const item = wikiData.find(x => x.id.toString() === id.toString());
     if(!item) return;
@@ -93,11 +103,10 @@ window.selectAnalysisStrategy = function(id) {
     document.getElementById('ana-theory-content').innerText = item.content;
     document.getElementById('analysis-empty-state').classList.add('hidden');
     
-    // Render Checklist
     document.getElementById('ana-checklist-container').innerHTML = CRITERIA_LIST.map(c => `
-        <label class="flex items-center gap-2 p-2 rounded bg-slate-200 dark:bg-slate-800 cursor-pointer">
+        <label class="flex items-center gap-2 p-2 rounded bg-slate-200 dark:bg-slate-800 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition">
             <input type="checkbox" class="accent-emerald-500 w-4 h-4">
-            <div><p class="text-xs font-bold">${c.name}</p><p class="text-[10px] text-slate-500">${c.desc}</p></div>
+            <div><p class="text-xs font-bold text-slate-700 dark:text-slate-200">${c.name}</p><p class="text-[10px] text-slate-500">${c.desc}</p></div>
         </label>`).join('');
 }
 
@@ -117,20 +126,14 @@ window.handleAnalysisUpload = function(input) {
 
 window.transferAnalysisToJournal = function() {
     if(!selectedAnalysisStrategy) return alert("Chưa chọn chiến lược!");
-    // Switch Tab
     window.switchTab('journal');
-    // Open Modal
     window.openEntryModal();
-    // Pre-fill Data
     const stratSelect = document.getElementById('inp-strategy');
-    // Tìm option có chứa mã strategy
     for(let i=0; i<stratSelect.options.length; i++){
         if(stratSelect.options[i].text.includes(selectedAnalysisStrategy.code)){
-            stratSelect.selectedIndex = i;
-            break;
+            stratSelect.selectedIndex = i; break;
         }
     }
-    // Pre-fill Image if exists
     if(currentAnalysisTabImg) {
         currentEntryImgBase64 = currentAnalysisTabImg;
         const img = document.getElementById('entry-img-preview');
@@ -140,7 +143,7 @@ window.transferAnalysisToJournal = function() {
     }
 }
 
-// --- 5. AI GEMINI LOGIC (ĐÃ FIX LỖI) ---
+// --- 5. AI GEMINI LOGIC (ĐÃ CẬP NHẬT KEY CỦA BẠN) ---
 async function callGeminiAPI(prompt, imageBase64 = null) {
     const model = "gemini-1.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
@@ -160,37 +163,27 @@ async function callGeminiAPI(prompt, imageBase64 = null) {
 
         const data = await response.json();
 
-        // --- ĐOẠN FIX LỖI "UNDEFINED READING 0" ---
-        if (!response.ok) {
-            console.error("API Error Response:", data);
-            throw new Error(data.error?.message || `Lỗi kết nối API (${response.status})`);
-        }
-
-        if (!data.candidates || data.candidates.length === 0) {
-            console.error("No Candidates:", data);
-            if (data.promptFeedback) throw new Error("AI từ chối phân tích do vi phạm chính sách an toàn.");
-            throw new Error("AI không trả về kết quả nào.");
-        }
-        // ------------------------------------------
+        // Kiểm tra lỗi API trả về
+        if (!response.ok) throw new Error(data.error?.message || `Lỗi kết nối API (${response.status})`);
+        if (!data.candidates || data.candidates.length === 0) throw new Error("AI không trả về kết quả (Có thể do hình ảnh vi phạm chính sách an toàn).");
 
         return data.candidates[0].content.parts[0].text;
 
     } catch (error) {
-        throw error; // Ném lỗi ra để hàm runAIAnalysis bắt được
+        throw error;
     }
 }
 
 window.handleAIUpload = function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.getElementById('ai-preview-img');
-            img.src = e.target.result;
-            img.classList.remove('hidden');
+        const r = new FileReader();
+        r.onload = (e) => {
+            document.getElementById('ai-preview-img').src = e.target.result;
+            document.getElementById('ai-preview-img').classList.remove('hidden');
             document.getElementById('ai-upload-placeholder').classList.add('hidden');
             currentAnalysisImageBase64 = e.target.result;
         };
-        reader.readAsDataURL(input.files[0]);
+        r.readAsDataURL(input.files[0]);
     }
 }
 
@@ -205,42 +198,23 @@ window.runAIAnalysis = async function() {
     const pair = document.getElementById('ai-pair-input').value || "Unknown";
     const tf = document.getElementById('ai-tf-input').value;
     
-    // Prompt yêu cầu trả về JSON chuẩn xác hơn
-    const prompt = `Bạn là chuyên gia Trading. Hãy phân tích biểu đồ ${pair} khung ${tf}. 
-    YÊU CẦU BẮT BUỘC: Chỉ trả về 1 chuỗi JSON duy nhất, không dùng markdown block (bỏ dấu \`\`\`json).
-    Cấu trúc JSON: 
-    { 
-        "pattern_name": "Tên setup/mô hình (Tiếng Việt)", 
-        "score": 85, 
-        "conclusion": "Đánh giá chi tiết (viết dạng văn bản bình thường)" 
-    }`;
+    const prompt = `Bạn là chuyên gia Trading. Phân tích biểu đồ ${pair} khung ${tf}. YÊU CẦU: Trả về JSON thuần túy: { "pattern_name": "Tên mẫu hình (Tiếng Việt)", "score": 85, "conclusion": "Nhận định chi tiết (Markdown)" }`;
     
     try {
         const text = await callGeminiAPI(prompt, currentAnalysisImageBase64);
+        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const result = JSON.parse(cleanJson);
         
-        // Làm sạch chuỗi JSON phòng trường hợp AI vẫn thêm markdown
-        let cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        
-        // Parse JSON
-        let result;
-        try {
-            result = JSON.parse(cleanJson);
-        } catch (e) {
-            console.error("JSON Parse Error:", text);
-            throw new Error("Lỗi định dạng dữ liệu từ AI. Hãy thử lại.");
-        }
-        
-        document.getElementById('ai-res-pattern').innerText = result.pattern_name || "Không xác định";
-        document.getElementById('ai-res-score').innerText = (result.score || 0) + "%";
+        document.getElementById('ai-res-pattern').innerText = result.pattern_name;
+        document.getElementById('ai-res-score').innerText = result.score + "%";
         document.getElementById('ai-res-time').innerText = new Date().toLocaleTimeString();
-        document.getElementById('ai-res-conclusion').innerHTML = marked.parse(result.conclusion || "Không có kết luận");
+        document.getElementById('ai-res-conclusion').innerHTML = marked.parse(result.conclusion);
         
         document.getElementById('ai-result-empty').classList.add('hidden');
         document.getElementById('ai-result-content').classList.remove('hidden');
-
     } catch (e) {
-        console.error("Analysis Error:", e);
-        alert("Lỗi phân tích: " + e.message + "\n(Kiểm tra lại API Key trong code app.js)");
+        console.error(e);
+        alert("Lỗi AI: " + e.message + "\n(Vui lòng kiểm tra lại Key hoặc Ảnh)");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -260,10 +234,10 @@ window.resetAI = function() {
 // --- CAPITAL LOGIC ---
 window.saveInitialCapital = function() {
     const val = parseFloat(document.getElementById('real-init-capital').value);
-    if(isNaN(val)) return;
+    if(isNaN(val) || val < 0) return alert("Vốn không hợp lệ!");
     initialCapital = val; saveDataToCloud(); renderDashboard();
     document.getElementById('cap-sim-start').value = val; updateCapitalCalc();
-    alert("Đã lưu!");
+    alert("Đã lưu Vốn Gốc mới!");
 }
 window.updateCapitalCalc = function() {
     const start = parseFloat(document.getElementById('cap-sim-start').value) || 0;
@@ -273,7 +247,7 @@ window.updateCapitalCalc = function() {
     let bal = start, html = '';
     for(let i=1; i<=n; i++) {
         const risk = bal * (pct/100); const profit = risk * rr; const end = bal + profit;
-        html += `<tr class="border-b dark:border-slate-800"><td class="p-3 text-center text-slate-500">${i}</td><td class="p-3 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-3 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-3 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`;
+        html += `<tr class="border-b dark:border-slate-800"><td class="p-3 text-center text-slate-500">${i}</td><td class="p-3 text-right text-slate-600 dark:text-slate-400">$${Math.round(bal).toLocaleString()}</td><td class="p-3 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-3 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold text-slate-800 dark:text-white">$${Math.round(end).toLocaleString()}</td></tr>`;
         bal = end;
     }
     document.getElementById('cap-projection-list').innerHTML = html;
@@ -282,7 +256,6 @@ window.updateCapitalCalc = function() {
 // --- JOURNAL LOGIC ---
 window.openEntryModal = function() { 
     document.getElementById('entry-modal').classList.remove('hidden');
-    // Reset inputs if not transferred
     if(!currentEntryImgBase64) {
         document.getElementById('entry-img-preview').classList.add('hidden');
         document.getElementById('entry-upload-hint').classList.remove('hidden');
@@ -320,7 +293,7 @@ window.saveEntry = function() {
     
     saveDataToCloud(); renderJournalList(); renderDashboard();
     window.closeModal('entry-modal');
-    currentEntryImgBase64 = null; // Reset temp image
+    currentEntryImgBase64 = null; 
 }
 window.updateEntryStatus = function(id, status) {
     const idx = journalData.findIndex(e => e.id.toString() === id.toString());
@@ -402,7 +375,6 @@ window.viewWikiDetail = function(id) {
     document.getElementById('view-content').innerText = item.content;
     const btnEdit = document.getElementById('btn-edit-entry');
     const btnDel = document.getElementById('btn-delete-entry');
-    // Clone to remove listener
     const newEdit = btnEdit.cloneNode(true); const newDel = btnDel.cloneNode(true);
     btnEdit.parentNode.replaceChild(newEdit, btnEdit); btnDel.parentNode.replaceChild(newDel, btnDel);
     newEdit.onclick = () => { window.closeModal('wiki-detail-modal'); window.openWikiEditor(id); };
@@ -452,7 +424,7 @@ window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); 
 function initTheme() { if(localStorage.theme==='dark') document.documentElement.classList.add('dark'); }
 function getCurrentBalance() { let pnl=0; journalData.forEach(t=>pnl+=parseFloat(t.pnl)); return initialCapital+pnl; }
 window.populateStrategies = () => { 
-    const list = wikiData.filter(i=>i.cat==='Setup'||i.cat==='Chiến Lược'); 
+    const list = wikiData.filter(i=>i.cat==='Setup'||i.cat==='Chiến Lược' || i.cat==='Strategy'); 
     document.getElementById('inp-strategy').innerHTML = list.map(s=>`<option value="${s.code}: ${s.title}">${s.code}: ${s.title}</option>`).join('');
     document.getElementById('strategy-list-container').innerHTML = list.map(s=>`<div onclick="selectAnalysisStrategy('${s.id}')" class="p-3 bg-white dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 border rounded cursor-pointer mb-2"><span class="font-bold block">${s.code}</span><span class="text-xs text-slate-500">${s.title}</span></div>`).join('');
 }
@@ -486,5 +458,21 @@ window.renderCharts = () => {
         if(chartInstances.wl) chartInstances.wl.destroy();
         chartInstances.wl = new Chart(ctx2, {type:'doughnut', data:{labels:['Win','Loss'], datasets:[{data:[w,l], backgroundColor:['#10b981','#f43f5e'], borderWidth:0}]}, options:{cutout:'70%', plugins:{legend:{position:'right'}}}});
     }
-
+}
+// --- LANDING PAGE LOGIC ---
+window.enterSystem = function() {
+    const landing = document.getElementById('landing-page');
+    landing.classList.add('fade-out-up');
+    
+    setTimeout(() => {
+        const storedUser = localStorage.getItem('min_sys_current_user');
+        // Nếu đã có user lưu trong máy -> Tự động đăng nhập luôn
+        if (storedUser) {
+            window.authLogin(); 
+        } else {
+            // Chưa có -> Hiện màn hình đăng nhập
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('auth-screen').classList.add('fade-in');
+        }
+    }, 600);
 }
