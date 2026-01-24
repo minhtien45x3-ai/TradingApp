@@ -1,15 +1,22 @@
 import { db, doc, getDoc, setDoc, collection, getDocs, updateDoc } from './firebase.js';
 
 // --- CONFIG ---
-const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E"; 
-const ADMIN_LIST = ["admin", "minhtien45x3"]; 
+const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E";
+// DANH SÁCH ADMIN (QUAN TRỌNG: Thêm nick của bạn vào đây)
+const ADMIN_LIST = ["admin", "minhtien45x3"];
 
 // --- GLOBAL VARS ---
 let journalData = [], wikiData = [], initialCapital = 20000;
 let currentEntryImg = null, currentAnalysisImg = null, chartInst = {};
 let isAdmin = false;
+let currentBgTheme = 'bg-theme-default';
+let currentFilter = 'all';
+let currentAnalysisImageBase64 = null;
+let currentAnalysisTabImg = null;
+let selectedAnalysisStrategy = null;
+
 const DEFAULT_WIKI = [{ id: "1", code: "XH01", cat: "Setup", title: "Uptrend", image: "", content: "Higher Highs" }];
-const CRITERIA_LIST = [{name:"XU HƯỚNG",desc:"Cấu trúc"},{name:"CẢN",desc:"Phản ứng"},{name:"NẾN",desc:"Đảo chiều"}];
+const CRITERIA_LIST = [{name:"XU HƯỚNG",desc:"Cấu trúc"},{name:"CẢN",desc:"Phản ứng"},{name:"NẾN",desc:"Đảo chiều"},{name:"R:R",desc:"Tỷ lệ"}];
 const ALL_THEMES = ['bg-theme-default', 'bg-theme-galaxy', 'bg-theme-emerald', 'bg-theme-midnight', 'bg-theme-sunset', 'bg-theme-aurora', 'bg-theme-nebula', 'bg-theme-oceanic', 'bg-theme-forest'];
 
 // --- INIT ---
@@ -17,15 +24,19 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
     const landing = document.getElementById('landing-page');
+    // Hiển thị Landing Page trước
     if(landing) {
         landing.classList.remove('hidden');
         document.getElementById('auth-screen').classList.add('hidden');
     }
 });
 
-// --- CORE DATA ---
+// --- CORE DATA & ERROR HANDLING ---
 window.loadData = async function() {
     if (!window.currentUser) return;
+    updateMarquee("🔄 Đang tải dữ liệu...");
+    
+    // Check Admin
     isAdmin = ADMIN_LIST.includes(window.currentUser);
     const adminBtn = document.getElementById('btn-admin-panel');
     if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
@@ -33,19 +44,31 @@ window.loadData = async function() {
     try {
         const uRef = doc(db, "users", window.currentUser);
         const uSnap = await getDoc(uRef);
+        
         if (uSnap.exists()) {
             const d = uSnap.data();
+            // Nếu tài khoản bị xóa trên cloud nhưng vẫn còn ở local -> Đăng xuất
             journalData = d.journal || [];
             initialCapital = d.capital || 20000;
             if(d.background) window.setBackground(d.background, false);
-        } else await saveUserData();
+        } else {
+            // Trường hợp user có ở local nhưng không có trên cloud -> Tạo lại hoặc báo lỗi
+            // Ở đây chọn cách tạo lại data rỗng để không bị treo
+            await saveUserData();
+        }
 
         const wRef = doc(db, "system", "wiki_master");
         const wSnap = await getDoc(wRef);
         wikiData = wSnap.exists() ? wSnap.data().items : DEFAULT_WIKI;
         
         initUI();
-    } catch (e) { alert("Lỗi tải: " + e.message); }
+        updateMarquee("✅ Hệ thống sẵn sàng!");
+    } catch (e) { 
+        console.error(e);
+        alert("Lỗi tải dữ liệu: " + e.message);
+        // Nếu lỗi, quay về màn hình đăng nhập để không bị treo màn hình xám
+        window.authLogout();
+    }
 }
 
 async function saveUserData() {
@@ -63,21 +86,25 @@ function initUI() {
     if(cap) cap.value = initialCapital;
     updateCapitalCalc();
     
-    // Wiki Button Permission
     const btnCreate = document.querySelector('#tab-wiki button[onclick="openWikiEditor()"]');
     if(btnCreate) btnCreate.style.display = isAdmin ? 'flex' : 'none';
     lucide.createIcons();
 }
 
-// --- GLOBAL FUNCTIONS ---
+// --- HELPER FUNCTIONS (Defined Globally) ---
 window.updateDailyPnL = function() {
     const today = new Date().toLocaleDateString('vi-VN'); 
     const pnl = journalData.filter(t => t.date === today).reduce((sum, t) => sum + parseFloat(t.pnl), 0);
     const el = document.getElementById('journal-pnl-today');
     if(el) {
-        el.innerText = (pnl >= 0 ? '+' : '') + `$${pnl.toFixed(2)}`;
+        el.innerText = (pnl >= 0 ? '+' : '') + `$${pnl.toLocaleString()}`;
         el.className = `text-sm font-mono font-bold ${pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
     }
+}
+
+function updateMarquee(text) {
+    const el = document.getElementById('dashboard-marquee');
+    if(el) el.innerText = text;
 }
 
 // --- AUTH ---
@@ -85,29 +112,46 @@ window.enterSystem = function() {
     document.getElementById('landing-page').classList.add('fade-out-up');
     setTimeout(() => {
         const u = localStorage.getItem('min_sys_current_user');
-        if(u) { document.getElementById('login-user').value = u; window.authLogin(); }
-        else document.getElementById('auth-screen').classList.remove('hidden');
+        if(u) { 
+            document.getElementById('login-user').value = u; 
+            window.authLogin(); 
+        } else { 
+            document.getElementById('auth-screen').classList.remove('hidden'); 
+        }
     }, 600);
 }
+
 window.authLogin = async function() {
     const u = document.getElementById('login-user').value.trim();
     const p = document.getElementById('login-pass').value.trim();
     if(!u) return;
+
+    // Show Loading state if needed
+    
     try {
         const snap = await getDoc(doc(db, "users", u));
-        if(!snap.exists()) return alert("Sai tên!");
+        if(!snap.exists()) {
+            alert("Tài khoản không tồn tại trên Cloud. Vui lòng Đăng Ký lại!");
+            return;
+        }
+        
         const d = snap.data();
-        if(d.password !== p) return alert("Sai pass!");
-        if(d.status === 'pending') return alert("Chờ Admin duyệt!");
+        if(d.password !== p) return alert("Sai mật khẩu!");
+        if(d.status === 'pending') return alert("Tài khoản đang chờ Admin duyệt!");
         
         window.currentUser = u;
         localStorage.setItem('min_sys_current_user', u);
+        
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
-        document.getElementById('app-container').classList.add('flex');
+        document.getElementById('app-container').classList.add('flex'); // Quan trọng để hiện giao diện
+        
         window.loadData();
-    } catch(e) { alert("Lỗi: "+e.message); }
+    } catch(e) { 
+        alert("Lỗi đăng nhập: " + e.message); 
+    }
 }
+
 window.authRegister = async function() {
     const u = document.getElementById('reg-user').value.trim();
     const p = document.getElementById('reg-pass').value.trim();
@@ -115,13 +159,18 @@ window.authRegister = async function() {
     if(!u || !p) return;
     try {
         const snap = await getDoc(doc(db, "users", u));
-        if(snap.exists()) return alert("Tồn tại!");
+        if(snap.exists()) return alert("Tên này đã tồn tại!");
+        
+        // Auto-approve nếu tên nằm trong list Admin
         const status = ADMIN_LIST.includes(u) ? 'approved' : 'pending';
+        
         await setDoc(doc(db, "users", u), { username:u, password:p, email:e, status:status, journal:[], capital:20000, created_at: new Date().toISOString() });
-        alert(status==='approved' ? "Admin ĐK xong" : "ĐK thành công, chờ duyệt");
+        
+        alert(status==='approved' ? "Admin ĐK thành công! Hãy đăng nhập." : "ĐK thành công, vui lòng chờ duyệt.");
         window.toggleAuth();
     } catch(err) { alert("Lỗi: "+err.message); }
 }
+
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
 window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); location.reload(); }
 
@@ -198,38 +247,51 @@ window.openAdminPanel = async () => {
 }
 window.approveUser = async (u) => { if(confirm("Duyệt?")) { await updateDoc(doc(db,"users",u),{status:'approved'}); window.openAdminPanel(); } }
 
-// --- AI LOGIC (GEMINI) ---
+// --- AI LOGIC ---
 async function callGeminiAPI(prompt, imageBase64 = null) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     const parts = [{ text: prompt }]; if (imageBase64) parts.push({ inlineData: { mimeType: "image/png", data: imageBase64.split(',')[1] } });
     try { const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts }] }) }); const data = await response.json(); if (!response.ok) throw new Error("API Error"); if (!data.candidates) throw new Error("AI Empty"); return data.candidates[0].content.parts[0].text; } catch (error) { throw error; }
 }
 window.handleAIUpload = function(input) { if (input.files[0]) { const r = new FileReader(); r.onload = (e) => { document.getElementById('ai-preview-img').src = e.target.result; document.getElementById('ai-preview-img').classList.remove('hidden'); document.getElementById('ai-upload-placeholder').classList.add('hidden'); currentAnalysisImageBase64 = e.target.result; }; r.readAsDataURL(input.files[0]); } }
-window.runAIAnalysis = async function() { if(!currentAnalysisImageBase64) return alert("Chọn ảnh!"); const btn = document.getElementById('btn-ai-analyze'); btn.innerHTML = "ĐANG XỬ LÝ..."; btn.disabled = true; const pair = document.getElementById('ai-pair-input').value; const prompt = `Phân tích ${pair}. JSON: {pattern_name, score, conclusion}`; try { const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64); const json = JSON.parse(txt.replace(/```json|```/g,'').trim()); document.getElementById('ai-res-pattern').innerText = json.pattern_name; document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion); document.getElementById('ai-result-content').classList.remove('hidden'); } catch (e) { alert("Lỗi: "+e.message); } btn.innerHTML = "BẮT ĐẦU"; btn.disabled = false; }
-window.resetAI = function() { document.getElementById('ai-result-content').classList.add('hidden'); currentAnalysisImageBase64=null; document.getElementById('ai-preview-img').classList.add('hidden'); }
+window.runAIAnalysis = async function() { if(!currentAnalysisImageBase64) return alert("Chọn ảnh!"); const btn = document.getElementById('btn-ai-analyze'); btn.innerHTML = "ĐANG XỬ LÝ..."; btn.disabled = true; const pair = document.getElementById('ai-pair-input').value; const prompt = `Phân tích ${pair}. JSON: {pattern_name, score, conclusion}`; try { const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64); const json = JSON.parse(txt.replace(/```json|```/g,'').trim()); document.getElementById('ai-res-pattern').innerText = json.pattern_name; document.getElementById('ai-res-score').innerText = json.score+"%"; document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion); document.getElementById('ai-result-content').classList.remove('hidden'); } catch (e) { alert("Lỗi: "+e.message); } btn.innerHTML = "BẮT ĐẦU"; btn.disabled = false; }
+window.resetAI = function() { document.getElementById('ai-result-content').classList.add('hidden'); document.getElementById('ai-result-empty').classList.remove('hidden'); currentAnalysisImageBase64=null; document.getElementById('ai-preview-img').classList.add('hidden'); document.getElementById('ai-upload-placeholder').classList.remove('hidden'); }
 
-// --- JOURNAL & ANALYSIS ---
+// --- JOURNAL & ANALYSIS LINK ---
 window.selectAnalysisStrategy = function(id) { const item = wikiData.find(x=>x.id==id); if(item) { selectedAnalysisStrategy=item; document.getElementById('current-setup-name').innerText=item.title; document.getElementById('ana-theory-img').src=item.image; document.getElementById('ana-theory-content').innerText=item.content; document.getElementById('analysis-empty-state').classList.add('hidden'); } }
-window.handleAnalysisUpload = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('ana-real-img').src=e.target.result; document.getElementById('ana-real-img').classList.remove('hidden'); currentAnalysisTabImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
-window.transferAnalysisToJournal = function() { if(!selectedAnalysisStrategy) return alert("Chưa chọn chiến lược!"); window.switchTab('journal'); window.openEntryModal(); if(currentAnalysisTabImg) { currentEntryImg=currentAnalysisTabImg; document.getElementById('entry-img-preview').src=currentAnalysisTabImg; document.getElementById('entry-img-preview').classList.remove('hidden'); } }
-window.openEntryModal = function() { document.getElementById('entry-modal').classList.remove('hidden'); const now=new Date(); document.getElementById('inp-date').value = new Date(now - now.getTimezoneOffset()*60000).toISOString().split('T')[0]; }
-window.handleEntryImage = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('entry-img-preview').src=e.target.result; document.getElementById('entry-img-preview').classList.remove('hidden'); currentEntryImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
+window.handleAnalysisUpload = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('ana-real-img').src=e.target.result; document.getElementById('ana-real-img').classList.remove('hidden'); document.getElementById('ana-upload-hint').classList.add('hidden'); currentAnalysisTabImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
+window.transferAnalysisToJournal = function() { if(!selectedAnalysisStrategy) return alert("Chưa chọn chiến lược!"); window.switchTab('journal'); window.openEntryModal(); if(currentAnalysisTabImg) { currentEntryImgBase64=currentAnalysisTabImg; document.getElementById('entry-img-preview').src=currentAnalysisTabImg; document.getElementById('entry-img-preview').classList.remove('hidden'); document.getElementById('entry-upload-hint').classList.add('hidden'); } }
+
+// --- JOURNAL & MODAL ---
+window.openEntryModal = function() { 
+    document.getElementById('entry-modal').classList.remove('hidden'); 
+    const now=new Date(); document.getElementById('inp-date').value = new Date(now - now.getTimezoneOffset()*60000).toISOString().split('T')[0];
+    if(!currentEntryImgBase64) { document.getElementById('entry-img-preview').classList.add('hidden'); document.getElementById('entry-upload-hint').classList.remove('hidden'); }
+}
+window.handleEntryImage = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('entry-img-preview').src=e.target.result; document.getElementById('entry-img-preview').classList.remove('hidden'); currentEntryImgBase64=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.saveEntry = function() {
-    const d = document.getElementById('inp-date').value.split('-'); const dateStr = `${d[2]}/${d[1]}/${d[0]}`;
+    const d = document.getElementById('inp-date').value.split('-'); 
+    const dateStr = `${d[2]}/${d[1]}/${d[0]}`;
     const p = parseFloat(document.getElementById('inp-risk').value)||0;
-    journalData.unshift({ id:Date.now().toString(), date:dateStr, pair: document.getElementById('inp-pair').value, pnl:0, status:'OPEN', risk:p, rr:2, strategy:'Manual', image: currentEntryImg });
+    const strat = document.getElementById('inp-strategy').value;
+    
+    journalData.unshift({ id:Date.now().toString(), date:dateStr, pair: document.getElementById('inp-pair').value, pnl:0, status:'OPEN', risk:p, rr:2, strategy: strat, image: currentEntryImgBase64 });
     saveUserData(); renderJournalList(); renderDashboard(); window.closeModal('entry-modal');
+    currentEntryImgBase64 = null;
 }
 window.updateEntryStatus = function(id, status) { const idx = journalData.findIndex(e => e.id.toString() === id.toString()); if(idx !== -1) { journalData[idx].status = status; const r = parseFloat(journalData[idx].risk); if(status === 'WIN') journalData[idx].pnl = r * 2; else if(status === 'LOSS') journalData[idx].pnl = -r; else journalData[idx].pnl = 0; saveUserData(); renderJournalList(); renderDashboard(); } }
 window.deleteEntry = (id) => { if(confirm('Xóa?')) { journalData=journalData.filter(x=>x.id!=id); saveUserData(); renderJournalList(); renderDashboard(); } }
-window.renderJournalList = function() { document.getElementById('journal-list').innerHTML = journalData.map(t=>`<tr><td class="p-3">${t.date}</td><td class="p-3">${t.pair}</td><td class="p-3 text-right">$${t.pnl}</td><td class="p-3"><button onclick="deleteEntry('${t.id}')">X</button></td></tr>`).join(''); updateDailyPnL(); }
+window.renderJournalList = function() { 
+    document.getElementById('journal-list').innerHTML = journalData.map(t=>`<tr><td class="p-3">${t.date}</td><td class="p-3">${t.pair}</td><td class="p-3 text-right">$${t.pnl}</td><td class="p-3"><button onclick="deleteEntry('${t.id}')">X</button></td></tr>`).join(''); 
+    updateDailyPnL(); 
+}
 
-// --- HELPERS ---
+// --- UTILS ---
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); document.getElementById('tab-'+id).classList.remove('hidden'); if(id==='dashboard') renderDashboard(); };
 window.initTheme = () => document.documentElement.classList.add('dark');
-window.populateStrategies = () => { document.getElementById('strategy-list-container').innerHTML = wikiData.map(w=>`<div class="p-2 border-b cursor-pointer" onclick="selectAnalysisStrategy('${w.id}')">${w.title}</div>`).join(''); };
-window.renderPairSelects = () => { const h = ["XAUUSD","BTCUSD"].map(p=>`<option value="${p}">${p}</option>`).join(''); document.getElementById('ai-pair-input').innerHTML=h; document.getElementById('inp-pair').innerHTML=h; }
+window.populateStrategies = () => { document.getElementById('strategy-list-container').innerHTML = wikiData.map(w=>`<div class="p-2 border-b cursor-pointer" onclick="selectAnalysisStrategy('${w.id}')">${w.title}</div>`).join(''); document.getElementById('inp-strategy').innerHTML = wikiData.map(w=>`<option value="${w.code}">${w.code} - ${w.title}</option>`).join(''); };
+window.renderPairSelects = () => { const h = ["XAUUSD","BTCUSD","EURUSD","GBPUSD"].map(p=>`<option value="${p}">${p}</option>`).join(''); document.getElementById('ai-pair-input').innerHTML=h; document.getElementById('inp-pair').innerHTML=h; }
 window.renderCategoryFilters = () => {}; window.filterWikiCat = () => {}; window.filterWiki = () => renderWikiGrid();
 window.previewImage = (url) => { document.getElementById('edit-preview').src = url; if(url) document.getElementById('edit-preview').classList.remove('hidden'); else document.getElementById('edit-preview').classList.add('hidden'); }
 window.handleImageUpload = (inp) => { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('edit-preview').src=e.target.result; document.getElementById('edit-preview').classList.remove('hidden'); document.getElementById('edit-image-url').value=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
@@ -237,5 +299,5 @@ window.viewImageFull = (src) => { document.getElementById('image-viewer-img').sr
 window.calcRiskPreview = () => {}; 
 window.saveInitialCapital = () => { initialCapital = parseFloat(document.getElementById('real-init-capital').value)||20000; saveUserData(); renderDashboard(); alert("Lưu!"); };
 window.updateCapitalCalc = () => {};
-window.setBackground = (t) => { document.body.className=`bg-theme-default ${t}`; }
+window.setBackground = (t) => { document.body.className=`bg-theme-default ${t}`; window.closeModal('bg-settings-modal'); saveUserData(); }
 window.openBgModal = () => document.getElementById('bg-settings-modal').classList.remove('hidden');
