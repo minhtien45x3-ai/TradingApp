@@ -1,63 +1,137 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-body { font-family: 'Inter', sans-serif; transition: background-image 0.5s ease, background-color 0.5s ease; }
-.font-mono { font-family: 'JetBrains Mono', monospace; }
+/* --- CẤU HÌNH GỐC --- */
+:root {
+    --font-sans: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
 
-/* THEMES */
-body.bg-theme-default { background-color: #f8fafc; background-image: url('https://grainy-gradients.vercel.app/noise.svg'); }
-html.dark body.bg-theme-default { background-color: #020617; background-image: url('https://grainy-gradients.vercel.app/noise.svg'); }
-body.bg-theme-galaxy { background-image: linear-gradient(-45deg, #1e1b4b, #312e81, #4c1d95, #1e1b4b); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: white; }
-body.bg-theme-emerald { background-image: linear-gradient(-45deg, #022c22, #115e59, #0f766e, #042f2e); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: white; }
-body.bg-theme-midnight { background-image: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a); background-size: cover; color: #cbd5e1; }
-body.bg-theme-sunset { background-image: linear-gradient(120deg, #4a044e, #881337, #0f172a); color: white; }
-body.bg-theme-aurora { background-color: black; background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%); color: white; }
-body.bg-theme-nebula { background-image: linear-gradient(135deg, #2e1065, #db2777); color: white; }
-body.bg-theme-oceanic { background-image: linear-gradient(to bottom, #0f172a, #0e7490); color: white; }
-body.bg-theme-forest { background-image: linear-gradient(to bottom right, #022c22, #14532d); color: white; }
+body { 
+    font-family: var(--font-sans); 
+    transition: background-image 0.5s ease, background-color 0.5s ease, color 0.3s ease; 
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.font-mono { font-family: var(--font-mono); }
+
+/* --- 1. HỆ THỐNG THEME (NỀN & MÀU CHỮ) --- */
+
+/* Default Light */
+body.bg-theme-default { 
+    background-color: #f0f4f8; 
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%), 
+        radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+        url('https://grainy-gradients.vercel.app/noise.svg');
+    color: #1e293b; 
+}
+
+/* Default Dark */
+html.dark body.bg-theme-default { 
+    background-color: #0f172a; 
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%), 
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+        url('https://grainy-gradients.vercel.app/noise.svg');
+    color: #cbd5e1; 
+}
+
+/* Các Theme màu (Bắt buộc chữ sáng) */
+body.bg-theme-galaxy { background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: #e2e8f0 !important; }
+body.bg-theme-emerald { background: linear-gradient(-45deg, #004d40, #00695c, #004d40); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: #f1f5f9 !important; }
+body.bg-theme-midnight { background: linear-gradient(to bottom right, #0f172a, #1e293b, #020617); color: #cbd5e1 !important; }
+body.bg-theme-sunset { background: linear-gradient(120deg, #4a044e, #2e1065, #0f172a); color: #ffe4e6 !important; }
+body.bg-theme-aurora { background-color: #000; background-image: radial-gradient(at 0% 0%, #1a1a2e 0, transparent 50%), radial-gradient(at 50% 100%, #16213e 0, transparent 50%); color: #f8fafc !important; }
+body.bg-theme-nebula { background: linear-gradient(135deg, #240b36, #c31432); color: #fae8ff !important; }
+body.bg-theme-oceanic { background: linear-gradient(to bottom, #0f172a, #0e7490); color: #cffafe !important; }
+body.bg-theme-forest { background: linear-gradient(to bottom right, #052e16, #14532d); color: #dcfce7 !important; }
 
 @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-/* Glass Panel */
-.glass-panel { transition: all 0.3s ease; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
-html:not(.dark) .glass-panel { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-html.dark .glass-panel { background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
+/* --- 2. HIỆU ỨNG GLASSMORPHISM CAO CẤP (QUAN TRỌNG) --- */
 
-/* Scrollbar */
+.glass-panel {
+    /* Hiệu ứng mờ nền (Blur) */
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    
+    /* Viền kính tinh tế (Rim light) */
+    border: 1px solid rgba(255, 255, 255, 0.125);
+    
+    /* Bóng đổ nhẹ tạo chiều sâu */
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        inset 0 0 20px rgba(255, 255, 255, 0.05); /* Bóng trong */
+        
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Giao diện SÁNG (Light Mode) */
+html:not(.dark) .glass-panel {
+    background: rgba(255, 255, 255, 0.7); /* Trắng đục 70% */
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Giao diện TỐI (Dark Mode) */
+html.dark .glass-panel {
+    background: rgba(17, 25, 40, 0.6); /* Đen xanh đục 60% */
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Khi dùng Theme MÀU (Galaxy, Nebula...) -> Kính cần trong suốt hơn để lộ nền */
+body:not(.bg-theme-default) .glass-panel {
+    background: rgba(0, 0, 0, 0.3) !important; /* Kính đen mờ */
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: inherit;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Bóng đậm hơn */
+}
+
+/* Hiệu ứng Hover cho các thẻ Card nhỏ */
+.glass-panel:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 10px 15px -3px rgba(0, 0, 0, 0.1), 
+        0 4px 6px -2px rgba(0, 0, 0, 0.05),
+        inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* --- 3. CÁC THÀNH PHẦN KHÁC --- */
+
+/* Scrollbar đẹp */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-html.dark ::-webkit-scrollbar-thumb { background: #334155; }
+::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.8); }
 
-/* Animations */
-.fade-in { animation: fadeIn 0.4s ease-out; }
+/* Animation */
+.fade-in { animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Marquee */
-.marquee-wrapper { width: 100%; overflow: hidden; white-space: nowrap; box-sizing: border-box; }
-.marquee-content { display: inline-block; padding-left: 100%; animation: marquee 25s linear infinite; }
-@keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+.fade-out-up { animation: fadeOutUp 0.8s forwards cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes fadeOutUp { to { opacity: 0; transform: translateY(-40px); visibility: hidden; } }
 
-/* AI Typing & Prose */
-.typing-cursor::after { content: '▋'; animation: blink 1s step-start infinite; color: #10B981; margin-left: 2px; }
-@keyframes blink { 50% { opacity: 0; } }
+.animate-float { animation: floating 3s ease-in-out infinite; }
+@keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+/* Marquee */
+.marquee-wrapper { width: 100%; overflow: hidden; white-space: nowrap; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+.marquee-content { display: inline-block; padding-left: 100%; animation: marquee 30s linear infinite; }
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+/* Typography */
 .prose strong { color: #10B981; font-weight: 700; }
 .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-top: 0.5rem; }
-/* --- LANDING PAGE ANIMATIONS --- */
-.fade-out-up {
-    animation: fadeOutUp 0.8s forwards cubic-bezier(0.16, 1, 0.3, 1);
-}
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
-@keyframes fadeOutUp {
-    0% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-20px); pointer-events: none; visibility: hidden; }
+/* Input & Select trong suốt trên nền kính */
+input, select, textarea {
+    transition: all 0.2s;
 }
-
-.animate-float {
-    animation: floating 3s ease-in-out infinite;
-}
-
-@keyframes floating {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+input:focus, select:focus, textarea:focus {
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
+    border-color: #10B981 !important;
 }

@@ -1,7 +1,8 @@
 import { db, doc, getDoc, setDoc } from './firebase.js';
 
-// --- CONFIG ---
-const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E";
+// --- 1. CONFIG & CONSTANTS ---
+const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E"; // Key của bạn
+
 const DEFAULT_WIKI = [
     { id: "XH01", code: "XH01", cat: "Xu Hướng", title: "Uptrend & Downtrend", image: "https://placehold.co/800x400/1e293b/10b981?text=XuHuong", content: "Đỉnh sau cao hơn đỉnh trước (HH), đáy sau cao hơn đáy trước (HL)." },
     { id: "BB02", code: "BB02", cat: "Setup", title: "Bounce Breakout", image: "https://placehold.co/800x400/1e293b/10b981?text=Setup", content: "Mua khi giá quay lại test vùng phá vỡ (Retest)." }
@@ -14,30 +15,45 @@ const CRITERIA_LIST = [
     { name: "7. MÔ HÌNH", desc: "Biểu đồ giá" }, { name: "8. FIBONACCI", desc: "Vùng vàng" },
     { name: "9. THỜI GIAN", desc: "Đóng nến" }, { name: "10. R:R", desc: "Tỷ lệ tốt" }
 ];
+const ALL_THEMES = ['bg-theme-default', 'bg-theme-galaxy', 'bg-theme-emerald', 'bg-theme-midnight', 'bg-theme-sunset', 'bg-theme-aurora', 'bg-theme-nebula', 'bg-theme-oceanic', 'bg-theme-forest'];
 
-// --- STATE ---
+// --- 2. STATE ---
 let journalData = [], wikiData = [], pairsData = [];
 let initialCapital = 20000;
 let currentBgTheme = 'bg-theme-default';
 let currentFilter = 'all';
-let currentAnalysisImageBase64 = null;
-let currentEntryImgBase64 = null;
-let currentAnalysisTabImg = null;
+let currentAnalysisImageBase64 = null; // Ảnh tab AI
+let currentEntryImgBase64 = null; // Ảnh tab Journal
+let currentAnalysisTabImg = null; // Ảnh tab Analysis (Upload)
 let selectedAnalysisStrategy = null;
 let chartInstances = {};
 
-// --- INIT ---
+// --- 3. INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
+    
+    // Ẩn auth ban đầu để nhường chỗ cho Landing Page (nếu có)
+    const authScreen = document.getElementById('auth-screen');
+    if(authScreen) authScreen.classList.add('hidden');
+
     const storedUser = localStorage.getItem('min_sys_current_user');
-    if (storedUser) document.getElementById('login-user').value = storedUser;
+    if (storedUser) {
+        document.getElementById('login-user').value = storedUser;
+        // Nếu không dùng Landing Page, bỏ comment dòng dưới để tự login
+        // window.authLogin(); 
+    } else {
+        if(authScreen) authScreen.classList.remove('hidden');
+    }
 });
 
-// --- CORE ---
+// --- 4. DATA CORE (Global vs Private) ---
 window.loadData = async function() {
     if (!window.currentUser) return;
+    updateMarquee("🔄 Đang đồng bộ dữ liệu...");
+    
     try {
+        // 1. Load Private Data
         const userRef = doc(db, "users", window.currentUser);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
@@ -46,15 +62,22 @@ window.loadData = async function() {
             pairsData = data.pairs || DEFAULT_PAIRS;
             initialCapital = data.capital || 20000;
             if (data.background) window.setBackground(data.background, false);
-        } else { await saveUserData(); }
+        } else {
+            await saveUserData();
+        }
 
+        // 2. Load Global Wiki
         const wikiRef = doc(db, "system", "wiki_master");
         const wikiSnap = await getDoc(wikiRef);
         wikiData = wikiSnap.exists() ? wikiSnap.data().items : DEFAULT_WIKI;
         if (!wikiSnap.exists()) await saveWikiData();
 
         initUI();
-    } catch (e) { alert("Lỗi tải: " + e.message); }
+        updateMarquee("✅ Hệ thống sẵn sàng!");
+    } catch (e) { 
+        console.error(e);
+        alert("Lỗi tải dữ liệu: " + e.message); 
+    }
 }
 
 async function saveUserData() {
@@ -72,6 +95,7 @@ async function saveWikiData() {
 function initUI() {
     renderWikiGrid(); renderCategoryFilters(); renderDashboard();
     populateStrategies(); renderPairSelects(); renderJournalList();
+    
     const capInput = document.getElementById('real-init-capital');
     const simStart = document.getElementById('cap-sim-start');
     if (capInput) capInput.value = initialCapital;
@@ -80,48 +104,50 @@ function initUI() {
     lucide.createIcons();
 }
 
-// --- DASHBOARD ANALYTICS (ADVANCED) ---
+function updateMarquee(text) {
+    const el = document.getElementById('dashboard-marquee');
+    if(el) el.innerText = text;
+}
+
+// --- 5. DASHBOARD & ANALYTICS (ADVANCED) ---
 window.renderDashboard = function() {
-    // 1. Basic Stats
-    const closedTrades = journalData.filter(t => t.status !== 'OPEN').sort((a, b) => a.id - b.id);
+    // Basic Calculation
+    const closedTrades = journalData.filter(t => t.status !== 'OPEN').sort((a, b) => a.id - b.id); // Sort theo ID (thời gian tạo) để tính equity đúng
     let wins = 0, totalPnl = 0;
     
-    // 2. Advanced Stats Variables
+    // Advanced Vars
     let maxDrawdown = 0, peakCapital = initialCapital, currentEquity = initialCapital;
     let currentLossStreak = 0, maxLossStreak = 0;
-    let strategyPerformance = {}; // { 'Strategy A': {profit: 0, loss: 0} }
-    let monthlyStats = {}; // { '10/2023': {total:0, win:0, loss:0, pnl:0} }
+    let strategyPerformance = {}; 
+    let monthlyStats = {}; 
 
-    // 3. Loop Calculation
     closedTrades.forEach(t => {
         const pnl = parseFloat(t.pnl);
         totalPnl += pnl;
         currentEquity += pnl;
 
-        // Winrate
         if (t.status === 'WIN') wins++;
 
-        // Max Drawdown (Peak to Valley)
+        // Max Drawdown
         if (currentEquity > peakCapital) peakCapital = currentEquity;
-        const drawdown = (peakCapital - currentEquity) / peakCapital;
-        if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+        const dd = peakCapital > 0 ? (peakCapital - currentEquity) / peakCapital : 0;
+        if (dd > maxDrawdown) maxDrawdown = dd;
 
-        // Max Consecutive Loss
+        // Streak
         if (t.status === 'LOSS') {
             currentLossStreak++;
             if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
-        } else if (t.status === 'WIN') {
+        } else {
             currentLossStreak = 0;
         }
 
-        // Strategy Performance
+        // Strategy
         if (!strategyPerformance[t.strategy]) strategyPerformance[t.strategy] = 0;
         strategyPerformance[t.strategy] += pnl;
 
-        // Monthly Stats
-        // Date format assumed: dd/mm/yyyy
-        const parts = t.date.split('/');
-        const monthKey = `${parts[1]}/${parts[2]}`; // mm/yyyy
+        // Monthly (Parse DD/MM/YYYY)
+        const [d, m, y] = t.date.split('/');
+        const monthKey = `${m}/${y}`;
         if (!monthlyStats[monthKey]) monthlyStats[monthKey] = { total: 0, win: 0, loss: 0, pnl: 0 };
         monthlyStats[monthKey].total++;
         monthlyStats[monthKey].pnl += pnl;
@@ -129,81 +155,92 @@ window.renderDashboard = function() {
         if (t.status === 'LOSS') monthlyStats[monthKey].loss++;
     });
 
-    // 4. Update UI - Basic
     const balance = initialCapital + totalPnl;
     const winRate = closedTrades.length ? Math.round((wins / closedTrades.length) * 100) : 0;
-    document.getElementById('dash-balance').innerText = `$${balance.toLocaleString()}`;
-    document.getElementById('header-balance').innerText = `$${balance.toLocaleString()}`;
-    document.getElementById('dash-winrate').innerText = `${winRate}%`;
-    document.getElementById('dash-total').innerText = `${closedTrades.length} Lệnh`;
-    document.getElementById('dash-pnl').innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toLocaleString()}`;
-    document.getElementById('dash-dd').innerText = `${(maxDrawdown * 100).toFixed(2)}%`;
-    document.getElementById('dash-max-loss-streak').innerText = `Chuỗi thua: ${maxLossStreak}`;
 
-    // 5. Update UI - Best/Worst Pattern
-    let bestStrat = { name: '-', val: -Infinity }, worstStrat = { name: '-', val: Infinity };
-    for (const [name, val] of Object.entries(strategyPerformance)) {
-        if (val > bestStrat.val) bestStrat = { name, val };
-        if (val < worstStrat.val) worstStrat = { name, val };
+    // Update Desktop Elements
+    if(document.getElementById('dash-balance')) document.getElementById('dash-balance').innerText = `$${balance.toLocaleString()}`;
+    if(document.getElementById('header-balance')) document.getElementById('header-balance').innerText = `$${balance.toLocaleString()}`;
+    if(document.getElementById('dash-winrate')) document.getElementById('dash-winrate').innerText = `${winRate}%`;
+    if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = `${closedTrades.length} Lệnh`;
+    if(document.getElementById('dash-pnl')) document.getElementById('dash-pnl').innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toLocaleString()}`;
+    if(document.getElementById('dash-dd')) document.getElementById('dash-dd').innerText = `${(maxDrawdown * 100).toFixed(2)}%`;
+    if(document.getElementById('dash-max-loss-streak')) document.getElementById('dash-max-loss-streak').innerText = `Chuỗi thua: ${maxLossStreak}`;
+
+    // Update Mobile Elements (Sync)
+    if(document.getElementById('dash-balance-mobile')) document.getElementById('dash-balance-mobile').innerText = `$${balance.toLocaleString()}`;
+    if(document.getElementById('dash-pnl-mobile')) {
+        const pnlMob = document.getElementById('dash-pnl-mobile');
+        pnlMob.innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toLocaleString()}`;
+        pnlMob.className = `text-lg font-mono font-bold ${totalPnl>=0 ? 'text-emerald-500' : 'text-rose-500'}`;
     }
-    document.getElementById('stat-best-pattern').innerText = bestStrat.name;
-    document.getElementById('stat-best-pnl').innerText = bestStrat.val > -Infinity ? `$${bestStrat.val.toFixed(0)}` : '$0';
-    document.getElementById('stat-best-pnl').className = "font-mono font-bold text-emerald-500";
-    
-    document.getElementById('stat-worst-pattern').innerText = worstStrat.name;
-    document.getElementById('stat-worst-pnl').innerText = worstStrat.val < Infinity ? `$${worstStrat.val.toFixed(0)}` : '$0';
-    
-    // 6. Update UI - Monthly Table
-    const monthHtml = Object.entries(monthlyStats)
-        .sort((a, b) => { // Sort by date descending
-            const [m1, y1] = a[0].split('/'); const [m2, y2] = b[0].split('/');
-            return new Date(y2, m2 - 1) - new Date(y1, m1 - 1);
-        })
-        .map(([key, data]) => `
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                <td class="p-2 font-bold">${key}</td>
-                <td class="p-2 text-center">${data.total}</td>
-                <td class="p-2 text-center text-emerald-500 font-bold">${data.win}</td>
-                <td class="p-2 text-center text-rose-500 font-bold">${data.loss}</td>
-                <td class="p-2 text-right font-mono font-bold ${data.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${data.pnl >= 0 ? '+' : ''}$${data.pnl.toLocaleString()}</td>
-            </tr>
-        `).join('');
-    document.getElementById('stats-monthly-body').innerHTML = monthHtml || '<tr><td colspan="5" class="p-4 text-center text-slate-400">Chưa có dữ liệu</td></tr>';
+    if(document.getElementById('dash-winrate-mobile')) document.getElementById('dash-winrate-mobile').innerText = `${winRate}%`;
+    if(document.getElementById('dash-total-mobile')) document.getElementById('dash-total-mobile').innerText = closedTrades.length;
 
-    // 7. Update Marquee
-    const marqueeText = ` Balance: $${balance.toLocaleString()} | PnL: ${totalPnl >= 0 ? '+' : ''}$${totalPnl.toLocaleString()} | Winrate: ${winRate}% | Max DD: ${(maxDrawdown * 100).toFixed(2)}% | Best: ${bestStrat.name} ($${bestStrat.val > -Infinity ? bestStrat.val : 0}) | Streak Loss: ${maxLossStreak} `;
-    document.getElementById('dashboard-marquee').innerText = marqueeText;
+    // Best/Worst Strategy
+    let best = {n:'-', v:-Infinity}, worst = {n:'-', v:Infinity};
+    for(const [k,v] of Object.entries(strategyPerformance)){
+        if(v > best.v) best = {n:k, v:v};
+        if(v < worst.v) worst = {n:k, v:v};
+    }
+    if(document.getElementById('stat-best-pattern')) {
+        document.getElementById('stat-best-pattern').innerText = best.n;
+        document.getElementById('stat-best-pnl').innerText = best.v > -Infinity ? `$${best.v}` : '$0';
+        document.getElementById('stat-worst-pattern').innerText = worst.n;
+        document.getElementById('stat-worst-pnl').innerText = worst.v < Infinity ? `$${worst.v}` : '$0';
+    }
+
+    // Monthly Table
+    const tBody = document.getElementById('stats-monthly-body');
+    if(tBody) {
+        tBody.innerHTML = Object.entries(monthlyStats)
+            .sort((a,b) => { const [m1,y1]=a[0].split('/'); const [m2,y2]=b[0].split('/'); return new Date(y2,m2)-new Date(y1,m1); })
+            .map(([k,v]) => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <td class="p-2 font-bold">${k}</td>
+                    <td class="p-2 text-center">${v.total}</td>
+                    <td class="p-2 text-center text-emerald-500">${v.win}</td>
+                    <td class="p-2 text-center text-rose-500">${v.loss}</td>
+                    <td class="p-2 text-right font-mono font-bold ${v.pnl>=0?'text-emerald-500':'text-rose-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</td>
+                </tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center opacity-50">Chưa có dữ liệu</td></tr>';
+    }
 
     renderCharts(closedTrades, initialCapital);
 }
 
 window.renderCharts = function(data, startCap) {
-    const ctxEquity = document.getElementById('chart-equity');
-    const ctxWinLoss = document.getElementById('chart-winloss');
+    const ctx1 = document.getElementById('chart-equity');
+    const ctx2 = document.getElementById('chart-winloss');
     
-    if(ctxEquity && window.Chart) {
-        let bal = startCap;
-        const points = [startCap, ...data.map(t => bal += parseFloat(t.pnl))];
+    // Theme Adaption
+    const isDark = document.documentElement.classList.contains('dark') || currentBgTheme !== 'bg-theme-default';
+    const txtCol = isDark ? '#cbd5e1' : '#475569';
+    const gridCol = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    Chart.defaults.color = txtCol;
+    Chart.defaults.borderColor = gridCol;
+
+    if(ctx1 && window.Chart) {
+        let b = startCap;
+        const pts = [startCap, ...data.map(t => b += parseFloat(t.pnl))];
         if(chartInstances.eq) chartInstances.eq.destroy();
-        chartInstances.eq = new Chart(ctxEquity, {
+        chartInstances.eq = new Chart(ctx1, {
             type: 'line',
-            data: { labels: points.map((_,i) => i), datasets: [{ label: 'Vốn', data: points, borderColor: '#10b981', tension: 0.2, fill: true, backgroundColor: 'rgba(16, 185, 129, 0.1)' }] },
-            options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
+            data: { labels: pts.map((_,i)=>i), datasets: [{ label: 'Equity', data: pts, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.2, fill: true }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: txtCol }, grid: { color: gridCol } } } }
         });
     }
-    if(ctxWinLoss && window.Chart) {
-        let win = 0, loss = 0;
-        data.forEach(t => t.status === 'WIN' ? win++ : loss++);
+    if(ctx2 && window.Chart) {
+        let w=0, l=0; data.forEach(t => t.status==='WIN'?w++:l++);
         if(chartInstances.wl) chartInstances.wl.destroy();
-        chartInstances.wl = new Chart(ctxWinLoss, {
+        chartInstances.wl = new Chart(ctx2, {
             type: 'doughnut',
-            data: { labels: ['Win', 'Loss'], datasets: [{ data: [win, loss], backgroundColor: ['#10b981', '#f43f5e'], borderWidth: 0 }] },
-            options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right' } } }
+            data: { labels: ['Win', 'Loss'], datasets: [{ data: [w,l], backgroundColor: ['#10b981', '#f43f5e'], borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: txtCol } } } }
         });
     }
 }
 
-// --- ANALYSIS LOGIC ---
+// --- 6. ANALYSIS LOGIC ---
 window.selectAnalysisStrategy = function(id) {
     const item = wikiData.find(x => x.id.toString() === id.toString());
     if(!item) return;
@@ -214,7 +251,7 @@ window.selectAnalysisStrategy = function(id) {
     document.getElementById('analysis-empty-state').classList.add('hidden');
     document.getElementById('ana-checklist-container').innerHTML = CRITERIA_LIST.map(c => `
         <label class="flex items-center gap-2 p-2 rounded bg-slate-200 dark:bg-slate-800 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition">
-            <input type="checkbox" class="accent-emerald-500 w-4 h-4"><div><p class="text-xs font-bold text-slate-700 dark:text-slate-200">${c.name}</p><p class="text-[10px] text-slate-500">${c.desc}</p></div>
+            <input type="checkbox" class="accent-emerald-500 w-4 h-4"><div><p class="text-xs font-bold">${c.name}</p><p class="text-[10px] opacity-70">${c.desc}</p></div>
         </label>`).join('');
 }
 window.handleAnalysisUpload = function(input) {
@@ -239,24 +276,127 @@ window.transferAnalysisToJournal = function() {
     }
     if(currentAnalysisTabImg) {
         currentEntryImgBase64 = currentAnalysisTabImg;
-        const img = document.getElementById('entry-img-preview');
-        img.src = currentAnalysisTabImg;
-        img.classList.remove('hidden');
+        document.getElementById('entry-img-preview').src = currentAnalysisTabImg;
+        document.getElementById('entry-img-preview').classList.remove('hidden');
         document.getElementById('entry-upload-hint').classList.add('hidden');
     }
 }
 
-// --- AI LOGIC ---
-async function callGeminiAPI(prompt, imageBase64) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// --- 7. JOURNAL LOGIC ---
+window.openEntryModal = function() {
+    document.getElementById('entry-modal').classList.remove('hidden');
+    // Reset if not transferring
+    if(!currentEntryImgBase64) {
+        document.getElementById('entry-img-preview').classList.add('hidden');
+        document.getElementById('entry-upload-hint').classList.remove('hidden');
+        document.getElementById('inp-note').value = "";
+    }
+    // Set Date Today
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    document.getElementById('inp-date').value = localDate;
+    calcRiskPreview();
+}
+window.handleEntryImage = function(input) {
+    if (input.files[0]) {
+        const r = new FileReader();
+        r.onload = (e) => {
+            document.getElementById('entry-img-preview').src = e.target.result;
+            document.getElementById('entry-img-preview').classList.remove('hidden');
+            document.getElementById('entry-upload-hint').classList.add('hidden');
+            currentEntryImgBase64 = e.target.result;
+        };
+        r.readAsDataURL(input.files[0]);
+    }
+}
+window.saveEntry = function() {
+    const rawDate = document.getElementById('inp-date').value;
+    const pair = document.getElementById('inp-pair').value;
+    const strat = document.getElementById('inp-strategy').value;
+    const riskVal = parseFloat(document.getElementById('inp-risk').value);
+    const rr = parseFloat(document.getElementById('inp-rr').value);
+    
+    if(!pair) return alert("Chọn cặp tiền!");
+    if(!rawDate) return alert("Chọn ngày!");
+    
+    const [y, m, d] = rawDate.split('-');
+    const formattedDate = `${d}/${m}/${y}`;
+    const riskUSD = document.getElementById('inp-risk-mode').value === '%' ? getCurrentBalance() * (riskVal/100) : riskVal;
+    
+    journalData.unshift({
+        id: Date.now().toString(), date: formattedDate, pair, 
+        dir: document.getElementById('inp-dir').value, session: document.getElementById('inp-session').value,
+        strategy: strat, risk: riskUSD.toFixed(2), rr, status: 'OPEN', pnl: 0,
+        note: document.getElementById('inp-note').value, image: currentEntryImgBase64
+    });
+    
+    // Sort by Date
+    journalData.sort((a,b) => {
+        const [d1,m1,y1]=a.date.split('/'); const [d2,m2,y2]=b.date.split('/');
+        return new Date(`${y2}-${m2}-${d2}`) - new Date(`${y1}-${m1}-${d1}`);
+    });
+
+    saveUserData(); renderJournalList(); renderDashboard();
+    window.closeModal('entry-modal');
+    currentEntryImgBase64 = null;
+}
+window.updateEntryStatus = function(id, status) {
+    const idx = journalData.findIndex(e => e.id.toString() === id.toString());
+    if(idx !== -1) {
+        journalData[idx].status = status;
+        const r = parseFloat(journalData[idx].risk);
+        if(status === 'WIN') journalData[idx].pnl = r * parseFloat(journalData[idx].rr);
+        else if(status === 'LOSS') journalData[idx].pnl = -r;
+        else journalData[idx].pnl = 0;
+        saveUserData(); renderJournalList(); renderDashboard();
+    }
+}
+window.deleteEntry = function(id) {
+    if(confirm('Xóa lệnh này?')) { 
+        journalData = journalData.filter(e => e.id.toString() !== id.toString()); 
+        saveUserData(); renderJournalList(); renderDashboard(); 
+    }
+}
+window.renderJournalList = function() {
+    const list = document.getElementById('journal-list');
+    list.innerHTML = journalData.map(t => `
+        <tr class="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 group transition">
+            <td class="p-4 text-center text-xs text-slate-500">
+                <div class="font-bold text-slate-700 dark:text-slate-300">${t.date}</div>
+                <div class="text-[10px] uppercase opacity-70">${t.session}</div>
+            </td>
+            <td class="p-4 text-center">${t.image ? `<div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 overflow-hidden cursor-pointer mx-auto hover:scale-110 transition" onclick="viewImageFull('${t.image}')"><img src="${t.image}" class="w-full h-full object-cover"></div>` : '<span class="text-xs opacity-30">-</span>'}</td>
+            <td class="p-4 text-center font-bold text-slate-800 dark:text-white">${t.pair} <span class="block text-[10px] ${t.dir==='BUY'?'text-emerald-500':'text-rose-500'} font-extrabold">${t.dir}</span></td>
+            <td class="p-4 text-center text-xs text-slate-500 truncate max-w-[120px] hidden md:table-cell">${t.strategy}</td>
+            <td class="p-4 text-center text-xs font-mono text-slate-600 dark:text-slate-300 hidden md:table-cell">-$${t.risk}</td>
+            <td class="p-4 text-center"><select onchange="updateEntryStatus('${t.id}', this.value)" class="bg-transparent text-xs font-bold outline-none cursor-pointer ${t.status==='WIN'?'text-emerald-500':t.status==='LOSS'?'text-rose-500':'text-blue-500'} text-center border rounded dark:border-slate-700 p-1"><option value="OPEN" ${t.status==='OPEN'?'selected':''}>OPEN</option><option value="WIN" ${t.status==='WIN'?'selected':''}>WIN</option><option value="LOSS" ${t.status==='LOSS'?'selected':''}>LOSS</option></select></td>
+            <td class="p-4 text-right font-bold ${parseFloat(t.pnl)>0?'text-emerald-500':parseFloat(t.pnl)<0?'text-rose-500':'text-slate-500'} font-mono">${parseFloat(t.pnl)>0?'+':''}${parseFloat(t.pnl).toLocaleString()}</td>
+            <td class="p-4 text-center"><button onclick="deleteEntry('${t.id}')" class="text-slate-400 hover:text-rose-500 opacity-50 group-hover:opacity-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+        </tr>`).join('');
+    lucide.createIcons();
+    updateDailyPnL();
+}
+function updateDailyPnL() {
+    const today = new Date().toLocaleDateString('vi-VN'); // DD/MM/YYYY
+    const pnl = journalData.filter(t => t.date === today).reduce((sum, t) => sum + parseFloat(t.pnl), 0);
+    const el = document.getElementById('journal-pnl-today');
+    if(el) { el.innerText = (pnl >= 0 ? '+' : '') + `$${pnl.toFixed(2)}`; el.className = `text-sm font-mono font-bold ${pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`; }
+}
+
+// --- 8. AI GEMINI LOGIC ---
+async function callGeminiAPI(prompt, imageBase64 = null) {
+    const model = "gemini-1.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
     const parts = [{ text: prompt }];
     if (imageBase64) parts.push({ inlineData: { mimeType: "image/png", data: imageBase64.split(',')[1] } });
+    
     try {
-        const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts }] }) });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error?.message || "API Error");
+        const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts }] }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || "Lỗi API");
+        if (!data.candidates) throw new Error("AI không trả lời.");
         return data.candidates[0].content.parts[0].text;
-    } catch (e) { throw e; }
+    } catch (error) { throw error; }
 }
 window.handleAIUpload = function(input) {
     if (input.files[0]) {
@@ -275,7 +415,8 @@ window.runAIAnalysis = async function() {
     const btn = document.getElementById('btn-ai-analyze');
     const org = btn.innerHTML; btn.innerHTML = "Đang xử lý..."; btn.disabled = true;
     const pair = document.getElementById('ai-pair-input').value;
-    const prompt = `Phân tích ${pair}. Trả về JSON: { "pattern_name": "Tên (TV)", "score": 85, "conclusion": "Nội dung (Markdown)" }`;
+    const tf = document.getElementById('ai-tf-input').value;
+    const prompt = `Phân tích ${pair} khung ${tf}. Trả về 1 JSON duy nhất: { "pattern_name": "Tên (Tiếng Việt)", "score": 85, "conclusion": "Chi tiết (Markdown)" }`;
     try {
         const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64);
         const json = JSON.parse(txt.replace(/```json/g, '').replace(/```/g, '').trim());
@@ -284,8 +425,8 @@ window.runAIAnalysis = async function() {
         document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion);
         document.getElementById('ai-result-empty').classList.add('hidden');
         document.getElementById('ai-result-content').classList.remove('hidden');
-    } catch (e) { alert("Lỗi: " + e.message); }
-    btn.innerHTML = org; btn.disabled = false;
+    } catch (e) { alert("Lỗi AI: " + e.message); } 
+    finally { btn.innerHTML = org; btn.disabled = false; }
 }
 window.resetAI = function() {
     document.getElementById('ai-result-content').classList.add('hidden');
@@ -295,161 +436,7 @@ window.resetAI = function() {
     document.getElementById('ai-upload-placeholder').classList.remove('hidden');
 }
 
-// --- CAPITAL ---
-window.saveInitialCapital = function() {
-    const val = parseFloat(document.getElementById('real-init-capital').value);
-    if(isNaN(val)) return;
-    initialCapital = val; saveUserData(); renderDashboard();
-    document.getElementById('cap-sim-start').value = val; updateCapitalCalc();
-    alert("Đã lưu!");
-}
-window.updateCapitalCalc = function() {
-    const start = parseFloat(document.getElementById('cap-sim-start').value) || 0;
-    const pct = parseFloat(document.getElementById('cap-risk-pct').value) || 1;
-    const rr = parseFloat(document.getElementById('cap-rr').value) || 2;
-    const n = parseInt(document.getElementById('cap-sim-count').value) || 20;
-    let bal = start, html = '';
-    for(let i=1; i<=n; i++) {
-        const risk = bal * (pct/100); const profit = risk * rr; const end = bal + profit;
-        html += `<tr class="border-b dark:border-slate-800"><td class="p-3 text-center">${i}</td><td class="p-3 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-3 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-3 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`;
-        bal = end;
-    }
-    document.getElementById('cap-projection-list').innerHTML = html;
-}
-
-// --- JOURNAL LOGIC (ĐÃ NÂNG CẤP CHỌN NGÀY) ---
-
-window.openEntryModal = function() { 
-    document.getElementById('entry-modal').classList.remove('hidden');
-    
-    // 1. Reset Ảnh & Form
-    if(!currentEntryImgBase64) {
-        document.getElementById('entry-img-preview').classList.add('hidden');
-        document.getElementById('entry-upload-hint').classList.remove('hidden');
-        document.getElementById('inp-note').value = "";
-    }
-    
-    // 2. Tự động điền ngày hôm nay vào ô input (Format YYYY-MM-DD cho input type=date)
-    // Lưu ý: Cần chỉnh timezone để không bị lệch ngày
-    const now = new Date();
-    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-    document.getElementById('inp-date').value = localDate;
-
-    // 3. Tính toán lại preview
-    calcRiskPreview();
-}
-
-window.handleEntryImage = function(input) {
-    if (input.files[0]) {
-        const r = new FileReader();
-        r.onload = (e) => {
-            document.getElementById('entry-img-preview').src = e.target.result;
-            document.getElementById('entry-img-preview').classList.remove('hidden');
-            document.getElementById('entry-upload-hint').classList.add('hidden');
-            currentEntryImgBase64 = e.target.result;
-        };
-        r.readAsDataURL(input.files[0]);
-    }
-}
-
-window.saveEntry = function() {
-    // Lấy dữ liệu từ Form
-    const rawDate = document.getElementById('inp-date').value;
-    const pair = document.getElementById('inp-pair').value;
-    const strat = document.getElementById('inp-strategy').value;
-    const riskVal = parseFloat(document.getElementById('inp-risk').value);
-    const rr = parseFloat(document.getElementById('inp-rr').value);
-    
-    // Validation
-    if(!pair) return alert("Vui lòng chọn cặp tiền!");
-    if(!rawDate) return alert("Vui lòng chọn ngày!");
-    if(isNaN(riskVal) || riskVal <= 0) return alert("Rủi ro không hợp lệ!");
-
-    // Chuyển đổi ngày từ YYYY-MM-DD sang DD/MM/YYYY để hiển thị đẹp
-    const [y, m, d] = rawDate.split('-');
-    const formattedDate = `${d}/${m}/${y}`;
-
-    // Tính Risk ra USD
-    const riskUSD = document.getElementById('inp-risk-mode').value === '%' ? getCurrentBalance() * (riskVal/100) : riskVal;
-    
-    // Tạo object lệnh mới
-    const newEntry = {
-        id: Date.now().toString(), 
-        date: formattedDate, // Sử dụng ngày người dùng chọn
-        pair, 
-        dir: document.getElementById('inp-dir').value, 
-        session: document.getElementById('inp-session').value,
-        strategy: strat, 
-        risk: riskUSD.toFixed(2), 
-        rr, 
-        status: 'OPEN', 
-        pnl: 0,
-        note: document.getElementById('inp-note').value, 
-        image: currentEntryImgBase64
-    };
-    
-    // Lưu và Reset
-    journalData.unshift(newEntry);
-    
-    // Sắp xếp lại Nhật ký theo thời gian (Mới nhất lên đầu)
-    // Logic sort: Convert DD/MM/YYYY về Date object để so sánh
-    journalData.sort((a, b) => {
-        const [d1, m1, y1] = a.date.split('/');
-        const [d2, m2, y2] = b.date.split('/');
-        return new Date(`${y2}-${m2}-${d2}`) - new Date(`${y1}-${m1}-${d1}`);
-    });
-
-    saveUserData(); 
-    renderJournalList(); 
-    renderDashboard();
-    
-    window.closeModal('entry-modal');
-    currentEntryImgBase64 = null; // Reset ảnh tạm
-}
-
-window.updateEntryStatus = function(id, status) {
-    const idx = journalData.findIndex(e => e.id.toString() === id.toString());
-    if(idx !== -1) {
-        journalData[idx].status = status;
-        const r = parseFloat(journalData[idx].risk);
-        if(status === 'WIN') journalData[idx].pnl = r * parseFloat(journalData[idx].rr);
-        else if(status === 'LOSS') journalData[idx].pnl = -r;
-        else journalData[idx].pnl = 0;
-        saveUserData(); renderJournalList(); renderDashboard();
-    }
-}
-
-window.deleteEntry = function(id) {
-    if(confirm('Bạn có chắc chắn muốn xóa lệnh này?')) { 
-        journalData = journalData.filter(e => e.id.toString() !== id.toString()); 
-        saveUserData(); 
-        renderJournalList(); 
-        renderDashboard(); 
-    }
-}
-
-window.renderJournalList = function() {
-    const list = document.getElementById('journal-list');
-    list.innerHTML = journalData.map(t => `
-        <tr class="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 group transition">
-            <td class="p-4 text-center text-xs text-slate-500">
-                <div class="font-bold text-slate-700 dark:text-slate-300">${t.date}</div>
-                <div class="text-[10px] uppercase tracking-wider opacity-70">${t.session}</div>
-            </td>
-            <td class="p-4 text-center">${t.image ? `<div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 overflow-hidden cursor-pointer mx-auto shadow-sm hover:scale-110 transition" onclick="viewImageFull('${t.image}')"><img src="${t.image}" class="w-full h-full object-cover"></div>` : '<span class="text-slate-300">-</span>'}</td>
-            <td class="p-4 text-center font-bold text-slate-800 dark:text-white">${t.pair} <span class="block text-[10px] ${t.dir==='BUY'?'text-emerald-500':'text-rose-500'} font-extrabold">${t.dir}</span></td>
-            <td class="p-4 text-center text-xs text-slate-500 truncate max-w-[120px]" title="${t.strategy}">${t.strategy}</td>
-            <td class="p-4 text-center text-xs font-mono text-slate-600 dark:text-slate-300">-$${t.risk} <span class="text-slate-400">|</span> 1:${t.rr}</td>
-            <td class="p-4 text-center"><select onchange="updateEntryStatus('${t.id}', this.value)" class="bg-transparent text-xs font-bold outline-none cursor-pointer ${t.status==='WIN'?'text-emerald-500':t.status==='LOSS'?'text-rose-500':'text-blue-500'} text-center border rounded border-slate-200 dark:border-slate-700 p-1"><option value="OPEN" ${t.status==='OPEN'?'selected':''}>OPEN</option><option value="WIN" ${t.status==='WIN'?'selected':''}>WIN</option><option value="LOSS" ${t.status==='LOSS'?'selected':''}>LOSS</option></select></td>
-            <td class="p-4 text-right font-bold ${parseFloat(t.pnl)>0?'text-emerald-500':parseFloat(t.pnl)<0?'text-rose-500':'text-slate-500'} font-mono">${parseFloat(t.pnl)>0?'+':''}${parseFloat(t.pnl).toLocaleString()}</td>
-            <td class="p-4 text-center"><button onclick="deleteEntry('${t.id}')" class="text-slate-400 hover:text-rose-500 opacity-50 group-hover:opacity-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
-        </tr>`).join('');
-    lucide.createIcons();
-    updateDailyPnL();
-}
-
-// --- WIKI & UTILS ---
-// (Wiki logic giữ nguyên như cũ, chỉ rút gọn để hiển thị)
+// --- 9. WIKI GLOBAL LOGIC ---
 window.openWikiEditor = function(id = null) {
     const cats = [...new Set(wikiData.map(i => i.cat))];
     document.getElementById('cat-suggestions').innerHTML = cats.map(c => `<option value="${c}">`).join('');
@@ -488,7 +475,12 @@ window.saveWiki = function() {
     saveWikiData(); renderWikiGrid(); populateStrategies();
     window.closeModal('wiki-editor-modal');
 }
-window.deleteWikiItem = function(id) { if(confirm("Xóa?")) { wikiData = wikiData.filter(i => i.id.toString() !== id.toString()); saveWikiData(); renderWikiGrid(); populateStrategies(); window.closeModal('wiki-detail-modal'); } }
+window.deleteWikiItem = function(id) { 
+    if(confirm("Xóa vĩnh viễn mục này khỏi hệ thống chung?")) { 
+        wikiData = wikiData.filter(i => i.id.toString() !== id.toString()); 
+        saveWikiData(); renderWikiGrid(); populateStrategies(); window.closeModal('wiki-detail-modal'); 
+    } 
+}
 window.viewWikiDetail = function(id) {
     const item = wikiData.find(x => x.id.toString() === id.toString());
     if(!item) return;
@@ -514,6 +506,8 @@ window.renderWikiGrid = function() {
         </div>`).join('');
     lucide.createIcons();
 }
+
+// --- UTILS & HELPERS ---
 window.authLogin = async function() {
     const u = document.getElementById('login-user').value; const p = document.getElementById('login-pass').value;
     const users = JSON.parse(localStorage.getItem('min_sys_users_db') || '[]');
@@ -523,6 +517,7 @@ window.authLogin = async function() {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
         document.getElementById('app-container').classList.add('flex');
+        window.enterSystem = function() {}; 
         window.loadData();
     } else alert("Sai thông tin");
 }
@@ -538,11 +533,47 @@ window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); loc
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(el => el.classList.add('hidden')); document.getElementById(`tab-${id}`).classList.remove('hidden'); if(id==='dashboard') renderDashboard(); }
-window.setBackground = (t, s=true) => { document.body.className = `bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col ${t}`; if(localStorage.theme==='dark') document.body.classList.add('dark'); currentBgTheme=t; if(s) saveUserData(); window.closeModal('bg-settings-modal'); }
+window.setBackground = (theme, s=true) => { 
+    document.body.classList.remove(...ALL_THEMES);
+    document.body.classList.add(theme);
+    currentBgTheme = theme;
+    if(theme !== 'bg-theme-default') document.documentElement.classList.add('dark');
+    else if(localStorage.theme === 'light') document.documentElement.classList.remove('dark');
+    if(s) saveUserData(); 
+    window.closeModal('bg-settings-modal'); 
+    renderCharts();
+}
 window.openBgModal = () => document.getElementById('bg-settings-modal').classList.remove('hidden');
-window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark')?'dark':'light'; renderCharts(); }
-function initTheme() { if(localStorage.theme==='dark') document.documentElement.classList.add('dark'); }
+window.toggleTheme = () => { 
+    const html = document.documentElement;
+    if (html.classList.contains('dark')) { html.classList.remove('dark'); localStorage.theme = 'light'; } 
+    else { html.classList.add('dark'); localStorage.theme = 'dark'; }
+    renderCharts(); 
+}
+function initTheme() { 
+    if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); 
+}
 function getCurrentBalance() { let pnl=0; journalData.forEach(t=>pnl+=parseFloat(t.pnl)); return initialCapital+pnl; }
+window.saveInitialCapital = function() {
+    const val = parseFloat(document.getElementById('real-init-capital').value);
+    if(isNaN(val)) return;
+    initialCapital = val; saveUserData(); renderDashboard();
+    document.getElementById('cap-sim-start').value = val; updateCapitalCalc();
+    alert("Đã lưu!");
+}
+window.updateCapitalCalc = function() {
+    const start = parseFloat(document.getElementById('cap-sim-start').value) || 0;
+    const pct = parseFloat(document.getElementById('cap-risk-pct').value) || 1;
+    const rr = parseFloat(document.getElementById('cap-rr').value) || 2;
+    const n = parseInt(document.getElementById('cap-sim-count').value) || 20;
+    let bal = start, html = '';
+    for(let i=1; i<=n; i++) {
+        const risk = bal * (pct/100); const profit = risk * rr; const end = bal + profit;
+        html += `<tr class="border-b dark:border-slate-800"><td class="p-3 text-center text-slate-500">${i}</td><td class="p-3 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-3 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-3 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`;
+        bal = end;
+    }
+    document.getElementById('cap-projection-list').innerHTML = html;
+}
 window.populateStrategies = () => { 
     const list = wikiData.filter(i=>i.cat==='Setup'||i.cat==='Chiến Lược'||i.cat==='Strategy'); 
     document.getElementById('inp-strategy').innerHTML = list.map(s=>`<option value="${s.code}: ${s.title}">${s.code}: ${s.title}</option>`).join('');
@@ -556,4 +587,15 @@ window.previewImage = (url) => { document.getElementById('edit-preview').src = u
 window.handleImageUpload = (inp) => { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('edit-preview').src=e.target.result; document.getElementById('edit-preview').classList.remove('hidden'); document.getElementById('edit-image-url').value=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.viewImageFull = (src) => { document.getElementById('image-viewer-img').src=src; document.getElementById('image-viewer-modal').classList.remove('hidden'); }
 window.calcRiskPreview = () => { const v=parseFloat(document.getElementById('inp-risk').value)||0; const mode=document.getElementById('inp-risk-mode').value; const rr=parseFloat(document.getElementById('inp-rr').value)||0; const r=mode==='%'?getCurrentBalance()*(v/100):v; document.getElementById('risk-preview').innerText=`Risk: $${r.toFixed(1)}`; document.getElementById('reward-preview').innerText=`Reward: $${(r*rr).toFixed(1)}`; }
-function initQuote() { document.getElementById('dashboard-marquee').innerText = "Trade what you see, not what you think."; }
+// Mobile Landing
+window.enterSystem = function() {
+    const landing = document.getElementById('landing-page');
+    if(landing) {
+        landing.classList.add('fade-out-up');
+        setTimeout(() => {
+            const user = localStorage.getItem('min_sys_current_user');
+            if(user) window.authLogin();
+            else { document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('auth-screen').classList.add('fade-in'); }
+        }, 600);
+    }
+}
