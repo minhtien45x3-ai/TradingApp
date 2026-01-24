@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MINIMALIST PRO v19.0 (Analysis Integration)</title>
+    <title>MINIMALIST PRO v20.0 (Advanced Stats)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -17,41 +17,13 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col">
-<div id="landing-page" class="fixed inset-0 z-[300] bg-[#020617] flex flex-col items-center justify-center p-6 text-center bg-[url('https://grainy-gradients.vercel.app/noise.svg')]">
-        
-        <div class="mb-8 animate-float">
-            <div class="w-20 h-20 bg-gradient-to-tr from-emerald-600 to-teal-400 rounded-2xl shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] flex items-center justify-center">
-                <i data-lucide="bar-chart-2" class="text-white w-10 h-10"></i>
-            </div>
-        </div>
-
-        <h1 class="text-4xl md:text-6xl font-bold font-mono text-white mb-4 tracking-tight">
-            MINIMALIST<span class="text-emerald-500">_PRO</span>
-        </h1>
-        
-        <p class="text-slate-400 text-sm md:text-base max-w-md mb-12 leading-relaxed">
-            Hệ thống quản lý giao dịch tập trung vào <span class="text-emerald-400 font-bold">Hiệu suất</span> và <span class="text-emerald-400 font-bold">Kỷ luật</span>. 
-            Loại bỏ nhiễu loạn, chỉ giữ lại những gì quan trọng nhất.
-        </p>
-
-        <button onclick="enterSystem()" class="group relative px-8 py-4 bg-transparent overflow-hidden rounded-full border border-slate-700 hover:border-emerald-500 transition-all duration-300">
-            <div class="absolute inset-0 w-0 bg-emerald-600 transition-all duration-[250ms] ease-out group-hover:w-full opacity-10"></div>
-            <span class="relative text-slate-300 group-hover:text-emerald-400 font-mono font-bold tracking-widest text-sm flex items-center gap-3">
-                TRUY CẬP HỆ THỐNG <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
-            </span>
-        </button>
-
-        <div class="absolute bottom-8 text-[10px] text-slate-600 font-mono uppercase tracking-widest">
-            v19.1 • Trading Journal System
-        </div>
-    </div>
 
     <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-50 dark:bg-[#020617] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]">
         <div class="glass-panel w-full max-w-md p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800">
             <div class="text-center mb-8">
                 <div class="inline-flex p-3 rounded-full bg-emerald-500/10 mb-4"><i data-lucide="cloud-lightning" class="w-10 h-10 text-emerald-500"></i></div>
                 <h1 class="text-3xl font-bold mb-2 font-mono">MINIMALIST<span class="text-emerald-500">_PRO</span></h1>
-                <p class="text-slate-500 dark:text-slate-400 text-sm">Trading System (Linked Analysis)</p>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">Trading System (Analytics v20.0)</p>
             </div>
             <div id="login-form" class="space-y-4 fade-in">
                 <input type="text" id="login-user" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 outline-none focus:border-emerald-500 transition" placeholder="Username">
@@ -94,164 +66,92 @@
 
         <main class="flex-1 max-w-[1920px] mx-auto px-4 py-4 w-full relative h-[calc(100vh-64px)] overflow-hidden">
             
-            <div id="tab-dashboard" class="space-y-4 fade-in flex flex-col h-full">
+            <div id="tab-dashboard" class="space-y-4 fade-in flex flex-col h-full pb-4 overflow-y-auto custom-scrollbar">
                 <div class="glass-panel h-12 rounded-xl border-l-4 border-emerald-500 bg-slate-100 dark:bg-slate-900/50 shadow-md shrink-0 flex items-center px-4 overflow-hidden relative">
-                    <div class="marquee-wrapper w-full"><div id="dynamic-quote" class="marquee-content text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">Loading...</div></div>
+                    <div class="marquee-wrapper w-full"><div id="dashboard-marquee" class="marquee-content text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">Loading Stats...</div></div>
                 </div>
+                
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
                     <div class="glass-panel p-4 rounded-xl border-t-4 border-t-emerald-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Vốn Hiện Tại</p><h2 class="text-2xl font-mono font-bold text-slate-900 dark:text-white mt-1" id="dash-balance">$0</h2></div>
                     <div class="glass-panel p-4 rounded-xl border-t-4 border-t-blue-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Tỷ Lệ Thắng</p><h2 class="text-2xl font-mono font-bold text-blue-600 dark:text-blue-400 mt-1" id="dash-winrate">0%</h2><p class="text-[10px] text-slate-500 mt-0.5" id="dash-total">0 Lệnh</p></div>
                     <div class="glass-panel p-4 rounded-xl border-t-4 border-t-purple-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Tổng Lợi Nhuận</p><h2 class="text-2xl font-mono font-bold text-purple-600 dark:text-purple-400 mt-1" id="dash-pnl">$0.00</h2></div>
-                    <div class="glass-panel p-4 rounded-xl border-t-4 border-t-rose-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Max Drawdown</p><h2 class="text-2xl font-mono font-bold text-rose-600 dark:text-rose-400 mt-1" id="dash-dd">0%</h2></div>
+                    <div class="glass-panel p-4 rounded-xl border-t-4 border-t-rose-500 bg-white dark:bg-slate-800/80"><p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Max Drawdown</p><h2 class="text-2xl font-mono font-bold text-rose-600 dark:text-rose-400 mt-1" id="dash-dd">0%</h2><p class="text-[10px] text-slate-500 mt-0.5" id="dash-max-loss-streak">Chuỗi thua: 0</p></div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 pb-2">
-                    <div class="glass-panel p-4 rounded-xl flex flex-col bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"><h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Biểu Đồ Tăng Trưởng</h3><div class="flex-1 relative w-full h-full"><canvas id="chart-equity"></canvas></div></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[300px]">
+                    <div class="glass-panel p-4 rounded-xl flex flex-col bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"><h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Biểu Đồ Tăng Trưởng (Equity)</h3><div class="flex-1 relative w-full h-full"><canvas id="chart-equity"></canvas></div></div>
                     <div class="glass-panel p-4 rounded-xl flex flex-col bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"><h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Tỷ Lệ Win/Loss</h3><div class="flex-1 relative w-full h-full flex justify-center items-center"><canvas id="chart-winloss"></canvas></div></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-2 glass-panel p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+                        <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3"><i data-lucide="calendar" class="inline w-3 h-3 mr-1"></i> Hiệu Suất Theo Tháng</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 dark:bg-slate-900/50 text-[10px] uppercase text-slate-500">
+                                    <tr>
+                                        <th class="p-2 rounded-l">Thời Gian</th>
+                                        <th class="p-2 text-center">Tổng Lệnh</th>
+                                        <th class="p-2 text-center text-emerald-500">Thắng</th>
+                                        <th class="p-2 text-center text-rose-500">Thua</th>
+                                        <th class="p-2 text-right rounded-r">PnL Ròng</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stats-monthly-body" class="font-mono text-slate-700 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col">
+                        <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3"><i data-lucide="award" class="inline w-3 h-3 mr-1"></i> Xếp Hạng Mẫu Hình</h3>
+                        <div class="flex-1 space-y-4">
+                            <div class="bg-emerald-50 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30">
+                                <p class="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-bold mb-1">Mẫu Hình Tốt Nhất (Profit)</p>
+                                <div class="flex justify-between items-end">
+                                    <h4 class="font-bold text-slate-800 dark:text-white truncate" id="stat-best-pattern">-</h4>
+                                    <span class="font-mono font-bold text-emerald-500" id="stat-best-pnl">$0</span>
+                                </div>
+                            </div>
+                            <div class="bg-rose-50 dark:bg-rose-900/10 p-3 rounded-lg border border-rose-100 dark:border-rose-900/30">
+                                <p class="text-[10px] text-rose-600 dark:text-rose-400 uppercase font-bold mb-1">Mẫu Hình Tệ Nhất (Loss)</p>
+                                <div class="flex justify-between items-end">
+                                    <h4 class="font-bold text-slate-800 dark:text-white truncate" id="stat-worst-pattern">-</h4>
+                                    <span class="font-mono font-bold text-rose-500" id="stat-worst-pnl">$0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="tab-analysis" class="hidden fade-in flex flex-col h-full pb-4">
                 <div class="flex h-full gap-4">
-                    <div class="w-64 glass-panel rounded-xl flex flex-col overflow-hidden shrink-0">
-                        <div class="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Chọn Chiến Lược</h3></div>
-                        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2" id="strategy-list-container"></div>
-                    </div>
-                    <div class="flex-1 glass-panel rounded-xl flex flex-col overflow-hidden relative">
-                        <div id="analysis-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 z-10 bg-white/50 dark:bg-black/50 backdrop-blur-sm">
-                            <i data-lucide="layout-template" class="w-16 h-16 mb-2 opacity-50"></i><p>Chọn một chiến lược bên trái để bắt đầu</p>
-                        </div>
-                        <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
-                            <h2 class="text-lg font-bold text-emerald-600 dark:text-emerald-400" id="current-setup-name">Tên Chiến Lược</h2>
-                            <button onclick="transferAnalysisToJournal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-500/20"><i data-lucide="arrow-right-circle"></i> Chuyển sang Nhật Ký</button>
-                        </div>
-                        <div class="flex-1 p-4 grid grid-cols-2 gap-4 overflow-hidden">
-                            <div class="flex flex-col gap-2 h-full">
-                                <div class="bg-slate-100 dark:bg-black/40 rounded-lg border border-slate-200 dark:border-slate-700 h-1/2 overflow-hidden relative group cursor-zoom-in" onclick="viewImageFull(this.querySelector('img').src)">
-                                    <span class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur">Lý Thuyết</span>
-                                    <img id="ana-theory-img" src="" class="w-full h-full object-contain">
-                                </div>
-                                <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-3 h-1/2 overflow-y-auto">
-                                    <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase">Ghi chú</p>
-                                    <div id="ana-theory-content" class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line"></div>
-                                </div>
-                            </div>
-                            <div class="flex flex-col gap-2 h-full">
-                                <div class="bg-slate-100 dark:bg-black/40 rounded-lg border border-slate-200 dark:border-slate-700 h-1/2 overflow-hidden relative group flex items-center justify-center">
-                                    <span class="absolute top-2 left-2 bg-emerald-600/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur z-10">Thực Tế</span>
-                                    <label class="absolute top-2 right-2 cursor-pointer bg-slate-800 hover:bg-slate-700 text-white p-1.5 rounded-full transition z-10 shadow-lg"><i data-lucide="upload" class="w-3 h-3"></i><input type="file" class="hidden" onchange="handleAnalysisUpload(this)"></label>
-                                    <img id="ana-real-img" src="" class="hidden w-full h-full object-contain absolute inset-0 cursor-zoom-in" onclick="viewImageFull(this.src)">
-                                    <div id="ana-upload-hint" class="text-center"><i data-lucide="image-plus" class="w-8 h-8 text-slate-400 mb-1 mx-auto"></i><p class="text-xs text-slate-400">Tải chart thực tế</p></div>
-                                </div>
-                                <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-3 h-1/2 overflow-y-auto">
-                                    <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase">Checklist</p>
-                                    <div id="ana-checklist-container" class="grid grid-cols-2 gap-2"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <div class="w-64 glass-panel rounded-xl flex flex-col overflow-hidden shrink-0"><div class="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Chọn Chiến Lược</h3></div><div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2" id="strategy-list-container"></div></div>
+                    <div class="flex-1 glass-panel rounded-xl flex flex-col overflow-hidden relative"><div id="analysis-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 z-10 bg-white/50 dark:bg-black/50 backdrop-blur-sm"><i data-lucide="layout-template" class="w-16 h-16 mb-2 opacity-50"></i><p>Chọn một chiến lược bên trái để bắt đầu</p></div><div class="p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0"><h2 class="text-lg font-bold text-emerald-600 dark:text-emerald-400" id="current-setup-name">Tên Chiến Lược</h2><button onclick="transferAnalysisToJournal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-500/20"><i data-lucide="arrow-right-circle"></i> Chuyển sang Nhật Ký</button></div><div class="flex-1 p-4 grid grid-cols-2 gap-4 overflow-hidden"><div class="flex flex-col gap-2 h-full"><div class="bg-slate-100 dark:bg-black/40 rounded-lg border border-slate-200 dark:border-slate-700 h-1/2 overflow-hidden relative group cursor-zoom-in" onclick="viewImageFull(this.querySelector('img').src)"><span class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur">Lý Thuyết</span><img id="ana-theory-img" src="" class="w-full h-full object-contain"></div><div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-3 h-1/2 overflow-y-auto"><p class="text-[10px] font-bold text-slate-500 mb-1 uppercase">Ghi chú</p><div id="ana-theory-content" class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line"></div></div></div><div class="flex flex-col gap-2 h-full"><div class="bg-slate-100 dark:bg-black/40 rounded-lg border border-slate-200 dark:border-slate-700 h-1/2 overflow-hidden relative group flex items-center justify-center"><span class="absolute top-2 left-2 bg-emerald-600/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur z-10">Thực Tế</span><label class="absolute top-2 right-2 cursor-pointer bg-slate-800 hover:bg-slate-700 text-white p-1.5 rounded-full transition z-10 shadow-lg"><i data-lucide="upload" class="w-3 h-3"></i><input type="file" class="hidden" onchange="handleAnalysisUpload(this)"></label><img id="ana-real-img" src="" class="hidden w-full h-full object-contain absolute inset-0 cursor-zoom-in" onclick="viewImageFull(this.src)"><div id="ana-upload-hint" class="text-center"><i data-lucide="image-plus" class="w-8 h-8 text-slate-400 mb-1 mx-auto"></i><p class="text-xs text-slate-400">Tải chart thực tế</p></div></div><div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-3 h-1/2 overflow-y-auto"><p class="text-[10px] font-bold text-slate-500 mb-2 uppercase">Checklist</p><div id="ana-checklist-container" class="grid grid-cols-2 gap-2"></div></div></div></div></div></div>
             </div>
-
+            
             <div id="tab-wiki" class="hidden fade-in flex flex-col h-full pb-4">
-                <div class="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between shrink-0">
-                    <div class="relative w-full md:w-1/2">
-                        <i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-slate-400"></i>
-                        <input type="text" id="wiki-search" onkeyup="filterWiki()" placeholder="Tìm kiếm Wiki..." class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-800 dark:text-white outline-none">
-                    </div>
-                    <button onclick="openWikiEditor()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all"><i data-lucide="plus-square" class="w-5 h-5"></i> Tạo Mới</button>
-                </div>
-                <div class="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar shrink-0" id="wiki-filter-container"></div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto custom-scrollbar pr-2 pb-10 flex-1" id="wiki-grid"></div>
+                <div class="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between shrink-0"><div class="relative w-full md:w-1/2"><i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-slate-400"></i><input type="text" id="wiki-search" onkeyup="filterWiki()" placeholder="Tìm kiếm Wiki..." class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-800 dark:text-white outline-none"></div><button onclick="openWikiEditor()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all"><i data-lucide="plus-square" class="w-5 h-5"></i> Tạo Mới</button></div><div class="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar shrink-0" id="wiki-filter-container"></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto custom-scrollbar pr-2 pb-10 flex-1" id="wiki-grid"></div>
             </div>
 
             <div id="tab-journal" class="hidden fade-in flex flex-col h-full pb-4">
-                <div class="flex justify-between items-center mb-4 shrink-0">
-                    <div class="flex gap-2"><button onclick="openEntryModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm flex items-center gap-2"><i data-lucide="plus"></i> Thêm Lệnh</button></div>
-                    <div class="text-right"><p class="text-[10px] text-slate-500 uppercase">P&L Today</p><p class="text-sm font-mono font-bold text-slate-800 dark:text-white" id="journal-pnl-today">$0.00</p></div>
-                </div>
-                <div class="glass-panel rounded-xl overflow-hidden flex-1 flex flex-col">
-                    <div class="overflow-auto custom-scrollbar flex-1">
-                        <table class="w-full text-left table-fixed">
-                            <thead class="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur z-10">
-                                <tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
-                                    <th class="p-4 text-center w-24">Ngày</th>
-                                    <th class="p-4 text-center w-16">Chart</th>
-                                    <th class="p-4 text-center w-32">Cặp/Hướng</th>
-                                    <th class="p-4 text-center">Chiến Lược</th>
-                                    <th class="p-4 text-center">Rủi Ro</th>
-                                    <th class="p-4 text-center w-24">Trạng Thái</th>
-                                    <th class="p-4 text-right">PnL</th>
-                                    <th class="p-4 text-center w-16">Xóa</th>
-                                </tr>
-                            </thead>
-                            <tbody id="journal-list" class="text-sm text-slate-700 dark:text-slate-300 divide-y divide-slate-200 dark:divide-slate-800 font-mono"></tbody>
-                        </table>
-                    </div>
-                </div>
+                <div class="flex justify-between items-center mb-4 shrink-0"><div class="flex gap-2"><button onclick="openEntryModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm flex items-center gap-2"><i data-lucide="plus"></i> Thêm Lệnh</button></div><div class="text-right"><p class="text-[10px] text-slate-500 uppercase">P&L Today</p><p class="text-sm font-mono font-bold text-slate-800 dark:text-white" id="journal-pnl-today">$0.00</p></div></div><div class="glass-panel rounded-xl overflow-hidden flex-1 flex flex-col"><div class="overflow-auto custom-scrollbar flex-1"><table class="w-full text-left table-fixed"><thead class="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur z-10"><tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800"><th class="p-4 text-center w-24">Ngày</th><th class="p-4 text-center w-16">Chart</th><th class="p-4 text-center w-32">Cặp/Hướng</th><th class="p-4 text-center">Chiến Lược</th><th class="p-4 text-center">Rủi Ro</th><th class="p-4 text-center w-24">Trạng Thái</th><th class="p-4 text-right">PnL</th><th class="p-4 text-center w-16">Xóa</th></tr></thead><tbody id="journal-list" class="text-sm text-slate-700 dark:text-slate-300 divide-y divide-slate-200 dark:divide-slate-800 font-mono"></tbody></table></div></div>
             </div>
             
             <div id="tab-ai" class="hidden fade-in flex flex-col lg:flex-row gap-6 h-full pb-4">
-                 <div class="lg:w-1/3 glass-panel rounded-xl p-6 flex flex-col h-full">
-                    <div class="mb-4"><h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2"><i data-lucide="scan-eye" class="text-emerald-500 w-6 h-6"></i> Gemini Chart Scan</h3><p class="text-sm text-slate-500">Tải ảnh biểu đồ lên để Gemini phân tích.</p></div>
-                    <div class="relative group border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-xl p-4 flex flex-col items-center justify-center transition-all bg-slate-50/50 dark:bg-slate-900/50 min-h-[200px] mb-4">
-                        <input type="file" id="ai-upload-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleAIUpload(this)">
-                        <div id="ai-upload-placeholder" class="text-center"><div class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition"><i data-lucide="upload-cloud" class="text-slate-500 dark:text-slate-400 group-hover:text-emerald-500 w-6 h-6"></i></div><p class="text-sm font-bold text-slate-600 dark:text-slate-300">Kéo thả hoặc Chọn ảnh</p></div>
-                        <img id="ai-preview-img" class="hidden w-full h-full object-contain rounded-lg absolute inset-0 z-0 bg-slate-100 dark:bg-slate-900">
-                    </div>
-                    <div class="space-y-3 mt-auto">
-                        <div class="grid grid-cols-2 gap-3">
-                            <div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Cặp Tiền</label><select id="ai-pair-input" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-2 text-slate-800 dark:text-white text-sm outline-none cursor-pointer"></select></div>
-                            <div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Khung Thời Gian</label><select id="ai-tf-input" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-2 text-slate-800 dark:text-white text-sm"><option value="H1">H1</option><option value="H4">H4</option><option value="M15">M15</option></select></div>
-                        </div>
-                        <button onclick="runAIAnalysis()" id="btn-ai-analyze" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all"><i data-lucide="sparkles" class="w-5 h-5"></i> BẮT ĐẦU</button>
-                    </div>
-                </div>
-                <div class="lg:w-2/3 glass-panel rounded-xl flex flex-col p-0 overflow-hidden relative">
-                    <div id="ai-result-empty" class="flex-1 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-8"><i data-lucide="monitor-stop" class="w-20 h-20 mb-4 opacity-20"></i><p>Chờ dữ liệu...</p></div>
-                    <div id="ai-result-content" class="hidden flex-1 flex flex-col h-full">
-                        <div class="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/80 flex justify-between items-center sticky top-0 z-10 backdrop-blur-md">
-                            <div><div class="flex items-center gap-2 mb-1"><span class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold">MATCHING FOUND</span></div><h2 class="text-2xl font-bold text-slate-800 dark:text-white" id="ai-res-pattern">Pattern</h2></div>
-                            <div class="text-right"><div class="text-4xl font-bold text-emerald-600 dark:text-emerald-400" id="ai-res-score">0%</div></div>
-                        </div>
-                        <div class="flex-1 overflow-y-auto p-6"><div class="bg-slate-100 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700 prose dark:prose-invert max-w-none" id="ai-res-conclusion">...</div></div>
-                        <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end"><button onclick="resetAI()" class="px-4 py-2 font-bold">Làm Lại</button></div>
-                    </div>
-                </div>
+                 <div class="lg:w-1/3 glass-panel rounded-xl p-6 flex flex-col h-full"><div class="mb-4"><h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2"><i data-lucide="scan-eye" class="text-emerald-500 w-6 h-6"></i> Gemini Chart Scan</h3><p class="text-sm text-slate-500">Tải ảnh biểu đồ lên để Gemini phân tích.</p></div><div class="relative group border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-xl p-4 flex flex-col items-center justify-center transition-all bg-slate-50/50 dark:bg-slate-900/50 min-h-[200px] mb-4"><input type="file" id="ai-upload-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleAIUpload(this)"><div id="ai-upload-placeholder" class="text-center"><div class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition"><i data-lucide="upload-cloud" class="text-slate-500 dark:text-slate-400 group-hover:text-emerald-500 w-6 h-6"></i></div><p class="text-sm font-bold text-slate-600 dark:text-slate-300">Kéo thả hoặc Chọn ảnh</p></div><img id="ai-preview-img" class="hidden w-full h-full object-contain rounded-lg absolute inset-0 z-0 bg-slate-100 dark:bg-slate-900"></div><div class="space-y-3 mt-auto"><div class="grid grid-cols-2 gap-3"><div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Cặp Tiền</label><select id="ai-pair-input" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-2 text-slate-800 dark:text-white text-sm outline-none cursor-pointer"></select></div><div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Khung Thời Gian</label><select id="ai-tf-input" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-2 text-slate-800 dark:text-white text-sm"><option value="H1">H1</option><option value="H4">H4</option><option value="M15">M15</option></select></div></div><button onclick="runAIAnalysis()" id="btn-ai-analyze" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all"><i data-lucide="sparkles" class="w-5 h-5"></i> BẮT ĐẦU</button></div></div><div class="lg:w-2/3 glass-panel rounded-xl flex flex-col p-0 overflow-hidden relative"><div id="ai-result-empty" class="flex-1 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-8"><i data-lucide="monitor-stop" class="w-20 h-20 mb-4 opacity-20"></i><p>Chờ dữ liệu...</p></div><div id="ai-result-content" class="hidden flex-1 flex flex-col h-full"><div class="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/80 flex justify-between items-center sticky top-0 z-10 backdrop-blur-md"><div><div class="flex items-center gap-2 mb-1"><span class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold">MATCHING FOUND</span></div><h2 class="text-2xl font-bold text-slate-800 dark:text-white" id="ai-res-pattern">Pattern</h2></div><div class="text-right"><div class="text-4xl font-bold text-emerald-600 dark:text-emerald-400" id="ai-res-score">0%</div></div></div><div class="flex-1 overflow-y-auto p-6"><div class="bg-slate-100 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700 prose dark:prose-invert max-w-none" id="ai-res-conclusion">...</div></div><div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end"><button onclick="resetAI()" class="px-4 py-2 font-bold">Làm Lại</button></div></div></div>
             </div>
 
             <div id="tab-capital" class="hidden fade-in flex flex-col h-full pb-4">
-                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-                    <div class="lg:col-span-4 flex flex-col gap-6">
-                        <div class="glass-panel rounded-xl p-5 border-l-4 border-l-blue-500">
-                            <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2"><i data-lucide="wallet" class="w-4 h-4 text-blue-500"></i> Khai Báo Vốn</h3>
-                            <div class="flex gap-2 items-end"><div class="flex-1"><label class="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Vốn Gốc ($)</label><input type="number" id="real-init-capital" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white font-mono font-bold outline-none"></div><button onclick="saveInitialCapital()" class="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-lg"><i data-lucide="save" class="w-5 h-5"></i></button></div>
-                        </div>
-                        <div class="glass-panel rounded-xl p-5 border-l-4 border-l-emerald-500 flex-1 flex flex-col">
-                            <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4 text-emerald-500"></i> Lãi Kép</h3>
-                            <div class="space-y-4">
-                                <div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Vốn Bắt Đầu ($)</label><input type="number" id="cap-sim-start" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 font-bold" onchange="updateCapitalCalc()"></div>
-                                <div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Rủi Ro (%)</label><input type="number" id="cap-risk-pct" value="1" step="0.1" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 font-bold" onchange="updateCapitalCalc()"></div><div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1 block">R:R</label><input type="number" id="cap-rr" value="2" step="0.1" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 font-bold" onchange="updateCapitalCalc()"></div></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-8 glass-panel rounded-xl flex flex-col overflow-hidden">
-                        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center"><h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase">Bảng Dự Phóng</h3><div class="flex items-center gap-2"><label class="text-[10px] font-bold">Số lệnh:</label><input type="number" id="cap-sim-count" value="20" class="w-16 bg-white dark:bg-slate-800 border rounded px-2 py-1 text-center" onchange="updateCapitalCalc()"></div></div>
-                        <div class="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-slate-950"><table class="w-full text-left"><thead class="sticky top-0 bg-slate-100 dark:bg-slate-900 z-10 shadow-sm"><tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800"><th class="p-3 text-center">#</th><th class="p-3 text-right">Vốn Đầu</th><th class="p-3 text-right text-rose-500">Rủi Ro</th><th class="p-3 text-right text-emerald-500">Lợi Nhuận</th><th class="p-3 text-right font-bold">Vốn Cuối</th></tr></thead><tbody id="cap-projection-list" class="text-sm font-mono text-slate-700 dark:text-slate-300 divide-y divide-slate-200 dark:divide-slate-800"></tbody></table></div>
-                    </div>
-                 </div>
+                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full"><div class="lg:col-span-4 flex flex-col gap-6"><div class="glass-panel rounded-xl p-5 border-l-4 border-l-blue-500"><h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2"><i data-lucide="wallet" class="w-4 h-4 text-blue-500"></i> Khai Báo Vốn</h3><div class="flex gap-2 items-end"><div class="flex-1"><label class="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Vốn Gốc ($)</label><input type="number" id="real-init-capital" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white font-mono font-bold outline-none"></div><button onclick="saveInitialCapital()" class="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-lg"><i data-lucide="save" class="w-5 h-5"></i></button></div></div><div class="glass-panel rounded-xl p-5 border-l-4 border-l-emerald-500 flex-1 flex flex-col"><h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4 text-emerald-500"></i> Lãi Kép</h3><div class="space-y-4"><div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Vốn Bắt Đầu ($)</label><input type="number" id="cap-sim-start" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 font-bold" onchange="updateCapitalCalc()"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Rủi Ro (%)</label><input type="number" id="cap-risk-pct" value="1" step="0.1" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 font-bold" onchange="updateCapitalCalc()"></div><div><label class="text-[10px] text-slate-500 uppercase font-bold mb-1 block">R:R</label><input type="number" id="cap-rr" value="2" step="0.1" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 font-bold" onchange="updateCapitalCalc()"></div></div></div></div></div><div class="lg:col-span-8 glass-panel rounded-xl flex flex-col overflow-hidden"><div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center"><h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase">Bảng Dự Phóng</h3><div class="flex items-center gap-2"><label class="text-[10px] font-bold">Số lệnh:</label><input type="number" id="cap-sim-count" value="20" class="w-16 bg-white dark:bg-slate-800 border rounded px-2 py-1 text-center" onchange="updateCapitalCalc()"></div></div><div class="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-slate-950"><table class="w-full text-left"><thead class="sticky top-0 bg-slate-100 dark:bg-slate-900 z-10 shadow-sm"><tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800"><th class="p-3 text-center">#</th><th class="p-3 text-right">Vốn Đầu</th><th class="p-3 text-right text-rose-500">Rủi Ro</th><th class="p-3 text-right text-emerald-500">Lợi Nhuận</th><th class="p-3 text-right font-bold">Vốn Cuối</th></tr></thead><tbody id="cap-projection-list" class="text-sm font-mono text-slate-700 dark:text-slate-300 divide-y divide-slate-200 dark:divide-slate-800"></tbody></table></div></div></div>
             </div>
         </main>
 
         <div id="wiki-editor-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[120] flex items-center justify-center p-4"><div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[95vh]"><div class="p-4 border-b dark:border-slate-800 flex justify-between"><h3 class="font-bold" id="wiki-editor-title">Editor</h3><button onclick="closeModal('wiki-editor-modal')"><i data-lucide="x"></i></button></div><div class="p-6 overflow-y-auto space-y-4"><input type="hidden" id="edit-id"><div class="grid grid-cols-2 gap-4"><input type="text" id="edit-code" placeholder="Mã" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700"><input type="text" list="cat-suggestions" id="edit-cat" placeholder="Danh mục" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700"><datalist id="cat-suggestions"></datalist></div><input type="text" id="edit-title" placeholder="Tiêu đề" class="w-full border p-2 rounded dark:bg-slate-800 dark:border-slate-700"><div class="flex gap-2 items-center"><input type="text" id="edit-image-url" placeholder="Link ảnh" class="flex-1 border p-2 rounded dark:bg-slate-800 dark:border-slate-700" onchange="previewImage(this.value)"><label class="cursor-pointer bg-slate-100 dark:bg-slate-800 p-2 rounded"><i data-lucide="upload"></i><input type="file" class="hidden" id="edit-file" onchange="handleImageUpload(this)"></label></div><img id="edit-preview" class="hidden w-full h-40 object-contain bg-black/10"><textarea id="edit-content" class="w-full h-32 border p-2 rounded dark:bg-slate-800 dark:border-slate-700"></textarea></div><div class="p-4 border-t dark:border-slate-800 flex justify-end"><button onclick="saveWiki()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold">Lưu</button></div></div></div>
-
         <div id="wiki-detail-modal" class="fixed inset-0 bg-black/50 dark:bg-black/95 hidden z-[100] flex items-center justify-center p-4"><div class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col max-h-[95vh]"><div class="p-4 border-b dark:border-slate-800 flex justify-between"><h2 id="view-title" class="font-bold text-xl"></h2><div class="flex gap-2"><button id="btn-edit-entry" class="p-2 bg-slate-100 dark:bg-slate-800 rounded"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button id="btn-delete-entry" class="p-2 bg-slate-100 dark:bg-slate-800 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button><button onclick="closeModal('wiki-detail-modal')"><i data-lucide="x" class="w-4 h-4"></i></button></div></div><div class="overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="bg-slate-100 dark:bg-black/40 rounded flex justify-center p-4"><img id="view-image" class="max-h-[50vh] object-contain"></div><div><div id="view-content" class="text-sm whitespace-pre-line mb-4"></div><div id="wiki-ai-container" class="hidden"></div></div></div></div></div>
-
         <div id="entry-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"><div class="p-4 border-b dark:border-slate-800 flex justify-between"><h3 class="font-bold">Thêm Lệnh Mới</h3><button onclick="closeModal('entry-modal')"><i data-lucide="x"></i></button></div><div class="p-6 overflow-y-auto space-y-4 custom-scrollbar"><div class="grid grid-cols-3 gap-4"><select id="inp-pair" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700 font-bold"></select><select id="inp-dir" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700 font-bold"><option>BUY</option><option>SELL</option></select><select id="inp-session" class="border p-2 rounded dark:bg-slate-800 dark:border-slate-700 text-sm"><option>ASIA</option><option>LONDON</option><option>NEWYORK</option></select></div><select id="inp-strategy" class="w-full border p-2 rounded dark:bg-slate-800 dark:border-slate-700 text-sm"></select><div class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-3 text-center hover:border-emerald-500 transition relative"><input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleEntryImage(this)"><div id="entry-upload-hint" class="flex flex-col items-center justify-center gap-1 text-slate-400"><i data-lucide="image-plus" class="w-6 h-6"></i><span class="text-xs font-bold">Thêm ảnh biểu đồ</span></div><img id="entry-img-preview" class="hidden w-full h-32 object-contain rounded bg-slate-100 dark:bg-black/20 mt-2 relative z-20"></div><div class="grid grid-cols-2 gap-4"><div class="flex"><input type="number" id="inp-risk" class="w-full border rounded-l p-2 dark:bg-slate-800 dark:border-slate-700" value="1" oninput="calcRiskPreview()"><select id="inp-risk-mode" class="border rounded-r bg-slate-100 dark:bg-slate-700 px-2 text-xs font-bold" onchange="calcRiskPreview()"><option value="%">% NAV</option><option value="$">$ USD</option></select></div><div class="flex items-center gap-2"><span class="text-xs font-bold text-slate-500">R:R 1:</span><input type="number" id="inp-rr" class="w-full border p-2 rounded dark:bg-slate-800 dark:border-slate-700" value="2" oninput="calcRiskPreview()"></div></div><div class="flex justify-between items-center text-xs text-slate-500 font-bold bg-slate-50 dark:bg-slate-800/50 p-2 rounded"><span id="risk-preview">Risk: $0.0</span><span id="reward-preview" class="text-emerald-500">Reward: $0.0</span></div><textarea id="inp-note" placeholder="Ghi chú..." class="w-full border p-2 rounded h-20 dark:bg-slate-800 dark:border-slate-700 text-sm"></textarea></div><div class="p-4 border-t dark:border-slate-800 flex justify-end"><button onclick="saveEntry()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg">Lưu Lệnh</button></div></div></div>
-
         <div id="image-viewer-modal" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out" onclick="closeModal('image-viewer-modal')"><button class="absolute top-4 right-4 text-white hover:text-rose-500"><i data-lucide="x" class="w-8 h-8"></i></button><img id="image-viewer-img" src="" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()"></div>
-
         <div id="bg-settings-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[150] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col"><div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center"><h3 class="font-bold">Giao Diện Nền</h3><button onclick="closeModal('bg-settings-modal')"><i data-lucide="x"></i></button></div><div class="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4"><button onclick="setBackground('bg-theme-default')" class="p-2 border rounded hover:border-emerald-500 text-xs">Mặc Định</button><button onclick="setBackground('bg-theme-galaxy')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-r from-indigo-900 to-purple-800 text-white text-xs">Galaxy</button><button onclick="setBackground('bg-theme-emerald')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-r from-teal-900 to-emerald-900 text-white text-xs">Emerald</button><button onclick="setBackground('bg-theme-midnight')" class="p-2 border rounded hover:border-emerald-500 bg-slate-900 text-white text-xs">Midnight</button><button onclick="setBackground('bg-theme-sunset')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-r from-rose-900 to-slate-900 text-white text-xs">Sunset</button><button onclick="setBackground('bg-theme-aurora')" class="p-2 border rounded hover:border-emerald-500 bg-black text-white text-xs">Aurora</button><button onclick="setBackground('bg-theme-nebula')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-r from-purple-800 to-pink-600 text-white text-xs">Nebula (Tím)</button><button onclick="setBackground('bg-theme-oceanic')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-b from-slate-900 to-cyan-700 text-white text-xs">Oceanic (Biển)</button><button onclick="setBackground('bg-theme-forest')" class="p-2 border rounded hover:border-emerald-500 bg-gradient-to-br from-green-900 to-green-700 text-white text-xs">Forest (Rừng)</button></div></div></div>
-        
     </div>
 
     <script type="module" src="app.js"></script>

@@ -1,99 +1,209 @@
 import { db, doc, getDoc, setDoc } from './firebase.js';
 
-// --- 1. CONFIG & CONSTANTS ---
-// ĐÃ CHÈN KEY CỦA BẠN TẠI ĐÂY:
-const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E"; 
-
+// --- CONFIG ---
+const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E";
 const DEFAULT_WIKI = [
     { id: "XH01", code: "XH01", cat: "Xu Hướng", title: "Uptrend & Downtrend", image: "https://placehold.co/800x400/1e293b/10b981?text=XuHuong", content: "Đỉnh sau cao hơn đỉnh trước (HH), đáy sau cao hơn đáy trước (HL)." },
     { id: "BB02", code: "BB02", cat: "Setup", title: "Bounce Breakout", image: "https://placehold.co/800x400/1e293b/10b981?text=Setup", content: "Mua khi giá quay lại test vùng phá vỡ (Retest)." }
 ];
 const DEFAULT_PAIRS = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "BTCUSD", "US30", "ETHUSD"];
 const CRITERIA_LIST = [
-    { name: "1. XU HƯỚNG", desc: "Cấu trúc rõ ràng" },
-    { name: "2. KEYLEVEL", desc: "Phản ứng tại cản" },
-    { name: "3. TRENDLINE", desc: "Tôn trọng/Phá vỡ" },
-    { name: "4. EMA 50", desc: "Vị trí giá" },
-    { name: "5. HỢP QUY", desc: "Nhiều yếu tố" },
-    { name: "6. TÍN HIỆU", desc: "Nến đảo chiều" },
-    { name: "7. MÔ HÌNH", desc: "Biểu đồ giá" },
-    { name: "8. FIBONACCI", desc: "Vùng vàng" },
-    { name: "9. THỜI GIAN", desc: "Đóng nến" },
-    { name: "10. R:R", desc: "Tỷ lệ tốt" }
+    { name: "1. XU HƯỚNG", desc: "Cấu trúc rõ ràng" }, { name: "2. KEYLEVEL", desc: "Phản ứng tại cản" },
+    { name: "3. TRENDLINE", desc: "Tôn trọng/Phá vỡ" }, { name: "4. EMA 50", desc: "Vị trí giá" },
+    { name: "5. HỢP QUY", desc: "Nhiều yếu tố" }, { name: "6. TÍN HIỆU", desc: "Nến đảo chiều" },
+    { name: "7. MÔ HÌNH", desc: "Biểu đồ giá" }, { name: "8. FIBONACCI", desc: "Vùng vàng" },
+    { name: "9. THỜI GIAN", desc: "Đóng nến" }, { name: "10. R:R", desc: "Tỷ lệ tốt" }
 ];
 
-// --- 2. STATE ---
+// --- STATE ---
 let journalData = [], wikiData = [], pairsData = [];
 let initialCapital = 20000;
 let currentBgTheme = 'bg-theme-default';
 let currentFilter = 'all';
-let currentAnalysisImageBase64 = null; 
-let currentEntryImgBase64 = null; 
-let currentAnalysisTabImg = null; 
+let currentAnalysisImageBase64 = null;
+let currentEntryImgBase64 = null;
+let currentAnalysisTabImg = null;
 let selectedAnalysisStrategy = null;
 let chartInstances = {};
 
-// --- 3. INIT ---
+// --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
-    
-    // Ẩn auth-screen ban đầu để nhường chỗ cho Landing Page
-    document.getElementById('auth-screen').classList.add('hidden');
-    
     const storedUser = localStorage.getItem('min_sys_current_user');
-    if(storedUser) {
-        document.getElementById('login-user').value = storedUser;
-        // Tự động điền user nhưng KHÔNG tự động login ngay, 
-        // để người dùng bấm "Truy cập hệ thống" xong mới xử lý tiếp.
-    }
+    if (storedUser) document.getElementById('login-user').value = storedUser;
 });
 
-// --- 4. CORE ---
+// --- CORE ---
 window.loadData = async function() {
     if (!window.currentUser) return;
-    document.getElementById('dynamic-quote').innerText = "🔄 Đang tải dữ liệu...";
     try {
         const userRef = doc(db, "users", window.currentUser);
-        const docSnap = await getDoc(userRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const data = userSnap.data();
             journalData = data.journal || [];
-            wikiData = data.wiki || DEFAULT_WIKI;
             pairsData = data.pairs || DEFAULT_PAIRS;
             initialCapital = data.capital || 20000;
-            if(data.background) window.setBackground(data.background, false);
-        } else { saveDataToCloud(); }
+            if (data.background) window.setBackground(data.background, false);
+        } else { await saveUserData(); }
+
+        const wikiRef = doc(db, "system", "wiki_master");
+        const wikiSnap = await getDoc(wikiRef);
+        wikiData = wikiSnap.exists() ? wikiSnap.data().items : DEFAULT_WIKI;
+        if (!wikiSnap.exists()) await saveWikiData();
+
         initUI();
-        document.getElementById('dynamic-quote').innerText = "✅ Đã sẵn sàng!";
-    } catch (error) { alert("Lỗi tải: " + error.message); }
+    } catch (e) { alert("Lỗi tải: " + e.message); }
 }
 
-async function saveDataToCloud() {
+async function saveUserData() {
     if (!window.currentUser) return;
-    try {
-        await setDoc(doc(db, "users", window.currentUser), {
-            journal: journalData, wiki: wikiData, pairs: pairsData,
-            capital: initialCapital, background: currentBgTheme,
-            last_updated: new Date().toISOString()
-        }, { merge: true });
-    } catch (e) { console.error("Save Error:", e); }
+    await setDoc(doc(db, "users", window.currentUser), {
+        journal: journalData, pairs: pairsData, capital: initialCapital,
+        background: currentBgTheme, last_updated: new Date().toISOString()
+    }, { merge: true });
+}
+
+async function saveWikiData() {
+    await setDoc(doc(db, "system", "wiki_master"), { items: wikiData, last_updated: new Date().toISOString() }, { merge: true });
 }
 
 function initUI() {
     renderWikiGrid(); renderCategoryFilters(); renderDashboard();
     populateStrategies(); renderPairSelects(); renderJournalList();
-    initQuote();
-    
     const capInput = document.getElementById('real-init-capital');
     const simStart = document.getElementById('cap-sim-start');
-    if(capInput) capInput.value = initialCapital;
-    if(simStart) simStart.value = initialCapital;
+    if (capInput) capInput.value = initialCapital;
+    if (simStart) simStart.value = initialCapital;
     updateCapitalCalc();
     lucide.createIcons();
 }
 
-// --- ANALYSIS TAB LOGIC ---
+// --- DASHBOARD ANALYTICS (ADVANCED) ---
+window.renderDashboard = function() {
+    // 1. Basic Stats
+    const closedTrades = journalData.filter(t => t.status !== 'OPEN').sort((a, b) => a.id - b.id);
+    let wins = 0, totalPnl = 0;
+    
+    // 2. Advanced Stats Variables
+    let maxDrawdown = 0, peakCapital = initialCapital, currentEquity = initialCapital;
+    let currentLossStreak = 0, maxLossStreak = 0;
+    let strategyPerformance = {}; // { 'Strategy A': {profit: 0, loss: 0} }
+    let monthlyStats = {}; // { '10/2023': {total:0, win:0, loss:0, pnl:0} }
+
+    // 3. Loop Calculation
+    closedTrades.forEach(t => {
+        const pnl = parseFloat(t.pnl);
+        totalPnl += pnl;
+        currentEquity += pnl;
+
+        // Winrate
+        if (t.status === 'WIN') wins++;
+
+        // Max Drawdown (Peak to Valley)
+        if (currentEquity > peakCapital) peakCapital = currentEquity;
+        const drawdown = (peakCapital - currentEquity) / peakCapital;
+        if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+
+        // Max Consecutive Loss
+        if (t.status === 'LOSS') {
+            currentLossStreak++;
+            if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
+        } else if (t.status === 'WIN') {
+            currentLossStreak = 0;
+        }
+
+        // Strategy Performance
+        if (!strategyPerformance[t.strategy]) strategyPerformance[t.strategy] = 0;
+        strategyPerformance[t.strategy] += pnl;
+
+        // Monthly Stats
+        // Date format assumed: dd/mm/yyyy
+        const parts = t.date.split('/');
+        const monthKey = `${parts[1]}/${parts[2]}`; // mm/yyyy
+        if (!monthlyStats[monthKey]) monthlyStats[monthKey] = { total: 0, win: 0, loss: 0, pnl: 0 };
+        monthlyStats[monthKey].total++;
+        monthlyStats[monthKey].pnl += pnl;
+        if (t.status === 'WIN') monthlyStats[monthKey].win++;
+        if (t.status === 'LOSS') monthlyStats[monthKey].loss++;
+    });
+
+    // 4. Update UI - Basic
+    const balance = initialCapital + totalPnl;
+    const winRate = closedTrades.length ? Math.round((wins / closedTrades.length) * 100) : 0;
+    document.getElementById('dash-balance').innerText = `$${balance.toLocaleString()}`;
+    document.getElementById('header-balance').innerText = `$${balance.toLocaleString()}`;
+    document.getElementById('dash-winrate').innerText = `${winRate}%`;
+    document.getElementById('dash-total').innerText = `${closedTrades.length} Lệnh`;
+    document.getElementById('dash-pnl').innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toLocaleString()}`;
+    document.getElementById('dash-dd').innerText = `${(maxDrawdown * 100).toFixed(2)}%`;
+    document.getElementById('dash-max-loss-streak').innerText = `Chuỗi thua: ${maxLossStreak}`;
+
+    // 5. Update UI - Best/Worst Pattern
+    let bestStrat = { name: '-', val: -Infinity }, worstStrat = { name: '-', val: Infinity };
+    for (const [name, val] of Object.entries(strategyPerformance)) {
+        if (val > bestStrat.val) bestStrat = { name, val };
+        if (val < worstStrat.val) worstStrat = { name, val };
+    }
+    document.getElementById('stat-best-pattern').innerText = bestStrat.name;
+    document.getElementById('stat-best-pnl').innerText = bestStrat.val > -Infinity ? `$${bestStrat.val.toFixed(0)}` : '$0';
+    document.getElementById('stat-best-pnl').className = "font-mono font-bold text-emerald-500";
+    
+    document.getElementById('stat-worst-pattern').innerText = worstStrat.name;
+    document.getElementById('stat-worst-pnl').innerText = worstStrat.val < Infinity ? `$${worstStrat.val.toFixed(0)}` : '$0';
+    
+    // 6. Update UI - Monthly Table
+    const monthHtml = Object.entries(monthlyStats)
+        .sort((a, b) => { // Sort by date descending
+            const [m1, y1] = a[0].split('/'); const [m2, y2] = b[0].split('/');
+            return new Date(y2, m2 - 1) - new Date(y1, m1 - 1);
+        })
+        .map(([key, data]) => `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                <td class="p-2 font-bold">${key}</td>
+                <td class="p-2 text-center">${data.total}</td>
+                <td class="p-2 text-center text-emerald-500 font-bold">${data.win}</td>
+                <td class="p-2 text-center text-rose-500 font-bold">${data.loss}</td>
+                <td class="p-2 text-right font-mono font-bold ${data.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${data.pnl >= 0 ? '+' : ''}$${data.pnl.toLocaleString()}</td>
+            </tr>
+        `).join('');
+    document.getElementById('stats-monthly-body').innerHTML = monthHtml || '<tr><td colspan="5" class="p-4 text-center text-slate-400">Chưa có dữ liệu</td></tr>';
+
+    // 7. Update Marquee
+    const marqueeText = ` Balance: $${balance.toLocaleString()} | PnL: ${totalPnl >= 0 ? '+' : ''}$${totalPnl.toLocaleString()} | Winrate: ${winRate}% | Max DD: ${(maxDrawdown * 100).toFixed(2)}% | Best: ${bestStrat.name} ($${bestStrat.val > -Infinity ? bestStrat.val : 0}) | Streak Loss: ${maxLossStreak} `;
+    document.getElementById('dashboard-marquee').innerText = marqueeText;
+
+    renderCharts(closedTrades, initialCapital);
+}
+
+window.renderCharts = function(data, startCap) {
+    const ctxEquity = document.getElementById('chart-equity');
+    const ctxWinLoss = document.getElementById('chart-winloss');
+    
+    if(ctxEquity && window.Chart) {
+        let bal = startCap;
+        const points = [startCap, ...data.map(t => bal += parseFloat(t.pnl))];
+        if(chartInstances.eq) chartInstances.eq.destroy();
+        chartInstances.eq = new Chart(ctxEquity, {
+            type: 'line',
+            data: { labels: points.map((_,i) => i), datasets: [{ label: 'Vốn', data: points, borderColor: '#10b981', tension: 0.2, fill: true, backgroundColor: 'rgba(16, 185, 129, 0.1)' }] },
+            options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
+        });
+    }
+    if(ctxWinLoss && window.Chart) {
+        let win = 0, loss = 0;
+        data.forEach(t => t.status === 'WIN' ? win++ : loss++);
+        if(chartInstances.wl) chartInstances.wl.destroy();
+        chartInstances.wl = new Chart(ctxWinLoss, {
+            type: 'doughnut',
+            data: { labels: ['Win', 'Loss'], datasets: [{ data: [win, loss], backgroundColor: ['#10b981', '#f43f5e'], borderWidth: 0 }] },
+            options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right' } } }
+        });
+    }
+}
+
+// --- ANALYSIS LOGIC ---
 window.selectAnalysisStrategy = function(id) {
     const item = wikiData.find(x => x.id.toString() === id.toString());
     if(!item) return;
@@ -102,37 +212,30 @@ window.selectAnalysisStrategy = function(id) {
     document.getElementById('ana-theory-img').src = item.image;
     document.getElementById('ana-theory-content').innerText = item.content;
     document.getElementById('analysis-empty-state').classList.add('hidden');
-    
     document.getElementById('ana-checklist-container').innerHTML = CRITERIA_LIST.map(c => `
         <label class="flex items-center gap-2 p-2 rounded bg-slate-200 dark:bg-slate-800 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition">
-            <input type="checkbox" class="accent-emerald-500 w-4 h-4">
-            <div><p class="text-xs font-bold text-slate-700 dark:text-slate-200">${c.name}</p><p class="text-[10px] text-slate-500">${c.desc}</p></div>
+            <input type="checkbox" class="accent-emerald-500 w-4 h-4"><div><p class="text-xs font-bold text-slate-700 dark:text-slate-200">${c.name}</p><p class="text-[10px] text-slate-500">${c.desc}</p></div>
         </label>`).join('');
 }
-
 window.handleAnalysisUpload = function(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.getElementById('ana-real-img');
-            img.src = e.target.result;
-            img.classList.remove('hidden');
+    if (input.files[0]) {
+        const r = new FileReader();
+        r.onload = (e) => {
+            document.getElementById('ana-real-img').src = e.target.result;
+            document.getElementById('ana-real-img').classList.remove('hidden');
             document.getElementById('ana-upload-hint').classList.add('hidden');
             currentAnalysisTabImg = e.target.result;
         };
-        reader.readAsDataURL(input.files[0]);
+        r.readAsDataURL(input.files[0]);
     }
 }
-
 window.transferAnalysisToJournal = function() {
     if(!selectedAnalysisStrategy) return alert("Chưa chọn chiến lược!");
     window.switchTab('journal');
     window.openEntryModal();
     const stratSelect = document.getElementById('inp-strategy');
     for(let i=0; i<stratSelect.options.length; i++){
-        if(stratSelect.options[i].text.includes(selectedAnalysisStrategy.code)){
-            stratSelect.selectedIndex = i; break;
-        }
+        if(stratSelect.options[i].text.includes(selectedAnalysisStrategy.code)){ stratSelect.selectedIndex = i; break; }
     }
     if(currentAnalysisTabImg) {
         currentEntryImgBase64 = currentAnalysisTabImg;
@@ -143,39 +246,20 @@ window.transferAnalysisToJournal = function() {
     }
 }
 
-// --- 5. AI GEMINI LOGIC (ĐÃ CẬP NHẬT KEY CỦA BẠN) ---
-async function callGeminiAPI(prompt, imageBase64 = null) {
-    const model = "gemini-1.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-    
+// --- AI LOGIC ---
+async function callGeminiAPI(prompt, imageBase64) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     const parts = [{ text: prompt }];
-    if (imageBase64) {
-        const cleanBase64 = imageBase64.split(',')[1];
-        parts.push({ inlineData: { mimeType: "image/png", data: cleanBase64 } });
-    }
-    
+    if (imageBase64) parts.push({ inlineData: { mimeType: "image/png", data: imageBase64.split(',')[1] } });
     try {
-        const response = await fetch(url, { 
-            method: "POST", 
-            headers: { "Content-Type": "application/json" }, 
-            body: JSON.stringify({ contents: [{ parts }] }) 
-        });
-
-        const data = await response.json();
-
-        // Kiểm tra lỗi API trả về
-        if (!response.ok) throw new Error(data.error?.message || `Lỗi kết nối API (${response.status})`);
-        if (!data.candidates || data.candidates.length === 0) throw new Error("AI không trả về kết quả (Có thể do hình ảnh vi phạm chính sách an toàn).");
-
+        const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts }] }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || "API Error");
         return data.candidates[0].content.parts[0].text;
-
-    } catch (error) {
-        throw error;
-    }
+    } catch (e) { throw e; }
 }
-
 window.handleAIUpload = function(input) {
-    if (input.files && input.files[0]) {
+    if (input.files[0]) {
         const r = new FileReader();
         r.onload = (e) => {
             document.getElementById('ai-preview-img').src = e.target.result;
@@ -186,58 +270,38 @@ window.handleAIUpload = function(input) {
         r.readAsDataURL(input.files[0]);
     }
 }
-
 window.runAIAnalysis = async function() {
-    if(!currentAnalysisImageBase64) return alert("Vui lòng chọn ảnh biểu đồ!");
-    
+    if(!currentAnalysisImageBase64) return alert("Chọn ảnh!");
     const btn = document.getElementById('btn-ai-analyze');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> ĐANG PHÂN TÍCH...`;
-    btn.disabled = true;
-    
-    const pair = document.getElementById('ai-pair-input').value || "Unknown";
-    const tf = document.getElementById('ai-tf-input').value;
-    
-    const prompt = `Bạn là chuyên gia Trading. Phân tích biểu đồ ${pair} khung ${tf}. YÊU CẦU: Trả về JSON thuần túy: { "pattern_name": "Tên mẫu hình (Tiếng Việt)", "score": 85, "conclusion": "Nhận định chi tiết (Markdown)" }`;
-    
+    const org = btn.innerHTML; btn.innerHTML = "Đang xử lý..."; btn.disabled = true;
+    const pair = document.getElementById('ai-pair-input').value;
+    const prompt = `Phân tích ${pair}. Trả về JSON: { "pattern_name": "Tên (TV)", "score": 85, "conclusion": "Nội dung (Markdown)" }`;
     try {
-        const text = await callGeminiAPI(prompt, currentAnalysisImageBase64);
-        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const result = JSON.parse(cleanJson);
-        
-        document.getElementById('ai-res-pattern').innerText = result.pattern_name;
-        document.getElementById('ai-res-score').innerText = result.score + "%";
-        document.getElementById('ai-res-time').innerText = new Date().toLocaleTimeString();
-        document.getElementById('ai-res-conclusion').innerHTML = marked.parse(result.conclusion);
-        
+        const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64);
+        const json = JSON.parse(txt.replace(/```json/g, '').replace(/```/g, '').trim());
+        document.getElementById('ai-res-pattern').innerText = json.pattern_name;
+        document.getElementById('ai-res-score').innerText = json.score + "%";
+        document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion);
         document.getElementById('ai-result-empty').classList.add('hidden');
         document.getElementById('ai-result-content').classList.remove('hidden');
-    } catch (e) {
-        console.error(e);
-        alert("Lỗi AI: " + e.message + "\n(Vui lòng kiểm tra lại Key hoặc Ảnh)");
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        lucide.createIcons();
-    }
+    } catch (e) { alert("Lỗi: " + e.message); }
+    btn.innerHTML = org; btn.disabled = false;
 }
-
 window.resetAI = function() {
     document.getElementById('ai-result-content').classList.add('hidden');
     document.getElementById('ai-result-empty').classList.remove('hidden');
-    document.getElementById('ai-upload-input').value = "";
+    currentAnalysisImageBase64 = null;
     document.getElementById('ai-preview-img').classList.add('hidden');
     document.getElementById('ai-upload-placeholder').classList.remove('hidden');
-    currentAnalysisImageBase64 = null;
 }
 
-// --- CAPITAL LOGIC ---
+// --- CAPITAL ---
 window.saveInitialCapital = function() {
     const val = parseFloat(document.getElementById('real-init-capital').value);
-    if(isNaN(val) || val < 0) return alert("Vốn không hợp lệ!");
-    initialCapital = val; saveDataToCloud(); renderDashboard();
+    if(isNaN(val)) return;
+    initialCapital = val; saveUserData(); renderDashboard();
     document.getElementById('cap-sim-start').value = val; updateCapitalCalc();
-    alert("Đã lưu Vốn Gốc mới!");
+    alert("Đã lưu!");
 }
 window.updateCapitalCalc = function() {
     const start = parseFloat(document.getElementById('cap-sim-start').value) || 0;
@@ -247,13 +311,13 @@ window.updateCapitalCalc = function() {
     let bal = start, html = '';
     for(let i=1; i<=n; i++) {
         const risk = bal * (pct/100); const profit = risk * rr; const end = bal + profit;
-        html += `<tr class="border-b dark:border-slate-800"><td class="p-3 text-center text-slate-500">${i}</td><td class="p-3 text-right text-slate-600 dark:text-slate-400">$${Math.round(bal).toLocaleString()}</td><td class="p-3 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-3 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold text-slate-800 dark:text-white">$${Math.round(end).toLocaleString()}</td></tr>`;
+        html += `<tr class="border-b dark:border-slate-800"><td class="p-3 text-center">${i}</td><td class="p-3 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-3 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-3 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`;
         bal = end;
     }
     document.getElementById('cap-projection-list').innerHTML = html;
 }
 
-// --- JOURNAL LOGIC ---
+// --- JOURNAL ---
 window.openEntryModal = function() { 
     document.getElementById('entry-modal').classList.remove('hidden');
     if(!currentEntryImgBase64) {
@@ -280,7 +344,6 @@ window.saveEntry = function() {
     const strat = document.getElementById('inp-strategy').value;
     const riskVal = parseFloat(document.getElementById('inp-risk').value);
     const rr = parseFloat(document.getElementById('inp-rr').value);
-    
     if(!pair) return alert("Chọn cặp tiền!");
     const riskUSD = document.getElementById('inp-risk-mode').value === '%' ? getCurrentBalance() * (riskVal/100) : riskVal;
     
@@ -290,10 +353,9 @@ window.saveEntry = function() {
         strategy: strat, risk: riskUSD.toFixed(2), rr, status: 'OPEN', pnl: 0,
         note: document.getElementById('inp-note').value, image: currentEntryImgBase64
     });
-    
-    saveDataToCloud(); renderJournalList(); renderDashboard();
+    saveUserData(); renderJournalList(); renderDashboard();
     window.closeModal('entry-modal');
-    currentEntryImgBase64 = null; 
+    currentEntryImgBase64 = null;
 }
 window.updateEntryStatus = function(id, status) {
     const idx = journalData.findIndex(e => e.id.toString() === id.toString());
@@ -303,11 +365,11 @@ window.updateEntryStatus = function(id, status) {
         if(status === 'WIN') journalData[idx].pnl = r * parseFloat(journalData[idx].rr);
         else if(status === 'LOSS') journalData[idx].pnl = -r;
         else journalData[idx].pnl = 0;
-        saveDataToCloud(); renderJournalList(); renderDashboard();
+        saveUserData(); renderJournalList(); renderDashboard();
     }
 }
 window.deleteEntry = function(id) {
-    if(confirm('Xóa?')) { journalData = journalData.filter(e => e.id.toString() !== id.toString()); saveDataToCloud(); renderJournalList(); renderDashboard(); }
+    if(confirm('Xóa?')) { journalData = journalData.filter(e => e.id.toString() !== id.toString()); saveUserData(); renderJournalList(); renderDashboard(); }
 }
 window.renderJournalList = function() {
     const list = document.getElementById('journal-list');
@@ -323,9 +385,17 @@ window.renderJournalList = function() {
             <td class="p-4 text-center"><button onclick="deleteEntry('${t.id}')" class="text-slate-400 hover:text-rose-500 opacity-50 group-hover:opacity-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
         </tr>`).join('');
     lucide.createIcons();
+    updateDailyPnL();
+}
+function updateDailyPnL() {
+    const today = new Date().toLocaleDateString('vi-VN');
+    const pnl = journalData.filter(t => t.date === today).reduce((sum, t) => sum + parseFloat(t.pnl), 0);
+    const el = document.getElementById('journal-pnl-today');
+    if(el) { el.innerText = (pnl >= 0 ? '+' : '') + `$${pnl.toFixed(2)}`; el.className = `text-sm font-mono font-bold ${pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`; }
 }
 
-// --- WIKI LOGIC ---
+// --- WIKI & UTILS ---
+// (Wiki logic giữ nguyên như cũ, chỉ rút gọn để hiển thị)
 window.openWikiEditor = function(id = null) {
     const cats = [...new Set(wikiData.map(i => i.cat))];
     document.getElementById('cat-suggestions').innerHTML = cats.map(c => `<option value="${c}">`).join('');
@@ -361,12 +431,10 @@ window.saveWiki = function() {
     if(!item.code || !item.title) return alert("Điền đủ thông tin!");
     const idx = wikiData.findIndex(i => i.id.toString() === id.toString());
     if(idx !== -1) wikiData[idx] = item; else wikiData.push(item);
-    saveDataToCloud(); renderWikiGrid(); populateStrategies();
+    saveWikiData(); renderWikiGrid(); populateStrategies();
     window.closeModal('wiki-editor-modal');
 }
-window.deleteWikiItem = function(id) {
-    if(confirm("Xóa?")) { wikiData = wikiData.filter(i => i.id.toString() !== id.toString()); saveDataToCloud(); renderWikiGrid(); populateStrategies(); window.closeModal('wiki-detail-modal'); }
-}
+window.deleteWikiItem = function(id) { if(confirm("Xóa?")) { wikiData = wikiData.filter(i => i.id.toString() !== id.toString()); saveWikiData(); renderWikiGrid(); populateStrategies(); window.closeModal('wiki-detail-modal'); } }
 window.viewWikiDetail = function(id) {
     const item = wikiData.find(x => x.id.toString() === id.toString());
     if(!item) return;
@@ -392,8 +460,6 @@ window.renderWikiGrid = function() {
         </div>`).join('');
     lucide.createIcons();
 }
-
-// --- UTILS ---
 window.authLogin = async function() {
     const u = document.getElementById('login-user').value; const p = document.getElementById('login-pass').value;
     const users = JSON.parse(localStorage.getItem('min_sys_users_db') || '[]');
@@ -418,15 +484,15 @@ window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); loc
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(el => el.classList.add('hidden')); document.getElementById(`tab-${id}`).classList.remove('hidden'); if(id==='dashboard') renderDashboard(); }
-window.setBackground = (t, s=true) => { document.body.className = `bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col ${t}`; if(localStorage.theme==='dark') document.body.classList.add('dark'); currentBgTheme=t; if(s) saveDataToCloud(); window.closeModal('bg-settings-modal'); }
+window.setBackground = (t, s=true) => { document.body.className = `bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col ${t}`; if(localStorage.theme==='dark') document.body.classList.add('dark'); currentBgTheme=t; if(s) saveUserData(); window.closeModal('bg-settings-modal'); }
 window.openBgModal = () => document.getElementById('bg-settings-modal').classList.remove('hidden');
 window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark')?'dark':'light'; renderCharts(); }
 function initTheme() { if(localStorage.theme==='dark') document.documentElement.classList.add('dark'); }
 function getCurrentBalance() { let pnl=0; journalData.forEach(t=>pnl+=parseFloat(t.pnl)); return initialCapital+pnl; }
 window.populateStrategies = () => { 
-    const list = wikiData.filter(i=>i.cat==='Setup'||i.cat==='Chiến Lược' || i.cat==='Strategy'); 
+    const list = wikiData.filter(i=>i.cat==='Setup'||i.cat==='Chiến Lược'||i.cat==='Strategy'); 
     document.getElementById('inp-strategy').innerHTML = list.map(s=>`<option value="${s.code}: ${s.title}">${s.code}: ${s.title}</option>`).join('');
-    document.getElementById('strategy-list-container').innerHTML = list.map(s=>`<div onclick="selectAnalysisStrategy('${s.id}')" class="p-3 bg-white dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 border rounded cursor-pointer mb-2"><span class="font-bold block">${s.code}</span><span class="text-xs text-slate-500">${s.title}</span></div>`).join('');
+    document.getElementById('strategy-list-container').innerHTML = list.map(s=>`<div onclick="selectAnalysisStrategy('${s.id}')" class="p-3 bg-white dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-700 border rounded cursor-pointer mb-2"><span class="font-bold block">${s.code}</span><span class="text-xs text-slate-500">${s.title}</span></div>`).join('');
 }
 window.renderPairSelects = () => { const h = pairsData.map(p=>`<option value="${p}">${p}</option>`).join(''); document.getElementById('ai-pair-input').innerHTML=h; document.getElementById('inp-pair').innerHTML=h; }
 window.renderCategoryFilters = () => { const cats = [...new Set(wikiData.map(i=>i.cat))].sort(); document.getElementById('wiki-filter-container').innerHTML = `<button onclick="filterWikiCat('all')" class="px-4 py-1.5 rounded-lg text-xs border ${currentFilter==='all'?'bg-emerald-500 text-white':''}">All</button>` + cats.map(c=>`<button onclick="filterWikiCat('${c}')" class="px-4 py-1.5 rounded-lg text-xs border ${currentFilter===c?'bg-emerald-500 text-white':''}">${c}</button>`).join(''); }
@@ -436,43 +502,4 @@ window.previewImage = (url) => { document.getElementById('edit-preview').src = u
 window.handleImageUpload = (inp) => { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('edit-preview').src=e.target.result; document.getElementById('edit-preview').classList.remove('hidden'); document.getElementById('edit-image-url').value=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.viewImageFull = (src) => { document.getElementById('image-viewer-img').src=src; document.getElementById('image-viewer-modal').classList.remove('hidden'); }
 window.calcRiskPreview = () => { const v=parseFloat(document.getElementById('inp-risk').value)||0; const mode=document.getElementById('inp-risk-mode').value; const rr=parseFloat(document.getElementById('inp-rr').value)||0; const r=mode==='%'?getCurrentBalance()*(v/100):v; document.getElementById('risk-preview').innerText=`Risk: $${r.toFixed(1)}`; document.getElementById('reward-preview').innerText=`Reward: $${(r*rr).toFixed(1)}`; }
-function initQuote() { document.getElementById('dynamic-quote').innerText = "Trade what you see, not what you think."; }
-window.renderDashboard = () => {
-    let w=0, t=journalData.filter(x=>x.status!=='OPEN'), pnl=0; t.forEach(x=>{pnl+=parseFloat(x.pnl); if(x.status==='WIN')w++});
-    const bal = initialCapital+pnl;
-    document.getElementById('dash-balance').innerText=`$${bal.toLocaleString()}`;
-    document.getElementById('dash-winrate').innerText=`${t.length?Math.round((w/t.length)*100):0}%`;
-    document.getElementById('dash-pnl').innerText=`${pnl>=0?'+':''}$${pnl.toLocaleString()}`;
-    renderCharts();
-}
-window.renderCharts = () => {
-    const ctx1=document.getElementById('chart-equity'); const ctx2=document.getElementById('chart-winloss');
-    if(ctx1 && window.Chart) {
-        const d = journalData.filter(x=>x.status!=='OPEN').sort((a,b)=>a.id-b.id);
-        let b=initialCapital; const pts=[initialCapital, ...d.map(x=>b+=parseFloat(x.pnl))];
-        if(chartInstances.eq) chartInstances.eq.destroy();
-        chartInstances.eq = new Chart(ctx1, {type:'line', data:{labels:pts.map((_,i)=>i), datasets:[{data:pts, borderColor:'#10b981', tension:0.2, fill:true}]}, options:{plugins:{legend:{display:false}}, scales:{x:{display:false}}}});
-    }
-    if(ctx2 && window.Chart) {
-        let w=0,l=0; journalData.filter(x=>x.status!=='OPEN').forEach(x=>x.status==='WIN'?w++:l++);
-        if(chartInstances.wl) chartInstances.wl.destroy();
-        chartInstances.wl = new Chart(ctx2, {type:'doughnut', data:{labels:['Win','Loss'], datasets:[{data:[w,l], backgroundColor:['#10b981','#f43f5e'], borderWidth:0}]}, options:{cutout:'70%', plugins:{legend:{position:'right'}}}});
-    }
-}
-// --- LANDING PAGE LOGIC ---
-window.enterSystem = function() {
-    const landing = document.getElementById('landing-page');
-    landing.classList.add('fade-out-up');
-    
-    setTimeout(() => {
-        const storedUser = localStorage.getItem('min_sys_current_user');
-        // Nếu đã có user lưu trong máy -> Tự động đăng nhập luôn
-        if (storedUser) {
-            window.authLogin(); 
-        } else {
-            // Chưa có -> Hiện màn hình đăng nhập
-            document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('auth-screen').classList.add('fade-in');
-        }
-    }, 600);
-}
+function initQuote() { document.getElementById('dashboard-marquee').innerText = "Trade what you see, not what you think."; }
