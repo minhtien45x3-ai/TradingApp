@@ -140,53 +140,121 @@ window.transferAnalysisToJournal = function() {
     }
 }
 
-// --- AI SCAN LOGIC ---
-async function callGeminiAPI(prompt, imageBase64) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// --- 5. AI GEMINI LOGIC (ĐÃ FIX LỖI) ---
+async function callGeminiAPI(prompt, imageBase64 = null) {
+    const model = "gemini-1.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+    
     const parts = [{ text: prompt }];
-    if (imageBase64) parts.push({ inlineData: { mimeType: "image/png", data: imageBase64.split(',')[1] } });
-    const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts }] }) });
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+    if (imageBase64) {
+        const cleanBase64 = imageBase64.split(',')[1];
+        parts.push({ inlineData: { mimeType: "image/png", data: cleanBase64 } });
+    }
+    
+    try {
+        const response = await fetch(url, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify({ contents: [{ parts }] }) 
+        });
+
+        const data = await response.json();
+
+        // --- ĐOẠN FIX LỖI "UNDEFINED READING 0" ---
+        if (!response.ok) {
+            console.error("API Error Response:", data);
+            throw new Error(data.error?.message || `Lỗi kết nối API (${response.status})`);
+        }
+
+        if (!data.candidates || data.candidates.length === 0) {
+            console.error("No Candidates:", data);
+            if (data.promptFeedback) throw new Error("AI từ chối phân tích do vi phạm chính sách an toàn.");
+            throw new Error("AI không trả về kết quả nào.");
+        }
+        // ------------------------------------------
+
+        return data.candidates[0].content.parts[0].text;
+
+    } catch (error) {
+        throw error; // Ném lỗi ra để hàm runAIAnalysis bắt được
+    }
 }
 
 window.handleAIUpload = function(input) {
-    if (input.files[0]) {
-        const r = new FileReader();
-        r.onload = (e) => {
-            document.getElementById('ai-preview-img').src = e.target.result;
-            document.getElementById('ai-preview-img').classList.remove('hidden');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('ai-preview-img');
+            img.src = e.target.result;
+            img.classList.remove('hidden');
             document.getElementById('ai-upload-placeholder').classList.add('hidden');
             currentAnalysisImageBase64 = e.target.result;
         };
-        r.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(input.files[0]);
     }
 }
 
 window.runAIAnalysis = async function() {
-    if(!currentAnalysisImageBase64) return alert("Chọn ảnh trước!");
+    if(!currentAnalysisImageBase64) return alert("Vui lòng chọn ảnh biểu đồ!");
+    
     const btn = document.getElementById('btn-ai-analyze');
-    btn.disabled = true; btn.innerHTML = "Đang phân tích...";
-    const pair = document.getElementById('ai-pair-input').value;
-    const prompt = `Phân tích biểu đồ ${pair}. Trả về JSON: { "pattern_name": "Tên mẫu hình (TV)", "score": 85, "conclusion": "Lời khuyên (Markdown TV)" }`;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> ĐANG PHÂN TÍCH...`;
+    btn.disabled = true;
+    
+    const pair = document.getElementById('ai-pair-input').value || "Unknown";
+    const tf = document.getElementById('ai-tf-input').value;
+    
+    // Prompt yêu cầu trả về JSON chuẩn xác hơn
+    const prompt = `Bạn là chuyên gia Trading. Hãy phân tích biểu đồ ${pair} khung ${tf}. 
+    YÊU CẦU BẮT BUỘC: Chỉ trả về 1 chuỗi JSON duy nhất, không dùng markdown block (bỏ dấu \`\`\`json).
+    Cấu trúc JSON: 
+    { 
+        "pattern_name": "Tên setup/mô hình (Tiếng Việt)", 
+        "score": 85, 
+        "conclusion": "Đánh giá chi tiết (viết dạng văn bản bình thường)" 
+    }`;
+    
     try {
         const text = await callGeminiAPI(prompt, currentAnalysisImageBase64);
-        const json = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
-        document.getElementById('ai-res-pattern').innerText = json.pattern_name;
-        document.getElementById('ai-res-score').innerText = json.score + "%";
-        document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion);
+        
+        // Làm sạch chuỗi JSON phòng trường hợp AI vẫn thêm markdown
+        let cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        // Parse JSON
+        let result;
+        try {
+            result = JSON.parse(cleanJson);
+        } catch (e) {
+            console.error("JSON Parse Error:", text);
+            throw new Error("Lỗi định dạng dữ liệu từ AI. Hãy thử lại.");
+        }
+        
+        document.getElementById('ai-res-pattern').innerText = result.pattern_name || "Không xác định";
+        document.getElementById('ai-res-score').innerText = (result.score || 0) + "%";
+        document.getElementById('ai-res-time').innerText = new Date().toLocaleTimeString();
+        document.getElementById('ai-res-conclusion').innerHTML = marked.parse(result.conclusion || "Không có kết luận");
+        
         document.getElementById('ai-result-empty').classList.add('hidden');
         document.getElementById('ai-result-content').classList.remove('hidden');
-    } catch (e) { alert("Lỗi: " + e.message); }
-    btn.disabled = false; btn.innerHTML = "BẮT ĐẦU";
+
+    } catch (e) {
+        console.error("Analysis Error:", e);
+        alert("Lỗi phân tích: " + e.message + "\n(Kiểm tra lại API Key trong code app.js)");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        lucide.createIcons();
+    }
 }
 
 window.resetAI = function() {
     document.getElementById('ai-result-content').classList.add('hidden');
     document.getElementById('ai-result-empty').classList.remove('hidden');
-    currentAnalysisImageBase64 = null;
+    document.getElementById('ai-upload-input').value = "";
     document.getElementById('ai-preview-img').classList.add('hidden');
     document.getElementById('ai-upload-placeholder').classList.remove('hidden');
+    currentAnalysisImageBase64 = null;
 }
 
 // --- CAPITAL LOGIC ---
@@ -418,4 +486,5 @@ window.renderCharts = () => {
         if(chartInstances.wl) chartInstances.wl.destroy();
         chartInstances.wl = new Chart(ctx2, {type:'doughnut', data:{labels:['Win','Loss'], datasets:[{data:[w,l], backgroundColor:['#10b981','#f43f5e'], borderWidth:0}]}, options:{cutout:'70%', plugins:{legend:{position:'right'}}}});
     }
+
 }
