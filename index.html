@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>MINIMALIST PRO v26.0 (Full Version)</title>
+    <title>MINIMALIST PRO v28.0 (Admin & Background)</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{slate:{850:'#1e293b'}}}}}</script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -16,32 +17,46 @@
 <body class="bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden">
 
     <div id="landing-page" class="fixed inset-0 z-[300] bg-[#020617] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-        <div class="blob blob-1 rounded-full"></div><div class="blob blob-2 rounded-full"></div><div class="blob blob-3 rounded-full"></div>
+        <div class="blob blob-1 rounded-full"></div>
+        <div class="blob blob-2 rounded-full"></div>
+        <div class="blob blob-3 rounded-full"></div>
         <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 pointer-events-none"></div>
+
         <div class="intro-glass relative z-10 p-10 md:p-16 rounded-3xl max-w-2xl w-full flex flex-col items-center fade-in border-t border-slate-700/50">
-            <div class="mb-8 p-4 bg-white/5 rounded-2xl border border-white/10 shadow-lg animate-float"><i data-lucide="footprints" class="text-emerald-400 w-12 h-12"></i></div>
+            <div class="mb-8 p-4 bg-white/5 rounded-2xl border border-white/10 shadow-lg animate-float">
+                <i data-lucide="footprints" class="text-emerald-400 w-12 h-12"></i>
+            </div>
             <h1 class="text-4xl md:text-5xl font-bold text-white mb-6 font-mono tracking-tight">MINIMALIST<span class="text-emerald-500">_PRO</span></h1>
-            <div class="relative mb-10"><i data-lucide="quote" class="absolute -top-4 -left-6 w-6 h-6 text-emerald-500/50"></i><p class="text-lg md:text-xl text-slate-300 font-light italic leading-relaxed font-sans">"Hành trình vạn dặm bắt đầu bằng một bước chân."</p><i data-lucide="quote" class="absolute -bottom-4 -right-6 w-6 h-6 text-emerald-500/50 rotate-180"></i><p class="text-xs text-slate-500 mt-2 uppercase tracking-widest font-bold">— Lão Tử —</p></div>
-            <button onclick="enterSystem()" class="group relative px-8 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 hover:text-white rounded-full font-bold border border-emerald-500/50 transition-all duration-300 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)] backdrop-blur-md"><span class="flex items-center gap-2">BƯỚC VÀO <i data-lucide="arrow-right" class="w-4 h-4"></i></span></button>
+            
+            <div class="relative mb-10">
+                <i data-lucide="quote" class="absolute -top-4 -left-6 w-6 h-6 text-emerald-500/50"></i>
+                <p class="text-lg md:text-xl text-slate-300 font-light italic leading-relaxed font-sans">"Hành trình vạn dặm bắt đầu bằng một bước chân."</p>
+                <i data-lucide="quote" class="absolute -bottom-4 -right-6 w-6 h-6 text-emerald-500/50 rotate-180"></i>
+                <p class="text-xs text-slate-500 mt-2 uppercase tracking-widest font-bold">— Lão Tử —</p>
+            </div>
+
+            <button onclick="enterSystem()" class="group relative px-8 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 hover:text-white rounded-full font-bold border border-emerald-500/50 transition-all duration-300 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)] backdrop-blur-md">
+                <span class="flex items-center gap-2">BƯỚC VÀO <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i></span>
+            </button>
         </div>
-        <div class="absolute bottom-6 text-[10px] text-slate-600 font-mono z-10">v26.0 • Discipline & Consistency</div>
+        <div class="absolute bottom-6 text-[10px] text-slate-600 font-mono z-10">v28.0 • System Ready</div>
     </div>
 
     <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-50 dark:bg-[#020617] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] hidden">
         <div class="glass-panel w-full max-w-md p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800">
-            <div class="text-center mb-8"><h1 class="text-2xl font-bold">ĐĂNG NHẬP</h1><p class="text-xs text-slate-500">Cloud Authentication</p></div>
+            <div class="text-center mb-8"><h1 class="text-2xl font-bold">ĐĂNG NHẬP</h1><p class="text-xs text-slate-500">Cloud Trading System</p></div>
             <div id="login-form" class="space-y-4">
                 <input type="text" id="login-user" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Tên đăng nhập">
                 <input type="password" id="login-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Mật khẩu">
                 <button onclick="authLogin()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95">VÀO HỆ THỐNG</button>
-                <p class="text-center text-xs text-slate-500 mt-4">Chưa có tài khoản? <a href="#" onclick="toggleAuth()" class="text-emerald-500">Đăng ký</a></p>
+                <p class="text-center text-xs text-slate-500 mt-4">Chưa có tài khoản? <a href="#" onclick="toggleAuth()" class="text-emerald-500 hover:underline">Đăng ký</a></p>
             </div>
             <div id="register-form" class="space-y-4 hidden">
                 <input type="text" id="reg-user" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Tên đăng nhập (Viết liền)">
-                <input type="email" id="reg-email" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Email">
+                <input type="email" id="reg-email" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Email (để duyệt)">
                 <input type="password" id="reg-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Mật khẩu">
                 <button onclick="authRegister()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl">GỬI YÊU CẦU ĐĂNG KÝ</button>
-                <p class="text-center text-xs text-slate-500 mt-4"><a href="#" onclick="toggleAuth()" class="text-emerald-500">Quay lại</a></p>
+                <p class="text-center text-xs text-slate-500 mt-4"><a href="#" onclick="toggleAuth()" class="text-emerald-500 hover:underline">Quay lại</a></p>
             </div>
         </div>
     </div>
@@ -53,10 +68,10 @@
                 <button onclick="switchTab('dashboard')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Dashboard</button>
                 <button onclick="switchTab('journal')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Nhật Ký</button>
                 <button onclick="switchTab('analysis')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Phân Tích</button>
-                <button onclick="switchTab('wiki')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Wiki</button>
+                <button onclick="switchTab('wiki')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Wiki AI</button>
                 <button onclick="switchTab('ai')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap text-indigo-500">AI Scan</button>
                 <button onclick="switchTab('capital')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Vốn</button>
-                <button id="btn-admin-panel" onclick="openAdminPanel()" class="hidden px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold uppercase whitespace-nowrap">DUYỆT</button>
+                <button id="btn-admin-panel" onclick="openAdminPanel()" class="hidden px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold uppercase whitespace-nowrap">DUYỆT USER</button>
             </nav>
             <div class="flex items-center gap-3">
                 <span id="header-balance" class="font-mono font-bold text-emerald-500 text-sm hidden md:block">$0</span>
@@ -66,7 +81,6 @@
         </header>
 
         <main class="flex-1 overflow-y-auto no-scrollbar p-4 w-full max-w-[1920px] mx-auto">
-            
             <div id="tab-dashboard" class="space-y-4 fade-in">
                 <div class="glass-panel h-10 rounded-lg flex items-center px-4 overflow-hidden border-l-4 border-emerald-500"><div class="marquee-wrapper"><div id="dashboard-marquee" class="marquee-content text-xs font-mono font-bold text-emerald-500">Loading...</div></div></div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

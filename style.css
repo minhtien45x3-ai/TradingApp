@@ -4,10 +4,11 @@
 body { font-family: var(--font-sans); transition: all 0.5s ease; min-height: 100vh; display: flex; flex-direction: column; }
 .font-mono { font-family: var(--font-mono); }
 
-/* THEMES */
+/* --- THEMES --- */
 body.bg-theme-default { background-color: #f0f4f8; background-image: radial-gradient(at 0% 0%, rgba(56,189,248,0.1) 0, transparent 50%), url('https://grainy-gradients.vercel.app/noise.svg'); color: #1e293b; }
 html.dark body.bg-theme-default { background-color: #020617; background-image: radial-gradient(at 0% 0%, rgba(56,189,248,0.15) 0, transparent 50%), url('https://grainy-gradients.vercel.app/noise.svg'); color: #cbd5e1; }
 
+/* Các theme màu khác (Giữ nguyên) */
 body.bg-theme-galaxy { background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e); color: #e2e8f0 !important; }
 body.bg-theme-emerald { background: linear-gradient(-45deg, #004d40, #00695c, #004d40); color: #f1f5f9 !important; }
 body.bg-theme-midnight { background: linear-gradient(to bottom right, #0f172a, #1e293b, #020617); color: #cbd5e1 !important; }
@@ -17,21 +18,32 @@ body.bg-theme-nebula { background: linear-gradient(135deg, #240b36, #c31432); co
 body.bg-theme-oceanic { background: linear-gradient(to bottom, #0f172a, #0e7490); color: #cffafe !important; }
 body.bg-theme-forest { background: linear-gradient(to bottom right, #052e16, #14532d); color: #dcfce7 !important; }
 
-/* GLASSMORPHISM */
+/* --- GLASSMORPHISM --- */
 .glass-panel { backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border: 1px solid rgba(255,255,255,0.125); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: all 0.3s; }
 html:not(.dark) .glass-panel { background: rgba(255,255,255,0.75); border-color: rgba(255,255,255,0.6); }
 html.dark .glass-panel { background: rgba(17,25,40,0.7); border-color: rgba(255,255,255,0.08); }
 body:not(.bg-theme-default) .glass-panel { background: rgba(0,0,0,0.3) !important; border-color: rgba(255,255,255,0.15) !important; color: inherit; }
 
-/* ANIMATION */
+/* --- HIỆU ỨNG MÀN HÌNH CHÀO (NEW) --- */
 .blob { position: absolute; filter: blur(80px); z-index: 0; animation: blob-bounce 10s infinite ease-in-out; opacity: 0.6; }
 .blob-1 { top: 10%; left: 10%; width: 300px; height: 300px; background: #10b981; animation-delay: 0s; }
 .blob-2 { bottom: 10%; right: 10%; width: 300px; height: 300px; background: #3b82f6; animation-delay: 2s; }
 .blob-3 { bottom: 20%; left: 30%; width: 200px; height: 200px; background: #8b5cf6; animation-delay: 4s; }
-@keyframes blob-bounce { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } }
 
-.intro-glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+@keyframes blob-bounce {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+}
 
+.intro-glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* --- UTILS --- */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 4px; }
