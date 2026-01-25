@@ -3,118 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MINIMALIST PRO v30.0 (Full Features)</title>
+    <title>MINIMALIST PRO v31.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{slate:{850:'#1e293b'}}}}}</script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <style>.no-scrollbar::-webkit-scrollbar{display:none}</style>
+    <style>.no-scrollbar::-webkit-scrollbar{display:none}.pb-safe{padding-bottom:env(safe-area-inset-bottom)}</style>
 </head>
 <body class="bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden">
 
-    <div id="landing-page" class="fixed inset-0 z-[300] bg-[#020617] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-        <div class="blob blob-1 rounded-full"></div>
-        <div class="blob blob-2 rounded-full"></div>
-        <div class="blob blob-3 rounded-full"></div>
-        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 pointer-events-none"></div>
+    <div id="landing-page" class="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-30 animate-pulse"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-30 animate-pulse" style="animation-delay: 2s"></div>
 
-        <div class="intro-glass relative z-10 p-10 md:p-16 rounded-3xl max-w-2xl w-full flex flex-col items-center fade-in border-t border-slate-700/50">
-            <div class="mb-8 p-4 bg-white/5 rounded-2xl border border-white/10 shadow-lg animate-bounce">
-                <i data-lucide="footprints" class="text-emerald-400 w-12 h-12"></i>
+        <div class="glass-panel relative z-10 p-12 rounded-[40px] max-w-lg w-full flex flex-col items-center fade-in border border-white/10">
+            <div class="mb-8 p-5 bg-white/10 rounded-3xl shadow-2xl backdrop-blur-xl">
+                <i data-lucide="bar-chart-2" class="text-white w-16 h-16"></i>
             </div>
-            <h1 class="text-4xl md:text-5xl font-bold text-white mb-6 font-mono tracking-tight">MINIMALIST<span class="text-emerald-500">_PRO</span></h1>
+            <h1 class="text-5xl font-bold text-white mb-6 font-sans tracking-tight">Trader<span class="text-ios-green">OS</span></h1>
             
-            <div class="relative mb-10">
-                <i data-lucide="quote" class="absolute -top-4 -left-6 w-6 h-6 text-emerald-500/50"></i>
-                <p class="text-lg md:text-xl text-slate-300 font-light italic leading-relaxed font-sans">"Hành trình vạn dặm bắt đầu bằng một bước chân."</p>
-                <i data-lucide="quote" class="absolute -bottom-4 -right-6 w-6 h-6 text-emerald-500/50 rotate-180"></i>
-                <p class="text-xs text-slate-500 mt-2 uppercase tracking-widest font-bold">— Lão Tử —</p>
+            <div class="relative mb-12 max-w-xs">
+                <p class="text-lg text-slate-300 font-medium italic leading-relaxed">"Hành trình vạn dặm bắt đầu bằng một bước chân."</p>
+                <p class="text-xs text-slate-500 mt-3 font-bold uppercase tracking-widest">— Lão Tử —</p>
             </div>
 
-            <button onclick="enterSystem()" class="group relative px-8 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 hover:text-white rounded-full font-bold border border-emerald-500/50 transition-all duration-300 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)] backdrop-blur-md">
-                <span class="flex items-center gap-2">BẮT ĐẦU <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i></span>
+            <button onclick="enterSystem()" class="w-full py-4 bg-white text-black hover:bg-slate-200 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 shadow-xl">
+                BẮT ĐẦU NGAY
             </button>
         </div>
-        <div class="absolute bottom-6 text-[10px] text-slate-600 font-mono z-10">v30.0 • Integrity & Discipline</div>
     </div>
 
-    <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-50 dark:bg-[#020617] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] hidden">
-        <div class="glass-panel w-full max-w-md p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800">
-            <div class="text-center mb-8"><h1 class="text-2xl font-bold">ĐĂNG NHẬP</h1><p class="text-xs text-slate-500">Cloud Trading System</p></div>
+    <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md hidden">
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl shadow-2xl">
+            <div class="text-center mb-8"><h1 class="text-2xl font-bold">Xác Thực</h1><p class="text-xs text-slate-500">Đăng nhập để truy cập dữ liệu</p></div>
             <div id="login-form" class="space-y-4">
-                <input type="text" id="login-user" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Tên đăng nhập">
-                <input type="password" id="login-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Mật khẩu">
-                <button onclick="authLogin()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95">VÀO HỆ THỐNG</button>
-                <p class="text-center text-xs text-slate-500 mt-4">Chưa có tài khoản? <a href="#" onclick="toggleAuth()" class="text-emerald-500 hover:underline">Đăng ký</a></p>
+                <input type="text" id="login-user" class="w-full bg-slate-100 dark:bg-slate-800/50 border-0 rounded-2xl p-4 outline-none font-bold" placeholder="Tên đăng nhập">
+                <input type="password" id="login-pass" class="w-full bg-slate-100 dark:bg-slate-800/50 border-0 rounded-2xl p-4 outline-none font-bold" placeholder="Mật khẩu">
+                <button onclick="authLogin()" class="w-full bg-ios-blue hover:bg-blue-600 text-white bg-blue-600 font-bold py-4 rounded-2xl shadow-lg transition">ĐĂNG NHẬP</button>
+                <p class="text-center text-sm text-slate-500 mt-4 cursor-pointer hover:text-blue-500" onclick="toggleAuth()">Chưa có tài khoản? <b>Đăng ký</b></p>
             </div>
             <div id="register-form" class="space-y-4 hidden">
-                <input type="text" id="reg-user" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Tên đăng nhập (Viết liền)">
-                <input type="email" id="reg-email" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Email (để duyệt)">
-                <input type="password" id="reg-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 outline-none" placeholder="Mật khẩu">
-                <button onclick="authRegister()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl">GỬI YÊU CẦU ĐĂNG KÝ</button>
-                <p class="text-center text-xs text-slate-500 mt-4"><a href="#" onclick="toggleAuth()" class="text-emerald-500 hover:underline">Quay lại</a></p>
+                <input type="text" id="reg-user" class="w-full bg-slate-100 dark:bg-slate-800/50 border-0 rounded-2xl p-4 outline-none" placeholder="Tên đăng nhập mới">
+                <input type="email" id="reg-email" class="w-full bg-slate-100 dark:bg-slate-800/50 border-0 rounded-2xl p-4 outline-none" placeholder="Email liên hệ">
+                <input type="password" id="reg-pass" class="w-full bg-slate-100 dark:bg-slate-800/50 border-0 rounded-2xl p-4 outline-none" placeholder="Mật khẩu mới">
+                <button onclick="authRegister()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl shadow-lg">ĐĂNG KÝ</button>
+                <p class="text-center text-sm text-slate-500 mt-4 cursor-pointer hover:text-blue-500" onclick="toggleAuth()">Quay lại Đăng nhập</p>
             </div>
         </div>
     </div>
 
     <div id="app-container" class="hidden flex-col h-screen relative">
-        <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md h-16 flex items-center justify-between px-4">
-            <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('dashboard')"><div class="bg-emerald-600 p-2 rounded-lg"><i data-lucide="layers" class="text-white w-5 h-5"></i></div><h1 class="font-bold font-mono hidden md:block">MINIMALIST_PRO</h1></div>
+        <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 sticky top-0 z-50 backdrop-blur-xl h-16 flex items-center justify-between px-4">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('dashboard')">
+                <div class="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-black"><i data-lucide="activity" class="w-5 h-5"></i></div>
+                <h1 class="font-bold font-sans text-lg hidden md:block">Minimalist</h1>
+            </div>
             <nav class="flex gap-1 overflow-x-auto no-scrollbar">
-                <button onclick="switchTab('dashboard')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Dashboard</button>
-                <button onclick="switchTab('journal')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Nhật Ký</button>
-                <button onclick="switchTab('analysis')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Phân Tích</button>
-                <button onclick="switchTab('wiki')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Wiki AI</button>
-                <button onclick="switchTab('ai')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap text-indigo-500">AI Scan</button>
-                <button onclick="switchTab('capital')" class="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold uppercase whitespace-nowrap">Vốn</button>
-                <button id="btn-admin-panel" onclick="openAdminPanel()" class="hidden px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold uppercase whitespace-nowrap">DUYỆT USER</button>
+                <button onclick="switchTab('dashboard')" class="px-3 py-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-xs font-bold uppercase transition">Tổng Quan</button>
+                <button onclick="switchTab('journal')" class="px-3 py-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-xs font-bold uppercase transition">Nhật Ký</button>
+                <button onclick="switchTab('analysis')" class="px-3 py-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-xs font-bold uppercase transition">Phân Tích</button>
+                <button onclick="switchTab('wiki')" class="px-3 py-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-xs font-bold uppercase transition">Wiki AI</button>
+                <button onclick="switchTab('capital')" class="px-3 py-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-xs font-bold uppercase transition">Vốn</button>
+                <button id="btn-admin-panel" onclick="openAdminPanel()" class="hidden px-3 py-2 bg-red-500 text-white rounded-xl text-xs font-bold uppercase ml-2 shadow-lg">DUYỆT</button>
             </nav>
             <div class="flex items-center gap-3">
-                <span id="header-balance" class="font-mono font-bold text-emerald-500 text-sm hidden md:block">$0</span>
-                <button onclick="openBgModal()"><i data-lucide="palette" class="w-5 h-5 text-blue-500"></i></button>
+                <button onclick="openBgModal()"><i data-lucide="settings-2" class="w-5 h-5 text-slate-500 hover:text-black dark:hover:text-white"></i></button>
                 <button onclick="authLogout()"><i data-lucide="log-out" class="w-5 h-5 text-rose-500"></i></button>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto no-scrollbar p-4 w-full max-w-[1920px] mx-auto">
-            <div id="tab-dashboard" class="space-y-4 fade-in">
-                <div class="glass-panel h-10 rounded-lg flex items-center px-4 overflow-hidden border-l-4 border-emerald-500"><div class="marquee-wrapper"><div id="dashboard-marquee" class="marquee-content text-xs font-mono font-bold text-emerald-500">Loading...</div></div></div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="glass-panel p-4 rounded-xl border-t-4 border-emerald-500"><p class="text-xs font-bold uppercase">Vốn</p><h2 class="text-xl md:text-2xl font-mono" id="dash-balance">$0</h2></div>
-                    <div class="glass-panel p-4 rounded-xl border-t-4 border-blue-500"><p class="text-xs font-bold uppercase">Winrate</p><h2 class="text-xl md:text-2xl font-mono text-blue-500" id="dash-winrate">0%</h2></div>
-                    <div class="glass-panel p-4 rounded-xl border-t-4 border-purple-500"><p class="text-xs font-bold uppercase">PnL</p><h2 class="text-xl md:text-2xl font-mono text-purple-500" id="dash-pnl">$0</h2></div>
-                    <div class="glass-panel p-4 rounded-xl border-t-4 border-rose-500"><p class="text-xs font-bold uppercase">DD</p><h2 class="text-xl md:text-2xl font-mono text-rose-500" id="dash-dd">0%</h2></div>
+        <main class="flex-1 overflow-y-auto no-scrollbar p-4 w-full max-w-[1920px] mx-auto space-y-6">
+            
+            <div id="tab-dashboard" class="space-y-6 fade-in">
+                <div class="glass-panel h-12 flex items-center px-4 overflow-hidden border-l-4 border-emerald-500">
+                    <div class="marquee-wrapper w-full">
+                        <div id="dashboard-marquee" class="marquee-content text-sm font-medium italic text-slate-600 dark:text-slate-300">
+                            "Hành trình vạn dặm bắt đầu bằng một bước chân." - Lão Tử
+                        </div>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="glass-panel p-4 rounded-xl"><h3 class="text-xs font-bold uppercase mb-2">Equity</h3><div class="h-48"><canvas id="chart-equity"></canvas></div></div><div class="glass-panel p-4 rounded-xl"><h3 class="text-xs font-bold uppercase mb-2">Win/Loss</h3><div class="h-48 flex justify-center"><canvas id="chart-winloss"></canvas></div></div></div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div class="lg:col-span-2 glass-panel p-4 rounded-xl overflow-hidden flex flex-col"><h3 class="text-xs font-bold text-slate-500 uppercase mb-3">Hiệu Suất Tháng</h3><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 dark:bg-slate-900/50 text-[10px] uppercase text-slate-500"><tr><th class="p-2">Thời Gian</th><th class="p-2 text-center">Tổng</th><th class="p-2 text-center text-emerald-500">Thắng</th><th class="p-2 text-center text-rose-500">Thua</th><th class="p-2 text-right">PnL</th></tr></thead><tbody id="stats-monthly-body" class="font-mono text-slate-700 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div></div>
-                    <div class="glass-panel p-4 rounded-xl flex flex-col gap-4"><h3 class="text-xs font-bold text-slate-500 uppercase">Mẫu Hình</h3><div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg"><p class="text-[10px] text-emerald-600 uppercase font-bold">Tốt Nhất</p><div class="flex justify-between"><span class="font-bold text-sm truncate" id="stat-best-pattern">-</span><span class="font-mono font-bold text-emerald-500" id="stat-best-pnl">$0</span></div></div><div class="bg-rose-50 dark:bg-rose-900/20 p-3 rounded-lg"><p class="text-[10px] text-rose-600 uppercase font-bold">Tệ Nhất</p><div class="flex justify-between"><span class="font-bold text-sm truncate" id="stat-worst-pattern">-</span><span class="font-mono font-bold text-rose-500" id="stat-worst-pnl">$0</span></div></div></div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5"><p class="text-xs text-slate-500 font-bold uppercase">Balance</p><h2 class="text-2xl font-mono font-bold mt-1" id="dash-balance">$0</h2></div>
+                    <div class="glass-panel p-5"><p class="text-xs text-slate-500 font-bold uppercase">Winrate</p><h2 class="text-2xl font-mono font-bold mt-1 text-ios-blue" id="dash-winrate">0%</h2></div>
+                    <div class="glass-panel p-5"><p class="text-xs text-slate-500 font-bold uppercase">Profit</p><h2 class="text-2xl font-mono font-bold mt-1 text-purple-500" id="dash-pnl">$0</h2></div>
+                    <div class="glass-panel p-5"><p class="text-xs text-slate-500 font-bold uppercase">Drawdown</p><h2 class="text-2xl font-mono font-bold mt-1 text-ios-red" id="dash-dd">0%</h2></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-80">
+                    <div class="glass-panel p-4"><h3 class="text-xs font-bold uppercase mb-2">Tăng Trưởng</h3><div class="h-full pb-6"><canvas id="chart-equity"></canvas></div></div>
+                    <div class="glass-panel p-4"><h3 class="text-xs font-bold uppercase mb-2">Hiệu Suất</h3><div class="h-full pb-6 flex justify-center"><canvas id="chart-winloss"></canvas></div></div>
                 </div>
             </div>
-            
-            <div id="tab-journal" class="hidden fade-in flex flex-col h-full"><div class="flex justify-between items-center mb-4"><button onclick="openEntryModal()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm shadow flex gap-2"><i data-lucide="plus"></i> Thêm</button><span class="font-mono text-xs font-bold" id="journal-pnl-today">$0.00 Today</span></div><div class="glass-panel rounded-xl overflow-hidden flex-1"><div class="overflow-auto h-full"><table class="w-full text-left"><thead class="sticky top-0 bg-slate-100 dark:bg-slate-900 z-10 text-[10px] uppercase"><tr><th class="p-3">Ngày</th><th class="p-3">Chart</th><th class="p-3">Cặp</th><th class="p-3">PnL</th><th class="p-3">Xóa</th></tr></thead><tbody id="journal-list" class="text-sm font-mono divide-y divide-slate-200 dark:divide-slate-800"></tbody></table></div></div></div>
-            
-            <div id="tab-analysis" class="hidden fade-in h-full"><div class="flex flex-col md:flex-row gap-4 h-full"><div class="md:w-64 glass-panel rounded-xl p-2 overflow-y-auto" id="strategy-list-container"></div><div class="flex-1 glass-panel rounded-xl p-4 flex flex-col relative"><div id="analysis-empty-state" class="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-black/80 z-10"><p>Chọn chiến lược</p></div><div class="flex justify-between mb-4"><h2 id="current-setup-name" class="font-bold text-emerald-500">Setup</h2><button onclick="transferAnalysisToJournal()" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs">Vào Nhật Ký</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto"><div><div class="h-48 bg-black/20 rounded mb-2 overflow-hidden"><img id="ana-theory-img" class="w-full h-full object-contain"></div><div id="ana-theory-content" class="text-xs whitespace-pre-line"></div></div><div><div class="h-48 bg-black/20 rounded mb-2 relative flex items-center justify-center"><input type="file" class="absolute inset-0 opacity-0 z-10" onchange="handleAnalysisUpload(this)"><img id="ana-real-img" class="absolute inset-0 w-full h-full object-contain hidden"><i data-lucide="upload" class="text-slate-500"></i></div><div id="ana-checklist-container" class="grid grid-cols-2 gap-2 text-xs"></div></div></div></div></div></div>
-            
-            <div id="tab-wiki" class="hidden fade-in flex flex-col h-full"><div class="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between shrink-0"><div class="relative w-full md:w-1/2"><i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-slate-400"></i><input type="text" id="wiki-search" onkeyup="filterWiki()" placeholder="Tìm kiếm Wiki..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-800 dark:text-white outline-none"></div><button onclick="openWikiEditor()" class="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-2">Tạo Mới</button></div><div class="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar shrink-0" id="wiki-filter-container"></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto custom-scrollbar pr-2 pb-10 flex-1" id="wiki-grid"></div></div>
 
-            <div id="tab-ai" class="hidden fade-in h-full"><div class="flex flex-col items-center justify-center h-full text-center"><div class="relative group border-2 border-dashed border-slate-600 rounded-xl p-8 mb-4 hover:border-emerald-500 transition"><input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleAIUpload(this)"><i data-lucide="scan-eye" class="w-12 h-12 text-slate-500 mx-auto mb-2"></i><p class="text-sm">Tải ảnh lên</p><img id="ai-preview-img" class="hidden absolute inset-0 w-full h-full object-contain bg-slate-900 rounded-xl"></div><div class="flex gap-2 mb-4"><select id="ai-pair-input" class="bg-slate-800 p-2 rounded text-sm"><option>XAUUSD</option><option>BTCUSD</option></select><button onclick="runAIAnalysis()" id="btn-ai-analyze" class="bg-indigo-600 px-6 py-2 rounded text-white font-bold">PHÂN TÍCH</button></div><div id="ai-result-content" class="hidden text-left bg-slate-800 p-4 rounded-xl max-w-lg w-full"><h3 class="font-bold text-emerald-400" id="ai-res-pattern">Pattern</h3><div id="ai-res-conclusion" class="text-sm mt-2 prose dark:prose-invert"></div><button onclick="resetAI()" class="mt-4 text-xs text-slate-400 underline">Làm lại</button></div></div></div>
-            
-            <div id="tab-capital" class="hidden fade-in h-full"><div class="p-4 glass-panel rounded-xl"><h3 class="font-bold mb-4">Quản Lý Vốn</h3><div class="grid grid-cols-2 gap-4 mb-4"><div><label class="text-xs">Vốn Gốc</label><input id="real-init-capital" type="number" class="w-full bg-slate-800 p-2 rounded"></div><button onclick="saveInitialCapital()" class="bg-blue-600 text-white rounded mt-4">Lưu</button></div><table class="w-full text-sm"><thead class="text-xs uppercase text-slate-500"><tr><th>#</th><th class="text-right">Vốn</th><th class="text-right">Lợi Nhuận</th></tr></thead><tbody id="cap-projection-list"></tbody></table></div></div>
+            <div id="tab-journal" class="hidden fade-in h-full flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <button onclick="openEntryModal()" class="px-5 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold shadow-lg hover:scale-105 transition flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Viết Nhật Ký</button>
+                    <div class="text-right"><p class="text-xs text-slate-500 font-bold uppercase">Hôm nay</p><p class="text-lg font-mono font-bold" id="journal-pnl-today">$0.00</p></div>
+                </div>
+                <div class="glass-panel flex-1 overflow-hidden flex flex-col">
+                    <div class="overflow-auto custom-scrollbar flex-1">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur z-10 text-xs font-bold uppercase text-slate-500">
+                                <tr>
+                                    <th class="p-4">Ngày</th>
+                                    <th class="p-4">Cặp</th>
+                                    <th class="p-4 text-center">Ảnh Chart</th>
+                                    <th class="p-4">Mẫu Hình</th>
+                                    <th class="p-4 text-center">R:R</th>
+                                    <th class="p-4 text-right">Lãi/Lỗ (PnL)</th>
+                                    <th class="p-4 text-center">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="journal-list" class="text-sm font-medium divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-analysis" class="hidden fade-in h-full flex flex-col">
+                <div class="flex h-full gap-6">
+                    <div class="w-72 glass-panel flex flex-col overflow-hidden shrink-0">
+                        <div class="p-4 border-b border-slate-200 dark:border-slate-700 font-bold text-center">THƯ VIỆN SETUP</div>
+                        <div class="flex-1 overflow-y-auto p-2 space-y-2" id="strategy-list-container"></div>
+                    </div>
+                    <div class="flex-1 glass-panel flex flex-col relative overflow-hidden">
+                        <div id="analysis-empty-state" class="absolute inset-0 flex flex-col items-center justify-center opacity-50"><i data-lucide="layout" class="w-16 h-16 mb-2"></i><p>Chọn Setup bên trái</p></div>
+                        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <h2 class="text-xl font-bold text-ios-green" id="current-setup-name">Tên Setup</h2>
+                            <button onclick="transferAnalysisToJournal()" class="px-4 py-2 bg-ios-blue text-white rounded-lg font-bold text-xs shadow-lg hover:bg-blue-600 transition">Lưu Vào Nhật Ký</button>
+                        </div>
+                        <div class="flex-1 p-6 grid grid-cols-2 gap-6 overflow-y-auto">
+                            <div class="space-y-2">
+                                <div class="aspect-video bg-black/10 dark:bg-white/5 rounded-xl overflow-hidden cursor-zoom-in group relative" onclick="viewImageFull(this.querySelector('img').src)">
+                                    <span class="absolute top-2 left-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-bold">LÝ THUYẾT</span>
+                                    <img id="ana-theory-img" class="w-full h-full object-contain transition group-hover:scale-105">
+                                </div>
+                                <div id="ana-theory-content" class="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700"></div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="aspect-video bg-black/10 dark:bg-white/5 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center relative group">
+                                    <input type="file" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleAnalysisUpload(this)">
+                                    <div class="text-center group-hover:scale-110 transition"><i data-lucide="upload" class="w-8 h-8 mx-auto mb-1 text-slate-400"></i><p class="text-xs font-bold text-slate-400">Upload Chart</p></div>
+                                    <img id="ana-real-img" class="absolute inset-0 w-full h-full object-contain hidden bg-slate-900 rounded-xl z-0">
+                                </div>
+                                <div class="glass-panel p-4">
+                                    <h3 class="text-xs font-bold uppercase mb-3 text-slate-500">Checklist Vào Lệnh (10 Tiêu Chí)</h3>
+                                    <div id="ana-checklist-container" class="grid grid-cols-2 gap-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-wiki" class="hidden fade-in h-full flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="relative w-96"><i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-slate-400"></i><input type="text" id="wiki-search" onkeyup="filterWiki()" placeholder="Tra cứu kiến thức..." class="w-full bg-slate-100 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 font-medium outline-none focus:ring-2 focus:ring-blue-500"></div>
+                    <button onclick="openWikiEditor()" class="px-6 py-3 bg-ios-green text-white rounded-xl font-bold shadow-lg hover:bg-green-600 transition flex items-center gap-2"><i data-lucide="plus"></i> Tạo Mới</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pb-10" id="wiki-grid"></div>
+            </div>
+
+            <div id="tab-capital" class="hidden fade-in h-full">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                    <div class="space-y-6">
+                        <div class="glass-panel p-6">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="wallet" class="text-blue-500"></i> Quản Lý Vốn</h3>
+                            <div class="flex gap-4">
+                                <input id="real-init-capital" type="number" class="flex-1 bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-mono text-xl font-bold" placeholder="Vốn gốc ($)">
+                                <button onclick="saveInitialCapital()" class="px-6 bg-blue-600 text-white rounded-xl font-bold shadow-lg">Lưu</button>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-6 flex-1 flex flex-col">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="trending-up" class="text-green-500"></i> Mô Phỏng Lãi Kép</h3>
+                            <div class="grid grid-cols-3 gap-4 mb-4">
+                                <div><label class="text-xs font-bold text-slate-500">Vốn Bắt Đầu</label><input id="cap-sim-start" type="number" class="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-lg font-bold" onchange="updateCapitalCalc()"></div>
+                                <div><label class="text-xs font-bold text-slate-500">Risk %</label><input id="cap-risk-pct" type="number" value="1" class="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-lg font-bold" onchange="updateCapitalCalc()"></div>
+                                <div><label class="text-xs font-bold text-slate-500">R:R</label><input id="cap-rr" type="number" value="2" class="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-lg font-bold" onchange="updateCapitalCalc()"></div>
+                            </div>
+                            <div class="flex-1 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                <table class="w-full text-sm text-left"><thead class="bg-slate-50 dark:bg-slate-900 sticky top-0"><tr><th class="p-2 text-center">#</th><th class="p-2 text-right">Balance</th><th class="p-2 text-right text-green-500">Profit</th></tr></thead><tbody id="cap-projection-list" class="font-mono"></tbody></table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 flex flex-col">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="list" class="text-purple-500"></i> Cài Đặt Mã Giao Dịch (Pairs)</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="new-pair-input" class="flex-1 bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold uppercase" placeholder="VD: XAUUSD, BTC...">
+                            <button onclick="addNewPair()" class="px-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-500"><i data-lucide="plus"></i></button>
+                        </div>
+                        <div id="pairs-list-container" class="flex-1 overflow-y-auto space-y-2 pr-2">
+                            </div>
+                    </div>
+                </div>
+            </div>
         </main>
 
-        <div id="entry-modal" class="fixed inset-0 z-[100] bg-black/80 hidden flex items-center justify-center p-4"><div class="bg-slate-900 w-full max-w-lg rounded-xl overflow-hidden flex flex-col max-h-[90vh]"><div class="p-4 border-b border-slate-800 flex justify-between"><h3 class="font-bold">Nhập Lệnh</h3><button onclick="closeModal('entry-modal')"><i data-lucide="x"></i></button></div><div class="p-4 overflow-y-auto space-y-3"><input type="date" id="inp-date" class="w-full bg-slate-800 p-3 rounded"><div class="grid grid-cols-2 gap-3"><select id="inp-pair" class="bg-slate-800 p-3 rounded font-bold"><option>XAUUSD</option><option>BTCUSD</option></select><select id="inp-dir" class="bg-slate-800 p-3 rounded font-bold"><option>BUY</option><option>SELL</option></select></div><select id="inp-strategy" class="w-full bg-slate-800 p-3 rounded"></select><div class="relative border-2 border-dashed border-slate-700 p-4 text-center rounded"><input type="file" class="absolute inset-0 opacity-0" onchange="handleEntryImage(this)"><p class="text-xs text-slate-400">Ảnh chart</p><img id="entry-img-preview" class="hidden absolute inset-0 w-full h-full object-cover bg-slate-900"></div><div class="flex gap-2"><input id="inp-risk" type="number" class="w-full bg-slate-800 p-3 rounded" placeholder="Risk %"><input id="inp-rr" type="number" class="w-full bg-slate-800 p-3 rounded" placeholder="R:R"></div><textarea id="inp-note" class="w-full bg-slate-800 p-3 rounded h-20" placeholder="Note..."></textarea></div><div class="p-4 border-t border-slate-800"><button onclick="saveEntry()" class="w-full bg-emerald-600 py-3 rounded font-bold">LƯU LỆNH</button></div></div></div>
-        
-        <div id="admin-modal" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center p-4"><div class="bg-slate-900 w-full max-w-2xl rounded-xl border border-rose-900"><div class="p-4 border-b border-slate-800 flex justify-between"><h3 class="font-bold text-rose-500">Duyệt Thành Viên</h3><button onclick="closeModal('admin-modal')"><i data-lucide="x"></i></button></div><div class="p-4 overflow-y-auto"><table class="w-full text-left text-sm"><tbody id="admin-user-list"></tbody></table><div id="admin-empty" class="text-center text-slate-500 mt-4 hidden">Không có yêu cầu</div></div></div></div>
-        
-        <div id="image-viewer-modal" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center" onclick="closeModal('image-viewer-modal')"><img id="image-viewer-img" class="max-w-full max-h-full p-2"></div>
-        <div id="bg-settings-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[150] flex items-center justify-center p-4"><div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full max-w-md rounded-2xl p-6"><button onclick="setBackground('bg-theme-default')" class="w-full border p-2 mb-2">Mặc Định</button><button onclick="setBackground('bg-theme-galaxy')" class="w-full border p-2 mb-2 bg-indigo-900">Galaxy</button><button onclick="closeModal('bg-settings-modal')" class="w-full bg-slate-700 text-white p-2">Đóng</button></div></div>
-        
-        <div id="wiki-editor-modal" class="fixed inset-0 bg-black/50 hidden z-[120] flex items-center justify-center p-4"><div class="bg-slate-900 w-full max-w-lg rounded-2xl"><div class="p-4 border-b border-slate-800"><h3 id="wiki-editor-title">Wiki</h3></div><div class="p-4 space-y-3"><input id="edit-id" type="hidden"><input id="edit-code" class="w-full bg-slate-800 p-2" placeholder="Code"><input id="edit-cat" class="w-full bg-slate-800 p-2" placeholder="Cat"><input id="edit-title" class="w-full bg-slate-800 p-2" placeholder="Title"><input id="edit-image-url" class="w-full bg-slate-800 p-2" placeholder="Img URL"><textarea id="edit-content" class="w-full bg-slate-800 p-2 h-20"></textarea></div><div class="p-4 border-t border-slate-800"><button onclick="saveWiki()" class="w-full bg-emerald-600 p-2 text-white">Lưu</button></div></div></div>
-        
-        <div id="wiki-detail-modal" class="fixed inset-0 bg-black/90 hidden z-[100] flex items-center justify-center p-4"><div class="bg-slate-900 w-full max-w-4xl rounded-2xl h-[90vh] flex flex-col"><div class="p-4 border-b border-slate-800 flex justify-between"><h2 id="view-title"></h2><div><button id="btn-edit-entry" class="p-2 bg-slate-700 mr-2"><i data-lucide="edit-2"></i></button><button id="btn-delete-entry" class="p-2 bg-rose-900 mr-2"><i data-lucide="trash"></i></button><button onclick="closeModal('wiki-detail-modal')"><i data-lucide="x"></i></button></div></div><div class="p-6 overflow-y-auto grid grid-cols-2 gap-4"><img id="view-image" class="w-full object-contain"><div id="view-content" class="whitespace-pre-line"></div></div></div></div>
+        <div id="entry-modal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+            <div class="glass-panel w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] bg-white dark:bg-slate-900">
+                <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <h3 class="font-bold text-xl">Nhật Ký Giao Dịch</h3>
+                    <button onclick="closeModal('entry-modal')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><i data-lucide="x"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto space-y-5 custom-scrollbar">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">Ngày</label><input type="date" id="inp-date" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold"></div>
+                        <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">Phiên</label><select id="inp-session" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold"><option>ASIA</option><option>LONDON</option><option>NEWYORK</option></select></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">Cặp Tiền</label><select id="inp-pair" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold uppercase"></select></div>
+                        <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">Hướng</label><select id="inp-dir" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold"><option value="BUY" class="text-green-500">BUY 🟢</option><option value="SELL" class="text-red-500">SELL 🔴</option></select></div>
+                    </div>
+                    <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">Chiến Lược</label><select id="inp-strategy" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold"></select></div>
+                    
+                    <div class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center relative group hover:border-blue-500 transition">
+                        <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleEntryImage(this)">
+                        <div id="entry-upload-hint"><i data-lucide="image" class="mx-auto w-8 h-8 text-slate-400 mb-1"></i><p class="text-xs font-bold text-slate-500">Thêm ảnh Chart</p></div>
+                        <img id="entry-img-preview" class="hidden w-full h-40 object-cover rounded-lg mt-2 relative z-0">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">Rủi Ro (Risk)</label><div class="flex"><input type="number" id="inp-risk" class="w-full rounded-l-xl bg-slate-100 dark:bg-slate-800 p-3 font-bold" value="1"><select id="inp-risk-mode" class="rounded-r-xl bg-slate-200 dark:bg-slate-700 px-2 font-bold text-xs"><option value="%">%</option><option value="$">$</option></select></div></div>
+                        <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">Tỷ lệ R:R</label><input type="number" id="inp-rr" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" value="2"></div>
+                    </div>
+                    <textarea id="inp-note" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl h-24 font-medium" placeholder="Ghi chú phân tích..."></textarea>
+                </div>
+                <div class="p-5 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                    <button onclick="saveEntry()" class="px-8 py-3 bg-ios-blue text-white rounded-xl font-bold shadow-lg hover:shadow-blue-500/30 transition">LƯU LỆNH</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="admin-modal" class="fixed inset-0 z-[200] bg-black/90 hidden flex items-center justify-center p-4"><div class="glass-panel w-full max-w-2xl bg-slate-900"><div class="p-4 border-b border-white/10 flex justify-between"><h3 class="font-bold text-white">Duyệt Thành Viên</h3><button onclick="closeModal('admin-modal')"><i data-lucide="x"></i></button></div><div class="p-4"><table class="w-full text-left text-sm text-slate-300"><tbody id="admin-user-list"></tbody></table><div id="admin-empty" class="text-center text-slate-500 hidden">Trống</div></div></div></div>
+        <div id="image-viewer-modal" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center cursor-zoom-out" onclick="closeModal('image-viewer-modal')"><img id="image-viewer-img" class="max-w-full max-h-full p-4 rounded-lg shadow-2xl"></div>
+        <div id="wiki-editor-modal" class="fixed inset-0 bg-black/50 hidden z-[120] flex items-center justify-center p-4"><div class="glass-panel w-full max-w-lg bg-white dark:bg-slate-900"><div class="p-4 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold">Wiki Editor</h3></div><div class="p-4 space-y-3"><input id="edit-id" type="hidden"><input id="edit-code" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" placeholder="Mã (VD: BB01)"><input id="edit-cat" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" placeholder="Danh mục"><input id="edit-title" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" placeholder="Tiêu đề"><input id="edit-image-url" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" placeholder="Link ảnh minh họa"><textarea id="edit-content" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl h-32 font-medium" placeholder="Nội dung..."></textarea></div><div class="p-4"><button onclick="saveWiki()" class="w-full py-3 bg-green-600 text-white rounded-xl font-bold">LƯU WIKI</button></div></div></div>
+        <div id="wiki-detail-modal" class="fixed inset-0 bg-black/90 hidden z-[100] flex items-center justify-center p-4"><div class="glass-panel w-full max-w-4xl h-[90vh] flex flex-col bg-white dark:bg-slate-900"><div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between"><h2 id="view-title" class="text-xl font-bold"></h2><div><button id="btn-edit-entry" class="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg mr-2"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button id="btn-delete-entry" class="p-2 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-lg mr-2"><i data-lucide="trash" class="w-4 h-4"></i></button><button onclick="closeModal('wiki-detail-modal')"><i data-lucide="x"></i></button></div></div><div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-6"><img id="view-image" class="w-full object-contain rounded-xl"><div id="view-content" class="whitespace-pre-line text-sm leading-relaxed"></div></div></div></div>
     </div>
 
     <script type="module" src="app.js"></script>
