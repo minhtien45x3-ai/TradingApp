@@ -2,14 +2,11 @@ import { db, doc, getDoc, setDoc, collection, getDocs, updateDoc } from './fireb
 
 // --- 1. CẤU HÌNH ---
 const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E";
-// DANH SÁCH ADMIN
-const ADMIN_LIST = ["admin", "minhtien45x3"]; 
-// MẬT KHẨU KHẨN CẤP CHO ADMIN (Dùng khi quên pass cũ)
-const ADMIN_MASTER_PASS = "admin123"; 
+const ADMIN_LIST = ["admin", "minhtien45x3"];
+const ADMIN_MASTER_PASS = "admin123"; // Pass cứu hộ khi quên mật khẩu
 
 // --- 2. GLOBAL STATE ---
-let journalData = [], wikiData = [], pairsData = [];
-let initialCapital = 20000;
+let journalData = [], wikiData = [], initialCapital = 20000;
 let currentEntryImg = null, currentAnalysisImg = null, chartInst = {};
 let isAdmin = false;
 let currentBgTheme = 'bg-theme-default';
@@ -20,15 +17,18 @@ let selectedAnalysisStrategy = null;
 
 const DEFAULT_WIKI = [{ id: "1", code: "XH01", cat: "Setup", title: "Uptrend", image: "", content: "Higher Highs" }];
 const CRITERIA_LIST = [{name:"XU HƯỚNG",desc:"Cấu trúc"},{name:"CẢN",desc:"Phản ứng"},{name:"NẾN",desc:"Đảo chiều"},{name:"R:R",desc:"Tỷ lệ"}];
+const ALL_THEMES = ['bg-theme-default', 'bg-theme-galaxy', 'bg-theme-emerald', 'bg-theme-midnight', 'bg-theme-sunset', 'bg-theme-aurora', 'bg-theme-nebula', 'bg-theme-oceanic', 'bg-theme-forest'];
 
 // --- 3. INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
+    // Đảm bảo Landing Page hiện, Auth ẩn khi mới vào
     const landing = document.getElementById('landing-page');
     if(landing) {
         landing.classList.remove('hidden');
         document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('app-container').classList.add('hidden');
     }
 });
 
@@ -37,7 +37,6 @@ window.loadData = async function() {
     if (!window.currentUser) return;
     updateMarquee("🔄 Đang tải dữ liệu...");
     
-    // Check quyền Admin
     isAdmin = ADMIN_LIST.includes(window.currentUser);
     const adminBtn = document.getElementById('btn-admin-panel');
     if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
@@ -52,6 +51,7 @@ window.loadData = async function() {
             initialCapital = d.capital || 20000;
             if(d.background) window.setBackground(d.background, false);
         } else {
+            // Nếu user đăng nhập thành công nhưng chưa có data -> tạo mới
             await saveUserData();
         }
 
@@ -63,8 +63,9 @@ window.loadData = async function() {
         updateMarquee("✅ Hệ thống sẵn sàng!");
     } catch (e) { 
         console.error(e);
-        // Không logout ngay để tránh loop nếu lỗi mạng, chỉ báo lỗi
-        alert("Lỗi tải dữ liệu: " + e.message);
+        // Nếu lỗi tải data, quay về màn hình đăng nhập để không bị treo
+        alert("Lỗi tải dữ liệu. Vui lòng đăng nhập lại.");
+        window.authLogout();
     }
 }
 
@@ -85,7 +86,6 @@ function initUI() {
     
     const btnCreate = document.querySelector('#tab-wiki button[onclick="openWikiEditor()"]');
     if(btnCreate) btnCreate.style.display = isAdmin ? 'flex' : 'none';
-    
     lucide.createIcons();
 }
 
@@ -105,61 +105,95 @@ function updateMarquee(text) {
     if(el) el.innerText = text;
 }
 
-// --- AUTH LOGIC (ĐÃ BỔ SUNG MẬT KHẨU ADMIN) ---
+// --- AUTH LOGIC (FIX LỖI MÀN HÌNH TRỐNG) ---
 window.enterSystem = function() {
-    document.getElementById('landing-page').classList.add('fade-out-up');
+    // 1. Hiệu ứng biến mất màn hình chào
+    const landing = document.getElementById('landing-page');
+    landing.classList.add('fade-out-up');
+
     setTimeout(() => {
+        // 2. Ẩn hẳn màn hình chào
+        landing.classList.add('hidden'); 
+        
         const u = localStorage.getItem('min_sys_current_user');
         if(u) { 
+            // 3a. Nếu có user cũ -> Thử tự động đăng nhập
             document.getElementById('login-user').value = u; 
-            window.authLogin(); 
+            window.authLogin(true); // Tham số true báo hiệu đây là auto-login
         } else { 
+            // 3b. Nếu không -> Hiện màn hình đăng nhập ngay
             document.getElementById('auth-screen').classList.remove('hidden'); 
+            document.getElementById('auth-screen').classList.add('fade-in');
         }
-    }, 600);
+    }, 600); // Chờ animation xong
 }
 
-window.authLogin = async function() {
+window.authLogin = async function(isAuto = false) {
     const u = document.getElementById('login-user').value.trim();
     const p = document.getElementById('login-pass').value.trim();
-    if(!u) return;
+    
+    // Nếu auto-login mà không có pass trong ô input (thường là có nếu trình duyệt lưu, nhưng nếu không thì hiện form)
+    if(!u) {
+        document.getElementById('auth-screen').classList.remove('hidden');
+        return;
+    }
+
+    // Nếu bấm nút đăng nhập thì bắt buộc phải có pass
+    if(!isAuto && !p) return alert("Vui lòng nhập mật khẩu!");
 
     try {
         const snap = await getDoc(doc(db, "users", u));
         
-        // 1. Kiểm tra nếu user chưa tồn tại
+        // 1. User chưa tồn tại trên Cloud
         if(!snap.exists()) {
-            // Nếu là Admin cố đăng nhập lần đầu -> Tự động tạo luôn để khỏi lỗi
-            if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) {
-                await setDoc(doc(db, "users", u), { 
-                    username:u, password:p, email:"admin@system", status:"approved", journal:[], capital:20000 
-                });
-                alert("Đã khởi tạo tài khoản Admin mới!");
+            if(isAuto) {
+                // Nếu tự động đăng nhập thất bại -> Hiện form để người dùng nhập lại hoặc ĐK
+                console.log("Auto-login failed: User not found on Cloud");
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('auth-screen').classList.add('fade-in');
             } else {
-                alert("Tài khoản chưa tồn tại. Vui lòng Đăng Ký!");
-                return;
+                // Nếu người dùng bấm nút -> Báo lỗi
+                // Admin Emergency Create
+                if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) {
+                    await setDoc(doc(db, "users", u), { 
+                        username:u, password:p, email:"admin@system", status:"approved", journal:[], capital:20000 
+                    });
+                    alert("Đã khởi tạo Admin khẩn cấp! Đăng nhập lại ngay.");
+                    window.location.reload();
+                } else {
+                    alert("Tài khoản chưa tồn tại. Vui lòng Đăng Ký!");
+                }
             }
+            return;
         }
         
-        // 2. Lấy dữ liệu user
-        // Chú ý: Lấy lại snap mới nếu vừa tạo xong
-        const userDoc = await getDoc(doc(db, "users", u));
-        const d = userDoc.data();
+        const d = snap.data();
 
-        // 3. LOGIC KIỂM TRA MẬT KHẨU (CÓ MASTER PASS)
-        let isPassCorrect = (d.password === p);
+        // 2. Kiểm tra mật khẩu (Chỉ kiểm tra nếu không phải auto-login hoặc nếu trình duyệt tự điền pass)
+        // Lưu ý: Auto-login dựa vào localStorage chỉ lưu username, không lưu pass. 
+        // Nên thực tế, "Auto-login" ở đây chỉ là "Auto-fill username" và hiện form. 
+        // TRỪ KHI: Ta bỏ qua check pass nếu đã có session (nhưng ở đây ta làm đơn giản).
         
-        // Nếu là Admin và nhập đúng Master Pass -> Cho qua luôn
-        if (ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) {
-            isPassCorrect = true;
+        // CƠ CHẾ MỚI: Nếu là Auto-login (isAuto=true), ta KHÔNG đăng nhập ngay mà chỉ hiện form đã điền sẵn user.
+        // Trừ khi bạn muốn lưu cả pass vào localStorage (không bảo mật).
+        // => Quyết định: Nếu enterSystem gọi, ta luôn hiện form đăng nhập để an toàn, chỉ điền sẵn user.
+        
+        if (isAuto) {
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('auth-screen').classList.add('fade-in');
+            return; // Dừng lại để người dùng nhập pass
         }
+
+        // Check pass thường
+        let isPassCorrect = (d.password === p);
+        if (ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) isPassCorrect = true;
 
         if (!isPassCorrect) return alert("Sai mật khẩu!");
 
-        // 4. Kiểm tra trạng thái duyệt
+        // 3. Check status
         if(d.status === 'pending' && !ADMIN_LIST.includes(u)) return alert("Tài khoản đang chờ Admin duyệt!");
         
-        // 5. Đăng nhập thành công
+        // 4. Thành công
         window.currentUser = u;
         localStorage.setItem('min_sys_current_user', u);
         
@@ -168,8 +202,11 @@ window.authLogin = async function() {
         document.getElementById('app-container').classList.add('flex');
         
         window.loadData();
+
     } catch(e) { 
-        alert("Lỗi đăng nhập: " + e.message); 
+        alert("Lỗi: " + e.message);
+        // Hiện form nếu lỗi
+        document.getElementById('auth-screen').classList.remove('hidden');
     }
 }
 
@@ -186,7 +223,7 @@ window.authRegister = async function() {
         
         await setDoc(doc(db, "users", u), { username:u, password:p, email:e, status:status, journal:[], capital:20000, created_at: new Date().toISOString() });
         
-        alert(status==='approved' ? "Admin ĐK thành công! Hãy đăng nhập." : "ĐK thành công, vui lòng chờ duyệt.");
+        alert(status==='approved' ? "Admin ĐK thành công!" : "ĐK thành công, vui lòng chờ duyệt.");
         window.toggleAuth();
     } catch(err) { alert("Lỗi: "+err.message); }
 }
@@ -235,17 +272,13 @@ window.viewWikiDetail = function(id) {
     document.getElementById('view-content').innerText = i.content;
     const btnEdit = document.getElementById('btn-edit-entry');
     const btnDel = document.getElementById('btn-delete-entry');
-    
     if(isAdmin) {
         btnEdit.style.display='inline-block'; btnDel.style.display='inline-block';
         const ne = btnEdit.cloneNode(true); const nd = btnDel.cloneNode(true);
         btnEdit.parentNode.replaceChild(ne, btnEdit); btnDel.parentNode.replaceChild(nd, btnDel);
         ne.onclick = () => { window.closeModal('wiki-detail-modal'); window.openWikiEditor(id); };
         nd.onclick = () => { if(confirm('Xóa?')) { wikiData=wikiData.filter(x=>x.id!=id); saveWikiData(); renderWikiGrid(); window.closeModal('wiki-detail-modal'); } };
-    } else { 
-        btnEdit.style.display='none'; btnDel.style.display='none'; 
-    }
-    
+    } else { btnEdit.style.display='none'; btnDel.style.display='none'; }
     document.getElementById('wiki-detail-modal').classList.remove('hidden');
 }
 window.renderWikiGrid = function() {
@@ -281,7 +314,7 @@ window.handleAIUpload = function(input) { if (input.files[0]) { const r = new Fi
 window.runAIAnalysis = async function() { if(!currentAnalysisImageBase64) return alert("Chọn ảnh!"); const btn = document.getElementById('btn-ai-analyze'); btn.innerHTML = "ĐANG XỬ LÝ..."; btn.disabled = true; const pair = document.getElementById('ai-pair-input').value; const prompt = `Phân tích ${pair}. JSON: {pattern_name, score, conclusion}`; try { const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64); const json = JSON.parse(txt.replace(/```json|```/g,'').trim()); document.getElementById('ai-res-pattern').innerText = json.pattern_name; document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion); document.getElementById('ai-result-content').classList.remove('hidden'); } catch (e) { alert("Lỗi: "+e.message); } btn.innerHTML = "BẮT ĐẦU"; btn.disabled = false; }
 window.resetAI = function() { document.getElementById('ai-result-content').classList.add('hidden'); document.getElementById('ai-result-empty').classList.remove('hidden'); currentAnalysisImageBase64=null; document.getElementById('ai-preview-img').classList.add('hidden'); }
 
-// --- JOURNAL & OTHERS ---
+// --- JOURNAL & ANALYSIS ---
 window.selectAnalysisStrategy = function(id) { const item = wikiData.find(x=>x.id==id); if(item) { selectedAnalysisStrategy=item; document.getElementById('current-setup-name').innerText=item.title; document.getElementById('ana-theory-img').src=item.image; document.getElementById('ana-theory-content').innerText=item.content; document.getElementById('analysis-empty-state').classList.add('hidden'); } }
 window.handleAnalysisUpload = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('ana-real-img').src=e.target.result; document.getElementById('ana-real-img').classList.remove('hidden'); document.getElementById('ana-upload-hint').classList.add('hidden'); currentAnalysisTabImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.transferAnalysisToJournal = function() { if(!selectedAnalysisStrategy) return alert("Chưa chọn chiến lược!"); window.switchTab('journal'); window.openEntryModal(); if(currentAnalysisTabImg) { currentEntryImgBase64=currentAnalysisTabImg; document.getElementById('entry-img-preview').src=currentAnalysisTabImg; document.getElementById('entry-img-preview').classList.remove('hidden'); document.getElementById('entry-upload-hint').classList.add('hidden'); } }
