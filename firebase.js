@@ -14,5 +14,5 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-console.log("🔥 Firebase Connected");
+console.log("🔥 Firebase Connected (Full Features)");
 export { db, doc, getDoc, setDoc, collection, getDocs, updateDoc };

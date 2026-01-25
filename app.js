@@ -1,64 +1,71 @@
 import { db, doc, getDoc, setDoc, collection, getDocs, updateDoc } from './firebase.js';
 
-// --- 1. CẤU HÌNH ---
-const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E"; 
-const ADMIN_LIST = ["admin", "minhtien45x3"]; 
+// --- 1. CONFIG ---
+const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E";
+// DANH SÁCH ADMIN (Thay 'admin' và 'minhtien45x3' bằng username của bạn)
+const ADMIN_LIST = ["admin", "minhtien45x3"];
 
-// --- 2. TRẠNG THÁI ---
-let journalData = [], wikiData = [], pairsData = [];
-let initialCapital = 20000;
+// --- 2. GLOBAL STATE ---
+let journalData = [], wikiData = [], initialCapital = 20000;
+let currentEntryImg = null, currentAnalysisImg = null, chartInst = {};
+let isAdmin = false;
 let currentBgTheme = 'bg-theme-default';
 let currentFilter = 'all';
-let currentAnalysisImageBase64 = null; 
-let currentEntryImgBase64 = null; 
-let currentAnalysisTabImg = null; 
+let currentAnalysisImageBase64 = null;
+let currentAnalysisTabImg = null;
 let selectedAnalysisStrategy = null;
-let chartInstances = {};
-let isAdmin = false; 
 
 const DEFAULT_WIKI = [{ id: "1", code: "XH01", cat: "Setup", title: "Uptrend", image: "", content: "Higher Highs" }];
 const CRITERIA_LIST = [{name:"XU HƯỚNG",desc:"Cấu trúc"},{name:"CẢN",desc:"Phản ứng"},{name:"NẾN",desc:"Đảo chiều"},{name:"R:R",desc:"Tỷ lệ"}];
 const ALL_THEMES = ['bg-theme-default', 'bg-theme-galaxy', 'bg-theme-emerald', 'bg-theme-midnight', 'bg-theme-sunset', 'bg-theme-aurora', 'bg-theme-nebula', 'bg-theme-oceanic', 'bg-theme-forest'];
 
-// --- 3. KHỞI TẠO ---
+// --- 3. INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
     const landing = document.getElementById('landing-page');
-    // Hiển thị Landing Page trước
+    // Luôn hiện Landing Page khi mới vào
     if(landing) {
         landing.classList.remove('hidden');
         document.getElementById('auth-screen').classList.add('hidden');
     }
 });
 
-// --- 4. XỬ LÝ DỮ LIỆU ---
+// --- 4. CORE DATA LOAD ---
 window.loadData = async function() {
     if (!window.currentUser) return;
     updateMarquee("🔄 Đang tải dữ liệu...");
     
-    // Check Admin
+    // Check quyền Admin
     isAdmin = ADMIN_LIST.includes(window.currentUser);
     const adminBtn = document.getElementById('btn-admin-panel');
     if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
     try {
+        // Tải dữ liệu người dùng
         const uRef = doc(db, "users", window.currentUser);
         const uSnap = await getDoc(uRef);
+        
         if (uSnap.exists()) {
             const d = uSnap.data();
             journalData = d.journal || [];
             initialCapital = d.capital || 20000;
             if(d.background) window.setBackground(d.background, false);
-        } else { await saveUserData(); }
+        } else {
+            await saveUserData();
+        }
 
+        // Tải Wiki Chung
         const wRef = doc(db, "system", "wiki_master");
         const wSnap = await getDoc(wRef);
         wikiData = wSnap.exists() ? wSnap.data().items : DEFAULT_WIKI;
         
         initUI();
         updateMarquee("✅ Hệ thống sẵn sàng!");
-    } catch (e) { alert("Lỗi tải: " + e.message); }
+    } catch (e) { 
+        console.error(e);
+        window.authLogout();
+    }
 }
 
 async function saveUserData() {
@@ -66,6 +73,7 @@ async function saveUserData() {
     await setDoc(doc(db, "users", window.currentUser), { journal: journalData, capital: initialCapital }, { merge: true });
 }
 async function saveWikiData() {
+    // Chỉ Admin mới được lưu Wiki
     if(!isAdmin) return;
     await setDoc(doc(db, "system", "wiki_master"), { items: wikiData, last_updated: new Date().toISOString() }, { merge: true });
 }
@@ -76,18 +84,14 @@ function initUI() {
     if(cap) cap.value = initialCapital;
     updateCapitalCalc();
     
-    // Wiki Button Permission
+    // Ẩn nút "Tạo Mới" Wiki nếu không phải Admin
     const btnCreate = document.querySelector('#tab-wiki button[onclick="openWikiEditor()"]');
     if(btnCreate) btnCreate.style.display = isAdmin ? 'flex' : 'none';
+    
     lucide.createIcons();
 }
 
-function updateMarquee(text) {
-    const el = document.getElementById('dashboard-marquee');
-    if(el) el.innerText = text;
-}
-
-// --- 5. HÀM UPDATE PNL (ĐÃ FIX) ---
+// --- 5. GLOBAL FUNCTIONS ---
 window.updateDailyPnL = function() {
     const today = new Date().toLocaleDateString('vi-VN'); 
     const pnl = journalData.filter(t => t.date === today).reduce((sum, t) => sum + parseFloat(t.pnl), 0);
@@ -98,34 +102,55 @@ window.updateDailyPnL = function() {
     }
 }
 
-// --- AUTH ---
+function updateMarquee(text) {
+    const el = document.getElementById('dashboard-marquee');
+    if(el) el.innerText = text;
+}
+
+// --- AUTH LOGIC (Logic quan trọng) ---
 window.enterSystem = function() {
     document.getElementById('landing-page').classList.add('fade-out-up');
     setTimeout(() => {
         const u = localStorage.getItem('min_sys_current_user');
-        if(u) { document.getElementById('login-user').value = u; window.authLogin(); }
-        else document.getElementById('auth-screen').classList.remove('hidden');
+        if(u) { 
+            document.getElementById('login-user').value = u; 
+            window.authLogin(); 
+        } else { 
+            document.getElementById('auth-screen').classList.remove('hidden'); 
+        }
     }, 600);
 }
+
 window.authLogin = async function() {
     const u = document.getElementById('login-user').value.trim();
     const p = document.getElementById('login-pass').value.trim();
     if(!u) return;
+
     try {
         const snap = await getDoc(doc(db, "users", u));
-        if(!snap.exists()) return alert("Tài khoản không tồn tại trên Cloud. Vui lòng ĐĂNG KÝ lại!");
+        if(!snap.exists()) {
+            alert("Tài khoản chưa có trên Cloud. Vui lòng ĐĂNG KÝ lại!");
+            return;
+        }
+        
         const d = snap.data();
         if(d.password !== p) return alert("Sai mật khẩu!");
-        if(d.status === 'pending') return alert("Tài khoản đang chờ Admin duyệt!");
+        // Nếu user đang chờ duyệt và không phải Admin (đề phòng)
+        if(d.status === 'pending' && !ADMIN_LIST.includes(u)) return alert("Tài khoản đang chờ Admin duyệt!");
         
         window.currentUser = u;
         localStorage.setItem('min_sys_current_user', u);
+        
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
         document.getElementById('app-container').classList.add('flex');
+        
         window.loadData();
-    } catch(e) { alert("Lỗi: "+e.message); }
+    } catch(e) { 
+        alert("Lỗi đăng nhập: " + e.message); 
+    }
 }
+
 window.authRegister = async function() {
     const u = document.getElementById('reg-user').value.trim();
     const p = document.getElementById('reg-pass').value.trim();
@@ -134,12 +159,19 @@ window.authRegister = async function() {
     try {
         const snap = await getDoc(doc(db, "users", u));
         if(snap.exists()) return alert("Tên này đã tồn tại!");
+        
+        // Tự động duyệt nếu là Admin trong danh sách
         const status = ADMIN_LIST.includes(u) ? 'approved' : 'pending';
+        
         await setDoc(doc(db, "users", u), { username:u, password:p, email:e, status:status, journal:[], capital:20000, created_at: new Date().toISOString() });
-        alert(status==='approved' ? "Admin ĐK thành công!" : "ĐK thành công, vui lòng chờ duyệt.");
+        
+        if(status === 'approved') alert("Đăng ký Admin thành công! Hãy đăng nhập.");
+        else alert("Đăng ký thành công! Vui lòng chờ Admin duyệt.");
+        
         window.toggleAuth();
     } catch(err) { alert("Lỗi: "+err.message); }
 }
+
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
 window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); location.reload(); }
 
@@ -162,9 +194,11 @@ window.renderCharts = function(data, start) {
     }
 }
 
-// --- WIKI ---
+// --- WIKI & PERMISSIONS (Admin Check) ---
 window.openWikiEditor = function(id=null) {
-    if(!isAdmin) return alert("Chỉ Admin mới được sửa!");
+    // Chỉ Admin mới được mở form sửa Wiki
+    if(!isAdmin) return alert("Chỉ Admin mới được thêm/sửa Wiki!");
+    
     document.getElementById('wiki-editor-modal').classList.remove('hidden');
     if(id) { const i = wikiData.find(x=>x.id==id); if(i) { document.getElementById('edit-id').value=i.id; document.getElementById('edit-title').value=i.title; document.getElementById('edit-code').value=i.code; document.getElementById('edit-cat').value=i.cat; document.getElementById('edit-image-url').value=i.image; document.getElementById('edit-content').value=i.content; } }
     else { document.getElementById('edit-id').value=""; document.getElementById('edit-title').value=""; }
@@ -184,13 +218,18 @@ window.viewWikiDetail = function(id) {
     document.getElementById('view-content').innerText = i.content;
     const btnEdit = document.getElementById('btn-edit-entry');
     const btnDel = document.getElementById('btn-delete-entry');
+    
+    // Ẩn nút Sửa/Xóa nếu không phải Admin
     if(isAdmin) {
         btnEdit.style.display='inline-block'; btnDel.style.display='inline-block';
         const ne = btnEdit.cloneNode(true); const nd = btnDel.cloneNode(true);
         btnEdit.parentNode.replaceChild(ne, btnEdit); btnDel.parentNode.replaceChild(nd, btnDel);
         ne.onclick = () => { window.closeModal('wiki-detail-modal'); window.openWikiEditor(id); };
         nd.onclick = () => { if(confirm('Xóa?')) { wikiData=wikiData.filter(x=>x.id!=id); saveWikiData(); renderWikiGrid(); window.closeModal('wiki-detail-modal'); } };
-    } else { btnEdit.style.display='none'; btnDel.style.display='none'; }
+    } else { 
+        btnEdit.style.display='none'; btnDel.style.display='none'; 
+    }
+    
     document.getElementById('wiki-detail-modal').classList.remove('hidden');
 }
 window.renderWikiGrid = function() {
@@ -201,7 +240,7 @@ window.renderWikiGrid = function() {
         </div>`).join('');
 }
 
-// --- ADMIN ---
+// --- ADMIN PANEL ---
 window.openAdminPanel = async () => {
     document.getElementById('admin-modal').classList.remove('hidden');
     const tb = document.getElementById('admin-user-list');
@@ -210,26 +249,23 @@ window.openAdminPanel = async () => {
     let h = '';
     s.forEach(d => {
         const u = d.data();
-        if(u.status === 'pending') h += `<tr><td class="p-2">${u.username}</td><td class="p-2 text-xs">${u.email}</td><td class="p-2"><button onclick="approveUser('${u.username}')" class="bg-green-600 px-2 rounded">Duyệt</button></td></tr>`;
+        if(u.status === 'pending') h += `<tr><td class="p-2">${u.username}</td><td class="p-2 text-xs">${u.email}</td><td class="p-2"><button onclick="approveUser('${u.username}')" class="bg-green-600 px-2 rounded text-xs text-white font-bold">Duyệt</button></td></tr>`;
     });
-    tb.innerHTML = h || '<tr><td colspan="3" class="text-center p-4">Trống</td></tr>';
+    tb.innerHTML = h || '<tr><td colspan="3" class="text-center p-4">Không có yêu cầu nào</td></tr>';
 }
-window.approveUser = async (u) => { if(confirm("Duyệt?")) { await updateDoc(doc(db,"users",u),{status:'approved'}); window.openAdminPanel(); } }
+window.approveUser = async (u) => { if(confirm("Duyệt tài khoản "+u+"?")) { await updateDoc(doc(db,"users",u),{status:'approved'}); window.openAdminPanel(); } }
 
 // --- AI LOGIC ---
 async function callGeminiAPI(prompt, imageBase64 = null) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     const parts = [{ text: prompt }]; if (imageBase64) parts.push({ inlineData: { mimeType: "image/png", data: imageBase64.split(',')[1] } });
-    try { const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts }] }) }); const data = await response.json(); 
-    if (!response.ok) throw new Error("API Error"); 
-    if (!data.candidates) throw new Error("AI Empty"); 
-    return data.candidates[0].content.parts[0].text; } catch (error) { throw error; }
+    try { const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts }] }) }); const data = await response.json(); if (!response.ok) throw new Error("API Error"); if (!data.candidates) throw new Error("AI Empty"); return data.candidates[0].content.parts[0].text; } catch (error) { throw error; }
 }
 window.handleAIUpload = function(input) { if (input.files[0]) { const r = new FileReader(); r.onload = (e) => { document.getElementById('ai-preview-img').src = e.target.result; document.getElementById('ai-preview-img').classList.remove('hidden'); document.getElementById('ai-upload-placeholder').classList.add('hidden'); currentAnalysisImageBase64 = e.target.result; }; r.readAsDataURL(input.files[0]); } }
 window.runAIAnalysis = async function() { if(!currentAnalysisImageBase64) return alert("Chọn ảnh!"); const btn = document.getElementById('btn-ai-analyze'); btn.innerHTML = "ĐANG XỬ LÝ..."; btn.disabled = true; const pair = document.getElementById('ai-pair-input').value; const prompt = `Phân tích ${pair}. JSON: {pattern_name, score, conclusion}`; try { const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64); const json = JSON.parse(txt.replace(/```json|```/g,'').trim()); document.getElementById('ai-res-pattern').innerText = json.pattern_name; document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion); document.getElementById('ai-result-content').classList.remove('hidden'); } catch (e) { alert("Lỗi: "+e.message); } btn.innerHTML = "BẮT ĐẦU"; btn.disabled = false; }
 window.resetAI = function() { document.getElementById('ai-result-content').classList.add('hidden'); document.getElementById('ai-result-empty').classList.remove('hidden'); currentAnalysisImageBase64=null; document.getElementById('ai-preview-img').classList.add('hidden'); }
 
-// --- JOURNAL ---
+// --- JOURNAL & ANALYSIS ---
 window.selectAnalysisStrategy = function(id) { const item = wikiData.find(x=>x.id==id); if(item) { selectedAnalysisStrategy=item; document.getElementById('current-setup-name').innerText=item.title; document.getElementById('ana-theory-img').src=item.image; document.getElementById('ana-theory-content').innerText=item.content; document.getElementById('analysis-empty-state').classList.add('hidden'); } }
 window.handleAnalysisUpload = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('ana-real-img').src=e.target.result; document.getElementById('ana-real-img').classList.remove('hidden'); document.getElementById('ana-upload-hint').classList.add('hidden'); currentAnalysisTabImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.transferAnalysisToJournal = function() { if(!selectedAnalysisStrategy) return alert("Chưa chọn chiến lược!"); window.switchTab('journal'); window.openEntryModal(); if(currentAnalysisTabImg) { currentEntryImgBase64=currentAnalysisTabImg; document.getElementById('entry-img-preview').src=currentAnalysisTabImg; document.getElementById('entry-img-preview').classList.remove('hidden'); document.getElementById('entry-upload-hint').classList.add('hidden'); } }
