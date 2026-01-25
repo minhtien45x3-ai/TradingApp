@@ -31,7 +31,7 @@ const QUOTES = [
     "Thị trường chuyển tiền từ kẻ thiếu kiên nhẫn sang kẻ kiên nhẫn."
 ];
 
-// --- Helper An Toàn (Chống lỗi Null) ---
+// --- Helper An Toàn (Chống lỗi Null - QUAN TRỌNG) ---
 function safeSetText(id, text) {
     const el = document.getElementById(id);
     if (el) el.innerText = text;
@@ -185,7 +185,7 @@ window.authLogin = async function(isAuto = false) {
         // 1. Tài khoản không tồn tại
         if(!snap.exists()) {
             if(isAuto) {
-                // Tự động đăng nhập thất bại -> Hiện form để người dùng biết
+                // Tự động đăng nhập thất bại -> Hiện form để người dùng biết (KHÔNG ALERT LỖI)
                 console.log("Auto-login failed: User not found");
                 showAuthScreen();
                 return;
@@ -209,7 +209,7 @@ window.authLogin = async function(isAuto = false) {
 
         if(!passValid) {
             if(isAuto) {
-                // Sai pass khi auto login -> Hiện form để nhập lại
+                // Sai pass khi auto login -> Hiện form để nhập lại (KHÔNG ALERT LỖI)
                 showAuthScreen();
                 return; 
             }
@@ -480,7 +480,7 @@ window.calcRiskPreview = () => {
 }
 window.saveInitialCapital = () => { initialCapital = parseFloat(document.getElementById('real-init-capital').value)||20000; saveUserData(); renderDashboard(); alert("Đã lưu!"); };
 window.updateCapitalCalc = () => {
-    const start = parseFloat(document.getElementById('cap-sim-start').value)||0; const pct = parseFloat(document.getElementById('cap-risk-pct').value)||1; const rr = parseFloat(document.getElementById('cap-rr').value)||2; const n = 20; let bal = start, html = ''; for(let i=1; i<=n; i++) { const risk = bal*(pct/100); const profit = risk*rr; const end = bal+profit; html += `<tr class="border-b border-slate-800"><td class="p-2 text-center">${i}</td><td class="p-2 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-2 text-right text-green-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`; bal = end; } document.getElementById('cap-projection-list').innerHTML = html;
+    const start = parseFloat(document.getElementById('cap-sim-start').value)||0; const pct = parseFloat(document.getElementById('cap-risk-pct').value)||1; const rr = parseFloat(document.getElementById('cap-rr').value)||2; const n = 20; let bal = start, html = ''; for(let i=1; i<=n; i++) { const risk = bal*(pct/100); const profit = risk*rr; const end = bal+profit; html += `<tr class="border-b border-slate-200 dark:border-slate-800"><td class="p-2 text-center">${i}</td><td class="p-2 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-2 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-2 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`; bal = end; } document.getElementById('cap-projection-list').innerHTML = html;
 }
 window.openBgModal = () => alert("Chế độ iOS Glass được bật mặc định!");
 // AI Logic
