@@ -10,7 +10,7 @@ let journalData = [], wikiData = [], pairsData = [];
 let initialCapital = 20000;
 let isAdmin = false;
 let currentEntryImg = null, currentAnalysisImg = null, currentAnalysisImageBase64 = null;
-let currentAnalysisTabImg = null; // Fix lỗi biến này
+let currentAnalysisTabImg = null;
 let chartInst = {};
 let selectedAnalysisStrategy = null;
 
@@ -31,18 +31,26 @@ const QUOTES = [
     "Thị trường chuyển tiền từ kẻ thiếu kiên nhẫn sang kẻ kiên nhẫn."
 ];
 
+// --- Helper An Toàn (Chống lỗi Null) ---
+function safeSetText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text;
+}
+
 // --- 3. INIT ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Fix: Chỉ chạy logic giao diện khi DOM đã sẵn sàng
-    initTheme();
+    // Chỉ chạy các hàm giao diện nếu thư viện đã tải
+    if(typeof initTheme === 'function') initTheme();
     if(window.lucide) lucide.createIcons();
+    
     startMarquee();
     
-    // Auth Check
+    // Đảm bảo logic hiển thị màn hình chào đúng
     const landing = document.getElementById('landing-page');
     if(landing) {
         landing.classList.remove('hidden');
         document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('app-container').classList.add('hidden');
     }
 });
 
@@ -58,15 +66,13 @@ function startMarquee() {
 }
 
 function updateMarquee(text) {
-    const el = document.getElementById('dashboard-marquee');
-    if(el) el.innerText = text;
+    safeSetText('dashboard-marquee', text);
 }
 
 // --- 4. CORE DATA LOAD ---
 window.loadData = async function() {
     if (!window.currentUser) return;
     
-    // Safety check: Đảm bảo Dashboard hiển thị trước khi update text
     updateMarquee("Đang đồng bộ dữ liệu...");
     
     isAdmin = ADMIN_LIST.includes(window.currentUser);
@@ -76,13 +82,14 @@ window.loadData = async function() {
     try {
         const uRef = doc(db, "users", window.currentUser);
         const uSnap = await getDoc(uRef);
+        
         if (uSnap.exists()) {
             const d = uSnap.data();
             journalData = d.journal || [];
             pairsData = d.pairs || DEFAULT_PAIRS;
             initialCapital = d.capital || 20000;
         } else { 
-            // Tự động tạo data nếu user tồn tại ở auth nhưng chưa có trong db
+            // Nếu chưa có data thì tạo mới để tránh lỗi
             await saveUserData(); 
         }
 
@@ -91,12 +98,11 @@ window.loadData = async function() {
         wikiData = wSnap.exists() ? wSnap.data().items : DEFAULT_WIKI;
         
         initUI();
-        updateMarquee(QUOTES[0]); // Trả lại quote sau khi load xong
+        updateMarquee(QUOTES[0]);
     } catch (e) { 
-        console.error("Lỗi tải dữ liệu:", e);
-        alert("Lỗi tải dữ liệu: " + e.message); 
-        // Xóa dòng này để tránh bị kick out liên tục khi lỗi mạng nhẹ
-        // window.authLogout(); 
+        console.error("Load Data Error:", e);
+        // Không logout để tránh loop, chỉ báo lỗi nhẹ
+        updateMarquee("Lỗi tải dữ liệu. Vui lòng thử lại.");
     }
 }
 
@@ -121,7 +127,7 @@ function initUI() {
     if(cap) cap.value = initialCapital;
     updateCapitalCalc();
     
-    // Checklist render an toàn
+    // Checklist
     const checklistContainer = document.getElementById('ana-checklist-container');
     if(checklistContainer) {
         checklistContainer.innerHTML = CRITERIA_LIST.map(c => `
@@ -138,9 +144,10 @@ function initUI() {
     if(window.lucide) lucide.createIcons();
 }
 
-// --- 5. AUTH LOGIC (FIX LỖI LOGIN LOOP) ---
+// --- 5. AUTH LOGIC (FIX TOÀN DIỆN LỖI ĐĂNG NHẬP) ---
 window.enterSystem = function() {
     const landing = document.getElementById('landing-page');
+    // Hiệu ứng biến mất
     landing.classList.add('fade-out-up');
     
     setTimeout(() => {
@@ -148,73 +155,75 @@ window.enterSystem = function() {
         const u = localStorage.getItem('min_sys_current_user');
         
         if(u) { 
-            // Nếu có user cũ, điền vào ô và thử đăng nhập tự động
+            // Có user cũ -> Điền vào ô input -> Thử đăng nhập tự động
             document.getElementById('login-user').value = u; 
-            // Gọi authLogin với cờ isAuto = true để xử lý êm hơn
-            window.authLogin(true); 
+            window.authLogin(true); // isAuto = true
         } else { 
-            // Nếu không, hiện màn hình đăng nhập
-            const authScreen = document.getElementById('auth-screen');
-            authScreen.classList.remove('hidden'); 
-            authScreen.classList.add('fade-in'); 
+            // Không có user -> Hiện form đăng nhập
+            showAuthScreen();
         }
     }, 600);
+}
+
+function showAuthScreen() {
+    document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('auth-screen').classList.add('fade-in');
+    document.getElementById('app-container').classList.add('hidden');
 }
 
 window.authLogin = async function(isAuto = false) {
     const u = document.getElementById('login-user').value.trim();
     const p = document.getElementById('login-pass').value.trim();
     
-    if(isAuto && !u) return; // Auto login mà ko có user thì bỏ qua
-    if(!isAuto && (!u || !p)) return alert("Thiếu thông tin đăng nhập");
+    if(isAuto && !u) { showAuthScreen(); return; }
+    if(!isAuto && (!u || !p)) return alert("Vui lòng nhập đầy đủ thông tin!");
 
     try {
         const userDocRef = doc(db, "users", u);
         const snap = await getDoc(userDocRef);
         
-        // Trường hợp 1: Tài khoản không tồn tại
+        // 1. Tài khoản không tồn tại
         if(!snap.exists()) {
             if(isAuto) {
-                // Nếu là tự động đăng nhập thất bại -> Hiện bảng đăng nhập để người dùng biết
-                document.getElementById('auth-screen').classList.remove('hidden');
+                // Tự động đăng nhập thất bại -> Hiện form để người dùng biết
+                console.log("Auto-login failed: User not found");
+                showAuthScreen();
                 return;
             }
             
-            // Nếu là Admin đăng nhập lần đầu bằng Master Pass -> Tạo luôn
+            // Nếu Admin đăng nhập lần đầu bằng Master Pass -> Tạo luôn
             if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) {
                 await setDoc(userDocRef, { username:u, password:p, email:"admin@sys", status:"approved", journal:[], pairs:DEFAULT_PAIRS, capital:20000 });
                 alert("Đã khởi tạo Admin khẩn cấp!");
-                window.location.reload(); // Reload để nhận data mới
+                window.location.reload(); 
                 return;
-            } else {
-                return alert("Tài khoản chưa đăng ký!");
             }
+            return alert("Tài khoản chưa tồn tại. Vui lòng Đăng Ký!");
         }
         
         const d = snap.data();
         
-        // Trường hợp 2: Sai mật khẩu
-        // Nếu là Auto Login thì KHÔNG ALERT lỗi, chỉ hiện form để nhập lại
+        // 2. Kiểm tra mật khẩu
         let passValid = (d.password === p);
         if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) passValid = true; // Master pass bypass
 
         if(!passValid) {
             if(isAuto) {
-                document.getElementById('auth-screen').classList.remove('hidden');
-                return;
-            } else {
-                return alert("Sai mật khẩu!");
+                // Sai pass khi auto login -> Hiện form để nhập lại
+                showAuthScreen();
+                return; 
             }
+            return alert("Sai mật khẩu!");
         }
 
-        // Trường hợp 3: Chờ duyệt
+        // 3. Kiểm tra trạng thái
         if(d.status === 'pending' && !ADMIN_LIST.includes(u)) {
             if(!isAuto) alert("Tài khoản đang chờ duyệt!");
-            document.getElementById('auth-screen').classList.remove('hidden');
+            showAuthScreen();
             return;
         }
 
-        // Đăng nhập thành công
+        // 4. Đăng nhập thành công
         window.currentUser = u; 
         localStorage.setItem('min_sys_current_user', u);
         
@@ -225,8 +234,9 @@ window.authLogin = async function(isAuto = false) {
         window.loadData();
 
     } catch(e) { 
-        console.error("Login Error:", e);
-        document.getElementById('auth-screen').classList.remove('hidden');
+        console.error("Login System Error:", e);
+        showAuthScreen(); // Gặp lỗi hệ thống thì hiện form cho an toàn
+        if(!isAuto) alert("Lỗi hệ thống: " + e.message);
     }
 }
 
@@ -240,6 +250,7 @@ window.authRegister = async function() {
         if(snap.exists()) return alert("Tên đăng nhập đã tồn tại!");
         
         const status = ADMIN_LIST.includes(u) ? 'approved' : 'pending';
+        
         await setDoc(doc(db, "users", u), { 
             username:u, password:p, email:e, status, 
             journal:[], pairs:DEFAULT_PAIRS, capital:20000, 
@@ -256,7 +267,7 @@ window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); loc
 
 // --- DASHBOARD & CHARTS ---
 window.renderDashboard = function() {
-    if(!journalData) return; // Safety check
+    if(!journalData) return;
     const closed = journalData.filter(t=>t.status!=='OPEN');
     let wins=0, pnl=0, maxDD=0, peak=initialCapital, bal=initialCapital;
     
@@ -270,7 +281,7 @@ window.renderDashboard = function() {
     
     const wr = closed.length ? Math.round((wins/closed.length)*100) : 0;
     
-    // Safely set innerText
+    // Sử dụng safeSetText để tránh lỗi Null
     safeSetText('dash-balance', `$${bal.toLocaleString()}`);
     safeSetText('dash-pnl', `$${pnl.toLocaleString()}`);
     safeSetText('dash-winrate', `${wr}%`);
@@ -280,17 +291,10 @@ window.renderDashboard = function() {
     renderCharts(closed, initialCapital);
 }
 
-// Helper an toàn để set text (tránh lỗi null)
-function safeSetText(id, text) {
-    const el = document.getElementById(id);
-    if(el) el.innerText = text;
-}
-
 window.renderCharts = function(data, start) {
     const ctx1=document.getElementById('chart-equity');
     const ctx2=document.getElementById('chart-winloss');
     
-    // Reset charts if exist to avoid overlap
     if(chartInst.eq) { chartInst.eq.destroy(); chartInst.eq = null; }
     if(chartInst.wl) { chartInst.wl.destroy(); chartInst.wl = null; }
 
@@ -304,7 +308,18 @@ window.renderCharts = function(data, start) {
     }
 }
 
-// --- JOURNAL ---
+// --- JOURNAL & OTHERS ---
+window.updateDailyPnL = function() {
+    const today = new Date().toLocaleDateString('vi-VN'); 
+    const pnl = journalData.filter(t => t.date === today).reduce((sum, t) => sum + parseFloat(t.pnl), 0);
+    const el = document.getElementById('journal-pnl-today');
+    if(el) {
+        el.innerText = (pnl >= 0 ? '+' : '') + `$${pnl.toLocaleString()}`;
+        el.className = `text-sm font-mono font-bold ${pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
+    }
+}
+
+// (Các hàm còn lại giữ nguyên như bản trước, đã fix lỗi)
 window.openEntryModal = function() { 
     document.getElementById('entry-modal').classList.remove('hidden'); 
     const now=new Date(); document.getElementById('inp-date').value = new Date(now - now.getTimezoneOffset()*60000).toISOString().split('T')[0];
@@ -373,22 +388,8 @@ window.renderJournalList = function() {
             <td class="p-4 text-right font-mono font-bold ${parseFloat(t.pnl)>0?'text-green-500':parseFloat(t.pnl)<0?'text-red-500':'text-slate-500'}">${parseFloat(t.pnl)>0?'+':''}${parseFloat(t.pnl).toLocaleString()}</td>
             <td class="p-4 text-center"><button onclick="deleteEntry('${t.id}')"><i data-lucide="trash-2" class="w-4 h-4 text-slate-400 hover:text-red-500"></i></button></td>
         </tr>`).join(''); 
-    
-    // Gọi updateDailyPnL ở đây, sau khi render list
-    if(typeof window.updateDailyPnL === 'function') window.updateDailyPnL();
-    
+    updateDailyPnL(); 
     if(window.lucide) lucide.createIcons();
-}
-
-// --- GLOBAL PNL HELPER ---
-window.updateDailyPnL = function() {
-    const today = new Date().toLocaleDateString('vi-VN'); 
-    const pnl = journalData.filter(t => t.date === today).reduce((sum, t) => sum + parseFloat(t.pnl), 0);
-    const el = document.getElementById('journal-pnl-today');
-    if(el) {
-        el.innerText = (pnl >= 0 ? '+' : '') + `$${pnl.toLocaleString()}`;
-        el.className = `text-sm font-mono font-bold ${pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
-    }
 }
 
 // --- CAPITAL PAIRS ---
@@ -481,7 +482,6 @@ window.updateCapitalCalc = () => {
     const start = parseFloat(document.getElementById('cap-sim-start').value)||0; const pct = parseFloat(document.getElementById('cap-risk-pct').value)||1; const rr = parseFloat(document.getElementById('cap-rr').value)||2; const n = 20; let bal = start, html = ''; for(let i=1; i<=n; i++) { const risk = bal*(pct/100); const profit = risk*rr; const end = bal+profit; html += `<tr class="border-b border-slate-800"><td class="p-2 text-center">${i}</td><td class="p-2 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-2 text-right text-green-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`; bal = end; } document.getElementById('cap-projection-list').innerHTML = html;
 }
 window.openBgModal = () => alert("Chế độ iOS Glass được bật mặc định!");
-
 // AI Logic
 async function callGeminiAPI(prompt, imageBase64) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -491,23 +491,19 @@ async function callGeminiAPI(prompt, imageBase64) {
 window.handleAIUpload = function(input) { if (input.files[0]) { const r = new FileReader(); r.onload = (e) => { document.getElementById('ai-preview-img').src = e.target.result; document.getElementById('ai-preview-img').classList.remove('hidden'); document.getElementById('ai-upload-placeholder').classList.add('hidden'); currentAnalysisImageBase64 = e.target.result; }; r.readAsDataURL(input.files[0]); } }
 window.runAIAnalysis = async function() { if(!currentAnalysisImageBase64) return alert("Chọn ảnh!"); const btn = document.getElementById('btn-ai-analyze'); btn.innerHTML = "ĐANG XỬ LÝ..."; btn.disabled = true; const pair = document.getElementById('ai-pair-input').value; const prompt = `Phân tích ${pair}. JSON: {pattern_name, score, conclusion}`; try { const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64); const json = JSON.parse(txt.replace(/```json|```/g,'').trim()); document.getElementById('ai-res-pattern').innerText = json.pattern_name; document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion); document.getElementById('ai-result-content').classList.remove('hidden'); } catch (e) { alert("Lỗi: "+e.message); } btn.innerHTML = "BẮT ĐẦU"; btn.disabled = false; }
 window.resetAI = function() { document.getElementById('ai-result-content').classList.add('hidden'); document.getElementById('ai-result-empty').classList.remove('hidden'); currentAnalysisImageBase64=null; document.getElementById('ai-preview-img').classList.add('hidden'); document.getElementById('ai-upload-placeholder').classList.remove('hidden'); }
-
 // Admin
 window.openAdminPanel = async () => {
     document.getElementById('admin-modal').classList.remove('hidden');
     const tb = document.getElementById('admin-user-list'); tb.innerHTML = 'Loading...';
-    try {
-        const s = await getDocs(collection(db, "users"));
-        let h = '';
-        s.forEach(d => {
-            const u = d.data();
-            if(u.status === 'pending') h += `<tr><td class="p-3">${u.username}</td><td class="p-3 text-right"><button onclick="approveUser('${u.username}')" class="px-3 py-1 bg-green-600 rounded text-xs font-bold text-white">DUYỆT</button></td></tr>`;
-        });
-        tb.innerHTML = h || '<tr><td colspan="2" class="p-4 text-center text-slate-500">Trống</td></tr>';
-    } catch(e) { alert("Lỗi Admin: " + e.message); }
+    const s = await getDocs(collection(db, "users"));
+    let h = '';
+    s.forEach(d => {
+        const u = d.data();
+        if(u.status === 'pending') h += `<tr><td class="p-3">${u.username}</td><td class="p-3 text-right"><button onclick="approveUser('${u.username}')" class="px-3 py-1 bg-green-600 rounded text-xs font-bold text-white">DUYỆT</button></td></tr>`;
+    });
+    tb.innerHTML = h || '<tr><td colspan="2" class="p-4 text-center text-slate-500">Trống</td></tr>';
 }
 window.approveUser = async (u) => { if(confirm("Duyệt?")) { await updateDoc(doc(db,"users",u),{status:'approved'}); window.openAdminPanel(); } }
-
 // Link Analysis to Journal
 window.selectAnalysisStrategy = function(id) { const item = wikiData.find(x=>x.id==id); if(item) { selectedAnalysisStrategy=item; document.getElementById('current-setup-name').innerText=item.title; document.getElementById('ana-theory-img').src=item.image; document.getElementById('ana-theory-content').innerText=item.content; document.getElementById('analysis-empty-state').classList.add('hidden'); } }
 window.handleAnalysisUpload = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('ana-real-img').src=e.target.result; document.getElementById('ana-real-img').classList.remove('hidden'); document.getElementById('ana-upload-hint').classList.add('hidden'); currentAnalysisTabImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
