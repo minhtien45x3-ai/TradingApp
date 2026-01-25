@@ -1,12 +1,15 @@
 import { db, doc, getDoc, setDoc, collection, getDocs, updateDoc } from './firebase.js';
 
-// --- 1. CONFIG ---
+// --- 1. CẤU HÌNH ---
 const GEMINI_API_KEY = "AIzaSyDN0i4GycJc-_-7wNMEePkNCa185nwHh6E";
-// DANH SÁCH ADMIN (Thay 'admin' và 'minhtien45x3' bằng username của bạn)
-const ADMIN_LIST = ["admin", "minhtien45x3"];
+// DANH SÁCH ADMIN
+const ADMIN_LIST = ["admin", "minhtien45x3"]; 
+// MẬT KHẨU KHẨN CẤP CHO ADMIN (Dùng khi quên pass cũ)
+const ADMIN_MASTER_PASS = "admin123"; 
 
 // --- 2. GLOBAL STATE ---
-let journalData = [], wikiData = [], initialCapital = 20000;
+let journalData = [], wikiData = [], pairsData = [];
+let initialCapital = 20000;
 let currentEntryImg = null, currentAnalysisImg = null, chartInst = {};
 let isAdmin = false;
 let currentBgTheme = 'bg-theme-default';
@@ -17,14 +20,12 @@ let selectedAnalysisStrategy = null;
 
 const DEFAULT_WIKI = [{ id: "1", code: "XH01", cat: "Setup", title: "Uptrend", image: "", content: "Higher Highs" }];
 const CRITERIA_LIST = [{name:"XU HƯỚNG",desc:"Cấu trúc"},{name:"CẢN",desc:"Phản ứng"},{name:"NẾN",desc:"Đảo chiều"},{name:"R:R",desc:"Tỷ lệ"}];
-const ALL_THEMES = ['bg-theme-default', 'bg-theme-galaxy', 'bg-theme-emerald', 'bg-theme-midnight', 'bg-theme-sunset', 'bg-theme-aurora', 'bg-theme-nebula', 'bg-theme-oceanic', 'bg-theme-forest'];
 
 // --- 3. INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
     const landing = document.getElementById('landing-page');
-    // Luôn hiện Landing Page khi mới vào
     if(landing) {
         landing.classList.remove('hidden');
         document.getElementById('auth-screen').classList.add('hidden');
@@ -42,7 +43,6 @@ window.loadData = async function() {
     if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
     try {
-        // Tải dữ liệu người dùng
         const uRef = doc(db, "users", window.currentUser);
         const uSnap = await getDoc(uRef);
         
@@ -55,7 +55,6 @@ window.loadData = async function() {
             await saveUserData();
         }
 
-        // Tải Wiki Chung
         const wRef = doc(db, "system", "wiki_master");
         const wSnap = await getDoc(wRef);
         wikiData = wSnap.exists() ? wSnap.data().items : DEFAULT_WIKI;
@@ -64,7 +63,8 @@ window.loadData = async function() {
         updateMarquee("✅ Hệ thống sẵn sàng!");
     } catch (e) { 
         console.error(e);
-        window.authLogout();
+        // Không logout ngay để tránh loop nếu lỗi mạng, chỉ báo lỗi
+        alert("Lỗi tải dữ liệu: " + e.message);
     }
 }
 
@@ -73,7 +73,6 @@ async function saveUserData() {
     await setDoc(doc(db, "users", window.currentUser), { journal: journalData, capital: initialCapital }, { merge: true });
 }
 async function saveWikiData() {
-    // Chỉ Admin mới được lưu Wiki
     if(!isAdmin) return;
     await setDoc(doc(db, "system", "wiki_master"), { items: wikiData, last_updated: new Date().toISOString() }, { merge: true });
 }
@@ -84,14 +83,13 @@ function initUI() {
     if(cap) cap.value = initialCapital;
     updateCapitalCalc();
     
-    // Ẩn nút "Tạo Mới" Wiki nếu không phải Admin
     const btnCreate = document.querySelector('#tab-wiki button[onclick="openWikiEditor()"]');
     if(btnCreate) btnCreate.style.display = isAdmin ? 'flex' : 'none';
     
     lucide.createIcons();
 }
 
-// --- 5. GLOBAL FUNCTIONS ---
+// --- 5. HELPER FUNCTIONS ---
 window.updateDailyPnL = function() {
     const today = new Date().toLocaleDateString('vi-VN'); 
     const pnl = journalData.filter(t => t.date === today).reduce((sum, t) => sum + parseFloat(t.pnl), 0);
@@ -107,7 +105,7 @@ function updateMarquee(text) {
     if(el) el.innerText = text;
 }
 
-// --- AUTH LOGIC (Logic quan trọng) ---
+// --- AUTH LOGIC (ĐÃ BỔ SUNG MẬT KHẨU ADMIN) ---
 window.enterSystem = function() {
     document.getElementById('landing-page').classList.add('fade-out-up');
     setTimeout(() => {
@@ -128,16 +126,40 @@ window.authLogin = async function() {
 
     try {
         const snap = await getDoc(doc(db, "users", u));
+        
+        // 1. Kiểm tra nếu user chưa tồn tại
         if(!snap.exists()) {
-            alert("Tài khoản chưa có trên Cloud. Vui lòng ĐĂNG KÝ lại!");
-            return;
+            // Nếu là Admin cố đăng nhập lần đầu -> Tự động tạo luôn để khỏi lỗi
+            if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) {
+                await setDoc(doc(db, "users", u), { 
+                    username:u, password:p, email:"admin@system", status:"approved", journal:[], capital:20000 
+                });
+                alert("Đã khởi tạo tài khoản Admin mới!");
+            } else {
+                alert("Tài khoản chưa tồn tại. Vui lòng Đăng Ký!");
+                return;
+            }
         }
         
-        const d = snap.data();
-        if(d.password !== p) return alert("Sai mật khẩu!");
-        // Nếu user đang chờ duyệt và không phải Admin (đề phòng)
+        // 2. Lấy dữ liệu user
+        // Chú ý: Lấy lại snap mới nếu vừa tạo xong
+        const userDoc = await getDoc(doc(db, "users", u));
+        const d = userDoc.data();
+
+        // 3. LOGIC KIỂM TRA MẬT KHẨU (CÓ MASTER PASS)
+        let isPassCorrect = (d.password === p);
+        
+        // Nếu là Admin và nhập đúng Master Pass -> Cho qua luôn
+        if (ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) {
+            isPassCorrect = true;
+        }
+
+        if (!isPassCorrect) return alert("Sai mật khẩu!");
+
+        // 4. Kiểm tra trạng thái duyệt
         if(d.status === 'pending' && !ADMIN_LIST.includes(u)) return alert("Tài khoản đang chờ Admin duyệt!");
         
+        // 5. Đăng nhập thành công
         window.currentUser = u;
         localStorage.setItem('min_sys_current_user', u);
         
@@ -160,14 +182,11 @@ window.authRegister = async function() {
         const snap = await getDoc(doc(db, "users", u));
         if(snap.exists()) return alert("Tên này đã tồn tại!");
         
-        // Tự động duyệt nếu là Admin trong danh sách
         const status = ADMIN_LIST.includes(u) ? 'approved' : 'pending';
         
         await setDoc(doc(db, "users", u), { username:u, password:p, email:e, status:status, journal:[], capital:20000, created_at: new Date().toISOString() });
         
-        if(status === 'approved') alert("Đăng ký Admin thành công! Hãy đăng nhập.");
-        else alert("Đăng ký thành công! Vui lòng chờ Admin duyệt.");
-        
+        alert(status==='approved' ? "Admin ĐK thành công! Hãy đăng nhập." : "ĐK thành công, vui lòng chờ duyệt.");
         window.toggleAuth();
     } catch(err) { alert("Lỗi: "+err.message); }
 }
@@ -194,11 +213,9 @@ window.renderCharts = function(data, start) {
     }
 }
 
-// --- WIKI & PERMISSIONS (Admin Check) ---
+// --- WIKI & PERMISSIONS ---
 window.openWikiEditor = function(id=null) {
-    // Chỉ Admin mới được mở form sửa Wiki
-    if(!isAdmin) return alert("Chỉ Admin mới được thêm/sửa Wiki!");
-    
+    if(!isAdmin) return alert("Chỉ Admin mới được sửa!");
     document.getElementById('wiki-editor-modal').classList.remove('hidden');
     if(id) { const i = wikiData.find(x=>x.id==id); if(i) { document.getElementById('edit-id').value=i.id; document.getElementById('edit-title').value=i.title; document.getElementById('edit-code').value=i.code; document.getElementById('edit-cat').value=i.cat; document.getElementById('edit-image-url').value=i.image; document.getElementById('edit-content').value=i.content; } }
     else { document.getElementById('edit-id').value=""; document.getElementById('edit-title').value=""; }
@@ -219,7 +236,6 @@ window.viewWikiDetail = function(id) {
     const btnEdit = document.getElementById('btn-edit-entry');
     const btnDel = document.getElementById('btn-delete-entry');
     
-    // Ẩn nút Sửa/Xóa nếu không phải Admin
     if(isAdmin) {
         btnEdit.style.display='inline-block'; btnDel.style.display='inline-block';
         const ne = btnEdit.cloneNode(true); const nd = btnDel.cloneNode(true);
@@ -265,7 +281,7 @@ window.handleAIUpload = function(input) { if (input.files[0]) { const r = new Fi
 window.runAIAnalysis = async function() { if(!currentAnalysisImageBase64) return alert("Chọn ảnh!"); const btn = document.getElementById('btn-ai-analyze'); btn.innerHTML = "ĐANG XỬ LÝ..."; btn.disabled = true; const pair = document.getElementById('ai-pair-input').value; const prompt = `Phân tích ${pair}. JSON: {pattern_name, score, conclusion}`; try { const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64); const json = JSON.parse(txt.replace(/```json|```/g,'').trim()); document.getElementById('ai-res-pattern').innerText = json.pattern_name; document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion); document.getElementById('ai-result-content').classList.remove('hidden'); } catch (e) { alert("Lỗi: "+e.message); } btn.innerHTML = "BẮT ĐẦU"; btn.disabled = false; }
 window.resetAI = function() { document.getElementById('ai-result-content').classList.add('hidden'); document.getElementById('ai-result-empty').classList.remove('hidden'); currentAnalysisImageBase64=null; document.getElementById('ai-preview-img').classList.add('hidden'); }
 
-// --- JOURNAL & ANALYSIS ---
+// --- JOURNAL & OTHERS ---
 window.selectAnalysisStrategy = function(id) { const item = wikiData.find(x=>x.id==id); if(item) { selectedAnalysisStrategy=item; document.getElementById('current-setup-name').innerText=item.title; document.getElementById('ana-theory-img').src=item.image; document.getElementById('ana-theory-content').innerText=item.content; document.getElementById('analysis-empty-state').classList.add('hidden'); } }
 window.handleAnalysisUpload = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('ana-real-img').src=e.target.result; document.getElementById('ana-real-img').classList.remove('hidden'); document.getElementById('ana-upload-hint').classList.add('hidden'); currentAnalysisTabImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.transferAnalysisToJournal = function() { if(!selectedAnalysisStrategy) return alert("Chưa chọn chiến lược!"); window.switchTab('journal'); window.openEntryModal(); if(currentAnalysisTabImg) { currentEntryImgBase64=currentAnalysisTabImg; document.getElementById('entry-img-preview').src=currentAnalysisTabImg; document.getElementById('entry-img-preview').classList.remove('hidden'); document.getElementById('entry-upload-hint').classList.add('hidden'); } }
