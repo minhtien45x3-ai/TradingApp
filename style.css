@@ -4,100 +4,104 @@
 
 body { 
     font-family: var(--font-sans); 
-    transition: background-image 0.5s ease, background-color 0.5s ease, color 0.3s ease; 
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Quan trọng để background không bị scroll */
 }
 
 .font-mono { font-family: var(--font-mono); }
 
-/* --- 1. THEMES (LIGHT / DARK) --- */
-/* Light Mode mặc định */
-body.bg-theme-default { 
-    background-color: #f2f2f7; 
-    background-image: 
-        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%), 
-        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-        url('https://grainy-gradients.vercel.app/noise.svg');
-    color: #1c1c1e; 
+/* --- 1. BACKGROUND GLOBAL --- */
+/* Màu nền chính (Deep Dark Blue/Black) giống ảnh bạn gửi */
+body.bg-theme-default { background-color: #020617; color: #f5f5f7; }
+html:not(.dark) body.bg-theme-default { background-color: #f0f4f8; color: #1e293b; }
+
+/* --- 2. GLOBAL BLOB ANIMATION (Hiệu ứng đốm màu nền) --- */
+.global-bg {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: -1; /* Luôn nằm dưới cùng */
+    overflow: hidden;
+    pointer-events: none;
+    background-color: #020617; /* Màu nền gốc */
 }
 
-/* Dark Mode */
-html.dark body.bg-theme-default { 
-    background-color: #000000; 
-    background-image: 
-        radial-gradient(at 50% 0%, #1c1c1e 0%, #000000 100%),
-        url('https://grainy-gradients.vercel.app/noise.svg');
-    color: #f5f5f7; 
+/* Các đốm màu */
+.blob { position: absolute; filter: blur(90px); opacity: 0.5; animation: blob-float 15s infinite ease-in-out; border-radius: 50%; }
+
+/* Đốm Xanh Lá (Góc trên trái) */
+.blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #10b981; animation-delay: 0s; }
+/* Đốm Tím (Góc dưới trái) */
+.blob-2 { bottom: -10%; left: 10%; width: 400px; height: 400px; background: #8b5cf6; animation-delay: 2s; }
+/* Đốm Xanh Dương (Góc phải) */
+.blob-3 { top: 30%; right: -10%; width: 450px; height: 450px; background: #3b82f6; animation-delay: 4s; }
+
+@keyframes blob-float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -60px) scale(1.1); }
+    66% { transform: translate(-30px, 30px) scale(0.9); }
 }
 
-/* Các Theme màu khác */
-body.bg-theme-galaxy { background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e); color: #e2e8f0 !important; }
-body.bg-theme-emerald { background: linear-gradient(-45deg, #064e3b, #065f46); color: #f1f5f9 !important; }
-body.bg-theme-sunset { background: linear-gradient(120deg, #4a044e, #881337); color: #ffe4e6 !important; }
+/* Lớp phủ Noise tạo hạt mịn */
+.noise-overlay {
+    position: absolute; inset: 0;
+    background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+    opacity: 0.15;
+    mix-blend-mode: overlay;
+}
 
-/* --- 2. GLASSMORPHISM (iOS Style) --- */
+/* --- 3. GLASSMORPHISM (Tăng độ trong suốt để thấy nền) --- */
 .glass-panel {
-    backdrop-filter: blur(25px) saturate(180%);
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    /* Mờ mạnh hơn */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Viền mảnh mờ */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
 }
 
-/* Light Mode Glass */
+/* Dark Mode (Mặc định): Nền đen trong suốt 40% để thấy Blob */
+html.dark .glass-panel, body.bg-theme-default .glass-panel {
+    background: rgba(10, 15, 30, 0.4); 
+}
+
+/* Light Mode: Nền trắng trong suốt 60% */
 html:not(.dark) .glass-panel {
-    background: rgba(255, 255, 255, 0.65); 
-    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
-/* Dark Mode Glass */
-html.dark .glass-panel {
-    background: rgba(30, 30, 30, 0.6);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+.glass-panel:hover { 
+    transform: translateY(-2px); 
+    background: rgba(10, 15, 30, 0.5); /* Đậm hơn xíu khi hover */
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
-.glass-panel:hover { transform: translateY(-2px); }
+/* Intro Box ở màn hình chào */
+.intro-glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
 
-/* --- 3. ANIMATIONS --- */
-.fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+/* --- 4. CÁC THÀNH PHẦN KHÁC --- */
+.fade-in { animation: fadeIn 0.6s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-.fade-out-up { animation: fadeOutUp 0.8s forwards cubic-bezier(0.16, 1, 0.3, 1); }
+.fade-out-up { animation: fadeOutUp 0.8s forwards; }
 @keyframes fadeOutUp { to { opacity: 0; transform: translateY(-50px); visibility: hidden; } }
 
-.blob { position: absolute; filter: blur(80px); z-index: 0; animation: blob-bounce 10s infinite ease-in-out; opacity: 0.6; }
-.blob-1 { top: 10%; left: 10%; width: 300px; height: 300px; background: #10b981; animation-delay: 0s; }
-.blob-2 { bottom: 10%; right: 10%; width: 300px; height: 300px; background: #3b82f6; animation-delay: 2s; }
-.blob-3 { bottom: 20%; left: 30%; width: 200px; height: 200px; background: #8b5cf6; animation-delay: 4s; }
-@keyframes blob-bounce { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } }
-
-.intro-glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-
-/* --- 4. MARQUEE (CHỮ CHẠY TO HƠN) --- */
-.marquee-wrapper { width: 100%; overflow: hidden; white-space: nowrap; mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent); }
-.marquee-content { 
-    display: inline-block; 
-    padding-left: 100%; 
-    animation: marquee 40s linear infinite; 
-    font-size: 1.1rem; /* Chữ to hơn */
-    font-weight: 600;
-}
+.marquee-wrapper { width: 100%; overflow: hidden; white-space: nowrap; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+.marquee-content { display: inline-block; padding-left: 100%; animation: marquee 40s linear infinite; font-size: 1.1rem; font-weight: 500; }
 @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-/* Utils */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 10px; }
-.text-ios-blue { color: #007AFF; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 .text-ios-green { color: #34C759; }
+.text-ios-blue { color: #007AFF; }
 .text-ios-red { color: #FF3B30; }
-
-/* Table Styles */
-th { font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; color: #64748b; }
-html.dark th { color: #94a3b8; }
-td { border-bottom: 1px solid rgba(0,0,0,0.05); }
-html.dark td { border-bottom: 1px solid rgba(255,255,255,0.05); }
+th { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+td { border-bottom: 1px solid rgba(255,255,255,0.05); }
