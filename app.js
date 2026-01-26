@@ -498,8 +498,108 @@ async function callGeminiAPI(prompt, imageBase64) { const url = `https://generat
 window.handleAIUpload = function(input) { if (input.files[0]) { const r = new FileReader(); r.onload = (e) => { document.getElementById('ai-preview-img').src = e.target.result; document.getElementById('ai-preview-img').classList.remove('hidden'); document.getElementById('ai-upload-placeholder').classList.add('hidden'); currentAnalysisImageBase64 = e.target.result; }; r.readAsDataURL(input.files[0]); } }
 window.runAIAnalysis = async function() { if(!currentAnalysisImageBase64) return alert("Chọn ảnh!"); const btn = document.getElementById('btn-ai-analyze'); btn.innerHTML = "ĐANG XỬ LÝ..."; btn.disabled = true; const pair = document.getElementById('ai-pair-input').value; const prompt = `Phân tích ${pair}. JSON: {pattern_name, score, conclusion}`; try { const txt = await callGeminiAPI(prompt, currentAnalysisImageBase64); const json = JSON.parse(txt.replace(/```json|```/g,'').trim()); document.getElementById('ai-res-pattern').innerText = json.pattern_name; document.getElementById('ai-res-conclusion').innerHTML = marked.parse(json.conclusion); document.getElementById('ai-result-content').classList.remove('hidden'); } catch (e) { alert("Lỗi: "+e.message); } btn.innerHTML = "BẮT ĐẦU"; btn.disabled = false; }
 window.resetAI = function() { document.getElementById('ai-result-content').classList.add('hidden'); document.getElementById('ai-result-empty').classList.remove('hidden'); currentAnalysisImageBase64=null; document.getElementById('ai-preview-img').classList.add('hidden'); document.getElementById('ai-upload-placeholder').classList.remove('hidden'); }
-window.openAdminPanel = async () => { document.getElementById('admin-modal').classList.remove('hidden'); const tb = document.getElementById('admin-user-list'); tb.innerHTML = 'Loading...'; const s = await getDocs(collection(db, "users")); let h = ''; s.forEach(d => { const u = d.data(); if(u.status === 'pending') h += `<tr><td class="p-3">${u.username}</td><td class="p-3 text-right"><button onclick="approveUser('${u.username}')" class="px-3 py-1 bg-green-600 rounded text-xs font-bold text-white">DUYỆT</button></td></tr>`; }); tb.innerHTML = h || '<tr><td colspan="2" class="p-4 text-center text-slate-500">Trống</td></tr>'; }
-window.approveUser = async (u) => { if(confirm("Duyệt?")) { await updateDoc(doc(db,"users",u),{status:'approved'}); window.openAdminPanel(); } }
+// ... (Các code phía trên giữ nguyên) ...
+
+// =========================================
+// KHU VỰC ADMIN (Duyệt & Xóa User) - MỚI
+// =========================================
+
+// 1. Hàm mở Admin Panel (Đã nâng cấp hiển thị nút Xóa)
+window.openAdminPanel = async () => {
+    if (!isAdmin) return alert("Bạn không có quyền truy cập!");
+    
+    document.getElementById('admin-modal').classList.remove('hidden');
+    const tb = document.getElementById('admin-user-list'); 
+    tb.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-slate-500">Đang tải danh sách...</td></tr>';
+    
+    try {
+        // Lấy TOÀN BỘ user
+        const s = await getDocs(collection(db, "users"));
+        let h = '';
+        
+        s.forEach(d => {
+            const u = d.data();
+            const isSelf = (u.username === window.currentUser); // Kiểm tra có phải chính mình không
+            
+            // Nút Duyệt (Chỉ hiện nếu status là pending)
+            let approveBtn = u.status === 'pending' 
+                ? `<button onclick="approveUser('${u.username}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold mr-2 transition">DUYỆT</button>` 
+                : `<span class="text-emerald-500 text-xs font-bold mr-2 border border-emerald-500/30 px-2 py-1 rounded-lg bg-emerald-500/10">Đã duyệt</span>`;
+            
+            // Nút Xóa (Không hiện nếu là chính mình để tránh tự sát)
+            let deleteBtn = isSelf
+                ? `<span class="text-slate-500 text-xs italic">Là bạn</span>`
+                : `<button onclick="deleteUser('${u.username}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600 text-red-500 hover:text-white border border-red-600/50 rounded-lg text-xs font-bold transition"><i data-lucide="trash-2" class="w-4 h-4 inline-block"></i> XÓA</button>`;
+
+            h += `
+            <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                <td class="p-4">
+                    <div class="font-bold text-white">${u.username}</div>
+                    <div class="text-xs text-slate-400">${u.email || 'Chưa có email'}</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Ngày tạo: ${u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                </td>
+                <td class="p-4 text-right align-middle">
+                    <div class="flex items-center justify-end">
+                        ${approveBtn}
+                        ${deleteBtn}
+                    </div>
+                </td>
+            </tr>`;
+        });
+        
+        tb.innerHTML = h || '<tr><td colspan="2" class="p-4 text-center text-slate-500">Không có thành viên nào.</td></tr>';
+        if(window.lucide) lucide.createIcons(); // Reset icon để nút Xóa hiện icon thùng rác
+
+    } catch(e) {
+        tb.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-red-500">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
+    }
+}
+
+// 2. Hàm Duyệt User (Giữ nguyên logic)
+window.approveUser = async (u) => { 
+    if(!isAdmin) return;
+    if(confirm(`Bạn có chắc chắn muốn DUYỆT thành viên "${u}"?`)) { 
+        try {
+            await updateDoc(doc(db,"users",u), {status:'approved'}); 
+            // Tải lại danh sách sau khi duyệt
+            window.openAdminPanel(); 
+        } catch(e) {
+            alert("Lỗi khi duyệt: " + e.message);
+        }
+    } 
+}
+
+// 3. Hàm Xóa User (MỚI HOÀN TOÀN)
+window.deleteUser = async (targetUsername) => {
+    if(!isAdmin) return alert("Chỉ Admin mới có quyền xóa!");
+    
+    // Check an toàn 2 lớp (dù UI đã ẩn nút)
+    if(targetUsername === window.currentUser) return alert("Bạn không thể tự xóa tài khoản của chính mình khi đang đăng nhập!");
+    
+    // Check bảo vệ tài khoản Super Admin gốc (tuỳ chọn, nên giữ)
+    const SUPER_ADMINS = ["admin", "minhtien45x3"];
+    if(SUPER_ADMINS.includes(targetUsername)) {
+        return alert(`KHÔNG THỂ XÓA! Tài khoản "${targetUsername}" là Super Admin được bảo vệ.`);
+    }
+
+    // Hộp thoại xác nhận quan trọng
+    const confirmMsg = `⚠️ CẢNH BÁO NGUY HIỂM ⚠️\n\nHành động này sẽ XÓA VĨNH VIỄN tài khoản "${targetUsername}" và TOÀN BỘ dữ liệu (Nhật ký, Vốn, Cài đặt) của họ khỏi hệ thống.\n\nBạn KHÔNG THỂ hoàn tác hành động này.\n\nBạn có chắc chắn muốn tiếp tục?`;
+    
+    if(confirm(confirmMsg)) {
+        try {
+            // Thực hiện xóa document trong collection "users"
+            await deleteDoc(doc(db, "users", targetUsername));
+            
+            alert(`✅ Đã xóa thành công tài khoản: ${targetUsername}`);
+            // Tải lại Admin Panel để cập nhật danh sách
+            window.openAdminPanel();
+            
+        } catch(e) {
+            console.error("Delete User Error:", e);
+            alert("❌ Đã xảy ra lỗi khi xóa: " + e.message);
+        }
+    }
+}
 window.selectAnalysisStrategy = function(id) { const item = wikiData.find(x=>x.id==id); if(item) { selectedAnalysisStrategy=item; document.getElementById('current-setup-name').innerText=item.title; document.getElementById('ana-theory-img').src=item.image; document.getElementById('ana-theory-content').innerText=item.content; document.getElementById('analysis-empty-state').classList.add('hidden'); } }
 window.handleAnalysisUpload = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('ana-real-img').src=e.target.result; document.getElementById('ana-real-img').classList.remove('hidden'); document.getElementById('ana-upload-hint').classList.add('hidden'); currentAnalysisTabImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.transferAnalysisToJournal = function() { if(!selectedAnalysisStrategy) return alert("Chưa chọn chiến lược!"); window.switchTab('journal'); window.openEntryModal(); if(currentAnalysisTabImg) { currentEntryImgBase64=currentAnalysisTabImg; document.getElementById('entry-img-preview').src=currentAnalysisTabImg; document.getElementById('entry-img-preview').classList.remove('hidden'); document.getElementById('entry-upload-hint').classList.add('hidden'); } }

@@ -1,7 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 👇 Sửa dòng dưới này: Thêm deleteDoc vào danh sách import
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
+    // ... (giữ nguyên config cũ của bạn) ...
     apiKey: "AIzaSyCKpkEF55M4sw0gvPd9wLBvMGWChrAv0DM",
     authDomain: "quanlyxaydung-cc893.firebaseapp.com",
     projectId: "quanlyxaydung-cc893",
@@ -14,5 +16,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-console.log("🔥 Firebase Connected (Full Features)");
-export { db, doc, getDoc, setDoc, collection, getDocs, updateDoc };
+console.log("🔥 Firebase Connected");
+// 👇 Sửa dòng cuối cùng: Thêm deleteDoc vào danh sách export
+export { db, doc, getDoc, setDoc, collection, getDocs, updateDoc, deleteDoc };
