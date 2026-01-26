@@ -78,8 +78,20 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-80"><div class="glass-panel p-4"><h3 class="text-xs font-bold uppercase mb-2">Tăng Trưởng Vốn</h3><div class="h-full pb-6"><canvas id="chart-equity"></canvas></div></div><div class="glass-panel p-4"><h3 class="text-xs font-bold uppercase mb-2">Tỷ Lệ Thắng/Thua</h3><div class="h-full pb-6 flex justify-center"><canvas id="chart-winloss"></canvas></div></div></div>
             </div>
 
-            <div id="tab-journal" class="hidden fade-in h-full flex flex-col"><div class="flex justify-between items-center mb-4"><button onclick="openEntryModal()" class="px-5 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold shadow-lg hover:scale-105 transition flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Viết Nhật Ký</button><div class="text-right"><p class="text-xs text-slate-500 font-bold uppercase">Hôm nay</p><p class="text-lg font-mono font-bold" id="journal-pnl-today">$0.00</p></div></div><div class="glass-panel flex-1 overflow-hidden flex flex-col"><div class="overflow-auto custom-scrollbar flex-1"><table class="w-full text-left border-collapse"><thead class="sticky top-0 bg-slate-100/90 dark:bg-slate-900/90 backdrop-blur z-10"><tr><th class="p-4">Ngày</th><th class="p-4">Cặp/Hướng</th><th class="p-4 text-center">Chart</th><th class="p-4">Mẫu Hình</th><th class="p-4 text-center">R:R</th><th class="p-4 text-right">Kết Quả (PnL)</th><th class="p-4 text-center">Xóa</th></tr></thead><tbody id="journal-list" class="text-sm font-medium divide-y divide-slate-200 dark:divide-slate-800"></tbody></table></div></div></div>
-
+            <div id="tab-journal" class="hidden fade-in h-full flex flex-col"><div class="flex justify-between items-center mb-4"><button onclick="openEntryModal()" class="px-5 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold shadow-lg hover:scale-105 transition flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Viết Nhật Ký</button><div class="text-right"><p class="text-xs text-slate-500 font-bold uppercase">Hôm nay</p><p class="text-lg font-mono font-bold" id="journal-pnl-today">$0.00</p></div></div><div class="glass-panel flex-1 overflow-hidden flex flex-col"><div class="overflow-auto custom-scrollbar flex-1"><table class="w-full text-left border-collapse">
+    <thead class="sticky top-0 bg-slate-100/90 dark:bg-slate-900/90 backdrop-blur z-10 text-xs font-bold uppercase text-slate-500">
+        <tr>
+            <th class="p-4">Ngày</th>
+            <th class="p-4">Cặp/Hướng</th>
+            <th class="p-4 text-center">Chart</th>
+            <th class="p-4">Mẫu Hình</th>
+            <th class="p-4 text-center">R:R</th>
+            <th class="p-4 text-center text-blue-500">Trạng Thái</th> <th class="p-4 text-right">Kết Quả (PnL)</th>
+            <th class="p-4 text-center">Xóa</th>
+        </tr>
+    </thead>
+    <tbody id="journal-list" class="text-sm font-medium divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+</table>
             <div id="tab-analysis" class="hidden fade-in h-full flex flex-col"><div class="flex h-full gap-6"><div class="w-72 glass-panel flex flex-col overflow-hidden shrink-0"><div class="p-4 border-b border-slate-200 dark:border-slate-700 font-bold text-center">DANH SÁCH SETUP</div><div class="flex-1 overflow-y-auto p-2 space-y-2" id="strategy-list-container"></div></div><div class="flex-1 glass-panel flex flex-col relative overflow-hidden"><div id="analysis-empty-state" class="absolute inset-0 flex flex-col items-center justify-center opacity-50"><i data-lucide="layout" class="w-16 h-16 mb-2"></i><p>Chọn Setup bên trái</p></div><div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center"><h2 class="text-xl font-bold text-ios-green" id="current-setup-name">Setup Name</h2><button onclick="transferAnalysisToJournal()" class="px-4 py-2 bg-ios-blue text-white rounded-lg font-bold text-xs shadow-lg">Lưu Vào Nhật Ký</button></div><div class="flex-1 p-6 grid grid-cols-2 gap-6 overflow-y-auto"><div class="space-y-2"><div class="aspect-video bg-black/10 dark:bg-white/5 rounded-xl overflow-hidden cursor-zoom-in group relative" onclick="viewImageFull(this.querySelector('img').src)"><span class="absolute top-2 left-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-bold">LÝ THUYẾT</span><img id="ana-theory-img" class="w-full h-full object-contain transition group-hover:scale-105"></div><div id="ana-theory-content" class="text-sm bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 whitespace-pre-line"></div></div><div class="space-y-4"><div class="aspect-video bg-black/10 dark:bg-white/5 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center relative group"><input type="file" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleAnalysisUpload(this)"><div class="text-center group-hover:scale-110 transition"><i data-lucide="upload" class="w-8 h-8 mx-auto mb-1 text-slate-400"></i><p class="text-xs font-bold text-slate-400">Upload Chart</p></div><img id="ana-real-img" class="absolute inset-0 w-full h-full object-contain hidden bg-slate-900 rounded-xl z-0"></div><div class="glass-panel p-4"><h3 class="text-xs font-bold uppercase mb-3 text-slate-500">Checklist (10 Tiêu Chí)</h3><div id="ana-checklist-container" class="grid grid-cols-2 gap-2"></div></div></div></div></div></div></div>
 
             <div id="tab-wiki" class="hidden fade-in h-full flex flex-col"><div class="flex justify-between items-center mb-6"><div class="relative w-96"><i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-slate-400"></i><input type="text" id="wiki-search" onkeyup="filterWiki()" placeholder="Tìm kiếm kiến thức..." class="w-full bg-slate-100 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 font-medium outline-none focus:ring-2 focus:ring-blue-500"></div><button onclick="openWikiEditor()" class="px-6 py-3 bg-ios-green text-white rounded-xl font-bold shadow-lg hover:bg-green-600 transition flex items-center gap-2"><i data-lucide="plus"></i> Tạo Mới</button></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pb-10" id="wiki-grid"></div></div>
@@ -91,7 +103,64 @@
         <div id="admin-modal" class="fixed inset-0 z-[200] bg-black/90 hidden flex items-center justify-center p-4"><div class="glass-panel w-full max-w-2xl bg-slate-900"><div class="p-4 border-b border-white/10 flex justify-between"><h3 class="font-bold text-white">Duyệt Thành Viên</h3><button onclick="closeModal('admin-modal')"><i data-lucide="x"></i></button></div><div class="p-4"><table class="w-full text-left text-sm text-slate-300"><tbody id="admin-user-list"></tbody></table><div id="admin-empty" class="text-center text-slate-500 hidden">Trống</div></div></div></div>
         <div id="image-viewer-modal" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center cursor-zoom-out" onclick="closeModal('image-viewer-modal')"><img id="image-viewer-img" class="max-w-full max-h-full p-4 rounded-lg shadow-2xl"></div>
         <div id="bg-settings-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[150] flex items-center justify-center p-4"><div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full max-w-md rounded-2xl p-6"><button onclick="setBackground('bg-theme-default')" class="w-full border p-2 mb-2">Mặc Định</button><button onclick="setBackground('bg-theme-galaxy')" class="w-full border p-2 mb-2 bg-indigo-900">Galaxy</button><button onclick="closeModal('bg-settings-modal')" class="w-full bg-slate-700 text-white p-2">Đóng</button></div></div>
-        <div id="wiki-editor-modal" class="fixed inset-0 bg-black/50 hidden z-[120] flex items-center justify-center p-4"><div class="glass-panel w-full max-w-lg bg-white dark:bg-slate-900"><div class="p-4 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold">Wiki Editor</h3></div><div class="p-4 space-y-3"><input id="edit-id" type="hidden"><input id="edit-code" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" placeholder="Mã (VD: BB01)"><input id="edit-cat" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" placeholder="Danh mục"><input id="edit-title" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" placeholder="Tiêu đề"><input id="edit-image-url" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold" placeholder="Link ảnh minh họa"><textarea id="edit-content" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl h-32 font-medium" placeholder="Nội dung..."></textarea></div><div class="p-4 border-t border-slate-200 dark:border-slate-700"><button onclick="saveWiki()" class="w-full py-3 bg-green-600 text-white rounded-xl font-bold">LƯU WIKI</button></div></div></div>
+       <div id="wiki-editor-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-[120] flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-lg bg-white dark:bg-slate-900 flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <h3 class="font-bold text-xl" id="wiki-editor-title">Wiki Editor</h3>
+            <button onclick="closeModal('wiki-editor-modal')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition"><i data-lucide="x"></i></button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto space-y-4 custom-scrollbar">
+            <input type="hidden" id="edit-id">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Mã (Code)</label>
+                    <input type="text" id="edit-code" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="VD: BB01">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Danh mục</label>
+                    <input type="text" list="cat-suggestions" id="edit-cat" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="VD: Setup">
+                    <datalist id="cat-suggestions"></datalist>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Tiêu đề</label>
+                <input type="text" id="edit-title" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tên phương pháp...">
+            </div>
+
+            <div>
+                <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Hình ảnh minh họa</label>
+                <div class="relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group cursor-pointer">
+                    <input type="file" id="wiki-file-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleWikiImageUpload(this)">
+                    
+                    <div id="wiki-upload-hint" class="flex flex-col items-center justify-center py-2">
+                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                            <i data-lucide="image-plus" class="w-5 h-5"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-600 dark:text-slate-300">Bấm để chọn ảnh</p>
+                    </div>
+
+                    <img id="wiki-image-preview" class="hidden w-full h-48 object-contain rounded-lg relative z-0">
+                    
+                    <input type="hidden" id="edit-image-url">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Nội dung chi tiết</label>
+                <textarea id="edit-content" class="w-full bg-slate-100 dark:bg-slate-800 p-3 rounded-xl h-32 font-medium outline-none focus:ring-2 focus:ring-blue-500 custom-scrollbar" placeholder="Mô tả chi tiết..."></textarea>
+            </div>
+        </div>
+
+        <div class="p-5 border-t border-slate-200 dark:border-slate-700">
+            <button onclick="saveWiki()" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
+                <i data-lucide="save" class="w-5 h-5"></i> LƯU WIKI
+            </button>
+        </div>
+    </div>
+</div>
         <div id="wiki-detail-modal" class="fixed inset-0 bg-black/90 hidden z-[100] flex items-center justify-center p-4"><div class="glass-panel w-full max-w-4xl h-[90vh] flex flex-col bg-white dark:bg-slate-900"><div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between"><h2 id="view-title" class="text-xl font-bold"></h2><div><button id="btn-edit-entry" class="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg mr-2"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button id="btn-delete-entry" class="p-2 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-lg mr-2"><i data-lucide="trash" class="w-4 h-4"></i></button><button onclick="closeModal('wiki-detail-modal')"><i data-lucide="x"></i></button></div></div><div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-6"><img id="view-image" class="w-full object-contain rounded-xl"><div id="view-content" class="whitespace-pre-line text-sm leading-relaxed"></div></div></div></div>
     </div>
 

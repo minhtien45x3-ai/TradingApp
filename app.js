@@ -353,27 +353,183 @@ window.saveEntry = function() {
 window.updateEntryStatus = function(id, status) { const idx = journalData.findIndex(e => e.id.toString() === id.toString()); if(idx !== -1) { journalData[idx].status = status; const r = parseFloat(journalData[idx].risk); const rr = parseFloat(journalData[idx].rr); if(status === 'WIN') journalData[idx].pnl = r * rr; else if(status === 'LOSS') journalData[idx].pnl = -r; else journalData[idx].pnl = 0; saveUserData(); renderJournalList(); renderDashboard(); } }
 window.deleteEntry = (id) => { if(confirm('Xóa?')) { journalData=journalData.filter(x=>x.id!=id); saveUserData(); renderJournalList(); renderDashboard(); } }
 window.renderJournalList = function() { 
-    document.getElementById('journal-list').innerHTML = journalData.map(t=>`
-        <tr class="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td class="p-4 font-bold text-slate-500 text-xs">${t.date}<br><span class="opacity-50 text-[10px]">${t.session||'SESSION'}</span></td>
-            <td class="p-4 font-bold"><span class="${t.dir==='BUY'?'text-green-500':'text-red-500'}">${t.dir}</span> ${t.pair}</td>
-            <td class="p-4 text-center">${t.image ? `<img src="${t.image}" class="w-10 h-10 object-cover rounded cursor-pointer mx-auto hover:scale-150 transition" onclick="viewImageFull('${t.image}')">` : '-'}</td>
-            <td class="p-4 text-xs">${t.strategy}</td>
-            <td class="p-4 text-center text-xs">1:${t.rr}</td>
-            <td class="p-4 text-right font-mono font-bold ${parseFloat(t.pnl)>0?'text-green-500':parseFloat(t.pnl)<0?'text-red-500':'text-slate-500'}">${parseFloat(t.pnl)>0?'+':''}${parseFloat(t.pnl).toLocaleString()}</td>
-            <td class="p-4 text-center"><button onclick="deleteEntry('${t.id}')"><i data-lucide="trash-2" class="w-4 h-4 text-slate-400 hover:text-red-500"></i></button></td>
-        </tr>`).join(''); 
-    updateDailyPnL(); 
+    const list = document.getElementById('journal-list');
+    if (!list) return;
+
+    list.innerHTML = journalData.map(t => `
+        <tr class="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
+            
+            <td class="p-4">
+                <div class="font-bold text-slate-600 dark:text-slate-300 text-xs">${t.date}</div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">${t.session || 'SESSION'}</div>
+            </td>
+
+            <td class="p-4 font-bold text-sm">
+                <span class="${t.dir === 'BUY' ? 'text-green-500' : 'text-red-500'}">${t.dir}</span> 
+                <span class="text-slate-800 dark:text-slate-200">${t.pair}</span>
+            </td>
+
+            <td class="p-4 text-center">
+                ${t.image ? `<div class="w-10 h-10 rounded-lg overflow-hidden mx-auto border border-slate-200 dark:border-slate-700 cursor-zoom-in hover:scale-110 transition shadow-sm" onclick="viewImageFull('${t.image}')"><img src="${t.image}" class="w-full h-full object-cover"></div>` : '<span class="text-slate-300 text-xs">-</span>'}
+            </td>
+
+            <td class="p-4 text-xs font-medium text-slate-600 dark:text-slate-400">${t.strategy}</td>
+
+            <td class="p-4 text-center text-xs font-mono text-slate-500">1:${t.rr}</td>
+
+            <td class="p-4 text-center">
+                <select onchange="updateEntryStatus('${t.id}', this.value)" 
+                        class="bg-transparent text-xs font-bold outline-none cursor-pointer text-center border border-slate-200 dark:border-slate-700 rounded py-1 px-2 shadow-sm focus:border-blue-500 transition
+                        ${t.status === 'WIN' ? 'text-green-500 bg-green-500/10 border-green-500/30' : 
+                          t.status === 'LOSS' ? 'text-red-500 bg-red-500/10 border-red-500/30' : 'text-blue-500 bg-blue-500/10 border-blue-500/30'}">
+                    <option value="OPEN" class="text-blue-500 bg-white dark:bg-slate-900" ${t.status === 'OPEN' ? 'selected' : ''}>OPEN</option>
+                    <option value="WIN" class="text-green-500 bg-white dark:bg-slate-900" ${t.status === 'WIN' ? 'selected' : ''}>WIN</option>
+                    <option value="LOSS" class="text-red-500 bg-white dark:bg-slate-900" ${t.status === 'LOSS' ? 'selected' : ''}>LOSS</option>
+                </select>
+            </td>
+
+            <td class="p-4 text-right font-mono font-bold ${parseFloat(t.pnl) > 0 ? 'text-green-500' : parseFloat(t.pnl) < 0 ? 'text-red-500' : 'text-slate-400'}">
+                ${parseFloat(t.pnl) > 0 ? '+' : ''}${parseFloat(t.pnl).toLocaleString()}
+            </td>
+
+            <td class="p-4 text-center">
+                <button onclick="deleteEntry('${t.id}')" class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg text-slate-400 hover:text-red-500 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    // Cập nhật PnL tổng ngày và icon
+    updateDailyPnL();
     if(window.lucide) lucide.createIcons();
 }
 window.renderPairsList = function() { const el = document.getElementById('pairs-list-container'); if(el) el.innerHTML = pairsData.map(p => `<div class="flex justify-between items-center bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-sm font-bold">${p} <button onclick="removePair('${p}')" class="text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button></div>`).join(''); if(window.lucide) lucide.createIcons(); }
 window.addNewPair = function() { const el = document.getElementById('new-pair-input'); const val = el.value.trim().toUpperCase(); if(val && !pairsData.includes(val)) { pairsData.push(val); saveUserData(); renderPairsList(); renderPairSelects(); } el.value = ""; }
 window.removePair = function(val) { if(confirm('Xóa?')) { pairsData = pairsData.filter(p => p !== val); saveUserData(); renderPairsList(); renderPairSelects(); } }
 window.renderPairSelects = function() { const h = pairsData.map(p=>`<option value="${p}">${p}</option>`).join(''); const aiSel = document.getElementById('ai-pair-input'); const inpSel = document.getElementById('inp-pair'); if(aiSel) aiSel.innerHTML=h; if(inpSel) inpSel.innerHTML=h; }
-window.openWikiEditor = function(id=null) { if(!isAdmin) return alert("Chỉ Admin!"); document.getElementById('wiki-editor-modal').classList.remove('hidden'); if(id) { const i = wikiData.find(x=>x.id==id); if(i) { document.getElementById('edit-id').value=i.id; document.getElementById('edit-title').value=i.title; document.getElementById('edit-code').value=i.code; document.getElementById('edit-cat').value=i.cat; document.getElementById('edit-image-url').value=i.image; document.getElementById('edit-content').value=i.content; } } else { document.getElementById('edit-id').value=""; document.getElementById('edit-title').value=""; } }
-window.saveWiki = function() { const id = document.getElementById('edit-id').value || Date.now().toString(); const item = { id, title: document.getElementById('edit-title').value, code: document.getElementById('edit-code').value, cat: document.getElementById('edit-cat').value, image: document.getElementById('edit-image-url').value, content: document.getElementById('edit-content').value }; const idx = wikiData.findIndex(x=>x.id==id); if(idx!==-1) wikiData[idx]=item; else wikiData.push(item); saveWikiData(); renderWikiGrid(); window.closeModal('wiki-editor-modal'); }
-window.deleteWikiItem = function(id) { if(!isAdmin) return; if(confirm("Xóa?")) { wikiData = wikiData.filter(i => i.id.toString() !== id.toString()); saveWikiData(); renderWikiGrid(); window.closeModal('wiki-detail-modal'); } }
-window.viewWikiDetail = function(id) { const i = wikiData.find(x=>x.id==id); if(!i) return; document.getElementById('view-title').innerText = i.title; document.getElementById('view-image').src = i.image; document.getElementById('view-content').innerText = i.content; const btnEdit = document.getElementById('btn-edit-entry'); const btnDel = document.getElementById('btn-delete-entry'); if(isAdmin) { btnEdit.style.display='inline-block'; btnDel.style.display='inline-block'; const ne = btnEdit.cloneNode(true); const nd = btnDel.cloneNode(true); btnEdit.parentNode.replaceChild(ne, btnEdit); btnDel.parentNode.replaceChild(nd, btnDel); ne.onclick = () => { window.closeModal('wiki-detail-modal'); window.openWikiEditor(id); }; nd.onclick = () => window.deleteWikiItem(id); } else { btnEdit.style.display='none'; btnDel.style.display='none'; } document.getElementById('wiki-detail-modal').classList.remove('hidden'); }
+// --- AI & WIKI ---
+
+// 1. Hàm mở Modal Wiki (Đã cập nhật logic reset ảnh)
+window.openWikiEditor = function(id = null) {
+    if (!isAdmin) return alert("Chỉ Admin mới được sửa!");
+    
+    document.getElementById('wiki-editor-modal').classList.remove('hidden');
+    
+    // Gợi ý danh mục
+    const cats = [...new Set(wikiData.map(i => i.cat))];
+    const dl = document.getElementById('cat-suggestions');
+    if(dl) dl.innerHTML = cats.map(c => `<option value="${c}">`).join('');
+
+    // Reset các trường ảnh
+    const imgPreview = document.getElementById('wiki-image-preview');
+    const uploadHint = document.getElementById('wiki-upload-hint');
+    const imgInput = document.getElementById('edit-image-url');
+
+    if (id) {
+        // CHẾ ĐỘ SỬA
+        const i = wikiData.find(x => x.id == id);
+        if (i) {
+            document.getElementById('wiki-editor-title').innerText = "Sửa Wiki";
+            document.getElementById('edit-id').value = i.id;
+            document.getElementById('edit-title').value = i.title;
+            document.getElementById('edit-code').value = i.code;
+            document.getElementById('edit-cat').value = i.cat;
+            document.getElementById('edit-content').value = i.content;
+            
+            // Xử lý hiển thị ảnh cũ
+            imgInput.value = i.image || ""; 
+            if (i.image) {
+                imgPreview.src = i.image;
+                imgPreview.classList.remove('hidden');
+                if(uploadHint) uploadHint.classList.add('hidden');
+            } else {
+                imgPreview.classList.add('hidden');
+                if(uploadHint) uploadHint.classList.remove('hidden');
+            }
+        }
+    } else {
+        // CHẾ ĐỘ THÊM MỚI
+        document.getElementById('wiki-editor-title').innerText = "Thêm Wiki Mới";
+        document.getElementById('edit-id').value = "";
+        document.getElementById('edit-title').value = "";
+        document.getElementById('edit-code').value = "";
+        document.getElementById('edit-cat').value = "";
+        document.getElementById('edit-content').value = "";
+        
+        // Reset ảnh trắng
+        imgInput.value = "";
+        imgPreview.src = "";
+        imgPreview.classList.add('hidden');
+        if(uploadHint) uploadHint.classList.remove('hidden');
+    }
+}
+
+// 2. Hàm xử lý khi chọn ảnh từ máy (MỚI)
+window.handleWikiImageUpload = function(input) {
+    if (input.files[0]) {
+        const r = new FileReader();
+        r.onload = (e) => {
+            const imgPreview = document.getElementById('wiki-image-preview');
+            const imgInput = document.getElementById('edit-image-url'); // Input ẩn lưu base64
+            const uploadHint = document.getElementById('wiki-upload-hint');
+
+            // Hiển thị ảnh và lưu dữ liệu
+            imgPreview.src = e.target.result;
+            imgPreview.classList.remove('hidden');
+            imgInput.value = e.target.result; // Lưu chuỗi base64 vào đây
+            
+            if(uploadHint) uploadHint.classList.add('hidden');
+        };
+        r.readAsDataURL(input.files[0]);
+    }
+}
+
+// 3. Hàm Lưu Wiki (Cập nhật để lấy ảnh từ input ẩn)
+window.saveWiki = function() {
+    if (!isAdmin) return;
+    
+    const id = document.getElementById('edit-id').value || Date.now().toString();
+    
+    const item = {
+        id,
+        title: document.getElementById('edit-title').value,
+        code: document.getElementById('edit-code').value,
+        cat: document.getElementById('edit-cat').value,
+        image: document.getElementById('edit-image-url').value, // Lấy dữ liệu ảnh từ input ẩn
+        content: document.getElementById('edit-content').value
+    };
+
+    if (!item.code || !item.title) return alert("Vui lòng nhập Mã và Tiêu đề!");
+
+    const idx = wikiData.findIndex(x => x.id == id);
+    if (idx !== -1) wikiData[idx] = item;
+    else wikiData.push(item);
+
+    saveWikiData();
+    renderWikiGrid();
+    populateStrategies(); // Cập nhật lại list bên tab Phân tích
+    window.closeModal('wiki-editor-modal');
+}
+
+// Các hàm xóa/xem chi tiết giữ nguyên
+window.deleteWikiItem = function(id) { if(!isAdmin) return; if(confirm("Xóa vĩnh viễn?")) { wikiData = wikiData.filter(i => i.id.toString() !== id.toString()); saveWikiData(); renderWikiGrid(); window.closeModal('wiki-detail-modal'); } }
+window.viewWikiDetail = function(id) {
+    const i = wikiData.find(x=>x.id==id); if(!i) return;
+    document.getElementById('view-title').innerText = i.title;
+    document.getElementById('view-image').src = i.image;
+    document.getElementById('view-content').innerText = i.content;
+    const btnEdit = document.getElementById('btn-edit-entry');
+    const btnDel = document.getElementById('btn-delete-entry');
+    if(isAdmin) {
+        btnEdit.style.display='inline-block'; btnDel.style.display='inline-block';
+        const ne = btnEdit.cloneNode(true); const nd = btnDel.cloneNode(true);
+        btnEdit.parentNode.replaceChild(ne, btnEdit); btnDel.parentNode.replaceChild(nd, btnDel);
+        ne.onclick = () => { window.closeModal('wiki-detail-modal'); window.openWikiEditor(id); };
+        nd.onclick = () => window.deleteWikiItem(id);
+    } else { btnEdit.style.display='none'; btnDel.style.display='none'; }
+    document.getElementById('wiki-detail-modal').classList.remove('hidden');
+}
 window.renderWikiGrid = function() { document.getElementById('wiki-grid').innerHTML = wikiData.map(i => `<div class="glass-panel p-4 cursor-pointer hover:bg-white/5" onclick="viewWikiDetail('${i.id}')"><div class="h-32 bg-black/20 rounded-lg mb-3 overflow-hidden"><img src="${i.image}" class="w-full h-full object-cover"></div><h4 class="font-bold text-sm truncate">${i.title}</h4><span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300 mt-1 inline-block">${i.code}</span></div>`).join(''); }
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); document.getElementById('tab-'+id).classList.remove('hidden'); if(id==='dashboard') renderDashboard(); };
