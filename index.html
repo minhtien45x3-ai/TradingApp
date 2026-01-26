@@ -287,8 +287,34 @@
         <div id="image-viewer-modal" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center cursor-zoom-out" onclick="closeModal('image-viewer-modal')"><img id="image-viewer-img" class="max-w-full max-h-full p-4 rounded-lg shadow-2xl"></div>
         <div id="bg-settings-modal" class="fixed inset-0 bg-black/50 dark:bg-black/90 hidden z-[150] flex items-center justify-center p-4"><div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full max-w-md rounded-2xl p-6"><button onclick="setBackground('bg-theme-default')" class="w-full border p-2 mb-2">Mặc Định</button><button onclick="closeModal('bg-settings-modal')" class="w-full bg-slate-700 text-white p-2">Đóng</button></div></div>
         
-        <div id="wiki-detail-modal" class="fixed inset-0 bg-black/90 hidden z-[100] flex items-center justify-center p-4"><div class="glass-panel w-full max-w-4xl h-[90vh] flex flex-col bg-[#0f172a] border border-slate-700"><div class="p-4 border-b border-white/10 flex justify-between"><h2 id="view-title" class="text-xl font-bold text-white"></h2><div><button id="btn-edit-entry" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg mr-2 text-white"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button id="btn-delete-entry" class="p-2 bg-red-900/30 hover:bg-red-900/50 text-red-500 rounded-lg mr-2"><i data-lucide="trash" class="w-4 h-4"></i></button><button onclick="closeModal('wiki-detail-modal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div></div><div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-6 custom-scrollbar"><div class="bg-black/30 rounded-xl border border-white/5 flex items-center justify-center p-4"><img id="view-image" class="w-full object-contain rounded-lg"></div><div id="view-content" class="whitespace-pre-line text-sm leading-relaxed text-slate-300"></div></div></div></div>
+       <div id="wiki-detail-modal" class="fixed inset-0 bg-black/90 hidden z-[100] flex items-center justify-center p-2">
+    <div class="glass-panel w-full max-w-[95vw] h-[95vh] flex flex-col bg-[#0f172a] border border-slate-700 rounded-2xl overflow-hidden shadow-2xl">
+        
+        <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 shrink-0">
+            <h2 id="view-title" class="text-xl font-bold text-white tracking-wide pl-2"></h2>
+            <div class="flex gap-3 pr-2">
+                <button id="btn-edit-entry" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white transition border border-white/5"><i data-lucide="edit-2" class="w-5 h-5"></i></button>
+                <button id="btn-delete-entry" class="p-2 bg-red-900/30 hover:bg-red-900/50 text-red-500 rounded-lg transition border border-red-500/20"><i data-lucide="trash" class="w-5 h-5"></i></button>
+                <button onclick="closeModal('wiki-detail-modal')" class="p-2 text-slate-400 hover:text-white transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-hidden p-0 grid grid-cols-1 lg:grid-cols-12 h-full">
+            
+            <div class="lg:col-span-9 bg-black/50 border-r border-white/5 flex items-center justify-center p-1 relative overflow-hidden group">
+                <img id="view-image" class="w-full h-full object-contain rounded-lg drop-shadow-2xl transition duration-500 group-hover:scale-[1.01]">
+            </div>
+            
+            <div class="lg:col-span-3 overflow-y-auto custom-scrollbar bg-[#0f172a] p-5 border-l border-white/5 shadow-inner">
+                <div class="mb-4">
+                    <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest block mb-3 border-b border-white/5 pb-2">CHI TIẾT KỸ THUẬT</span>
+                    <div id="view-content" class="text-[11px] leading-relaxed text-slate-300 whitespace-pre-line font-mono tracking-wide"></div>
+                </div>
+            </div>
+
+        </div>
     </div>
+</div>
 
     <script type="module" src="app.js"></script>
 </body>
