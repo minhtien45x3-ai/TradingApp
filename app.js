@@ -262,7 +262,64 @@ window.filterWiki = () => { const term = document.getElementById('wiki-search').
 window.filterLibrary = () => { const term = document.getElementById('library-search').value.toLowerCase(); const html = libraryData.filter(i => i.title.toLowerCase().includes(term) || i.code.toLowerCase().includes(term)).map(i => `<div class="glass-panel p-4 cursor-pointer hover:bg-white/5 border border-blue-500/20" onclick="viewWikiDetail('${i.id}', 'library')"><div class="h-32 bg-black/20 rounded-lg mb-3 overflow-hidden"><img src="${i.image}" class="w-full h-full object-cover"></div><h4 class="font-bold text-sm truncate text-blue-200">${i.title}</h4><span class="text-[10px] bg-blue-900/50 px-2 py-1 rounded text-blue-300 mt-1 inline-block">${i.cat}</span></div>`).join(''); document.getElementById('library-grid').innerHTML = html; }
 
 // --- OTHERS ---
-window.openAdminPanel = async () => { document.getElementById('admin-modal').classList.remove('hidden'); const tb = document.getElementById('admin-user-list'); tb.innerHTML = 'Loading...'; const s = await getDocs(collection(db, "users")); let h = ''; s.forEach(d => { const u = d.data(); const delBtn = u.username===window.currentUser ? '' : `<button onclick="deleteUser('${u.username}')" class="text-red-500 ml-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`; const appBtn = u.status==='pending' ? `<button onclick="approveUser('${u.username}')" class="bg-green-600 px-2 py-1 rounded text-xs">Duyệt</button>` : `<span class="text-green-500 text-xs">Duyệt</span>`; h += `<tr><td class="p-3">${u.username}</td><td class="p-3 text-right">${appBtn} ${delBtn}</td></tr>`; }); tb.innerHTML = h || 'Trống'; if(window.lucide) lucide.createIcons(); }
+window.openAdminPanel = async () => {
+    document.getElementById('admin-modal').classList.remove('hidden');
+    const tb = document.getElementById('admin-user-list'); 
+    tb.innerHTML = '<div class="p-4 text-center text-slate-500">Đang tải dữ liệu...</div>';
+    
+    try {
+        const s = await getDocs(collection(db, "users"));
+        
+        // Tạo tiêu đề bảng
+        let h = `
+        <tr class="text-[10px] text-slate-500 uppercase font-bold border-b border-white/10 bg-white/5">
+            <td class="p-3">Tài khoản / Email</td>
+            <td class="p-3">Mật khẩu</td>
+            <td class="p-3 text-right">Hành động</td>
+        </tr>`;
+        
+        s.forEach(d => {
+            const u = d.data();
+            
+            // Logic nút Xóa
+            const deleteBtn = (u.username === window.currentUser) 
+                ? '<span class="text-xs text-slate-500 italic mr-2">Tôi</span>' 
+                : `<button onclick="deleteUser('${u.username}')" class="p-2 text-rose-500 hover:bg-rose-500/10 rounded transition" title="Xóa"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+            
+            // Logic nút Duyệt
+            const approveBtn = (u.status === 'pending')
+                ? `<button onclick="approveUser('${u.username}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 rounded text-xs font-bold text-white mr-1 shadow-lg shadow-emerald-500/20">Duyệt</button>`
+                : `<span class="text-emerald-500 text-xs font-bold mr-2 border border-emerald-500/20 px-2 py-1 rounded bg-emerald-500/5">Đã duyệt</span>`;
+
+            h += `
+            <tr class="border-b border-white/5 hover:bg-white/5 transition group">
+                <td class="p-3 align-middle">
+                    <div class="font-bold text-white text-sm">${u.username}</div>
+                    <div class="text-[11px] text-blue-400 font-mono mt-0.5">${u.email || 'Không có email'}</div>
+                </td>
+                
+                <td class="p-3 align-middle">
+                    <div class="inline-block bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-yellow-500 font-mono tracking-wider">
+                        ${u.password || '***'}
+                    </div>
+                </td>
+
+                <td class="p-3 text-right align-middle">
+                    <div class="flex items-center justify-end gap-1">
+                        ${approveBtn}
+                        ${deleteBtn}
+                    </div>
+                </td>
+            </tr>`;
+        });
+        
+        tb.innerHTML = h;
+        if(window.lucide) lucide.createIcons();
+        
+    } catch(e) { 
+        tb.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-red-500">Lỗi: ${e.message}</td></tr>`; 
+    }
+}
 window.approveUser = async (u) => { if(confirm("Duyệt?")) { await updateDoc(doc(db,"users",u),{status:'approved'}); window.openAdminPanel(); } }
 window.deleteUser = async (u) => { if(confirm("Xóa vĩnh viễn?")) { await deleteDoc(doc(db,"users",u)); window.openAdminPanel(); } }
 window.selectAnalysisStrategy = function(id) { const item = wikiData.find(x=>x.id==id); if(item) { selectedAnalysisStrategy=item; document.getElementById('current-setup-name').innerText=item.title; document.getElementById('ana-theory-img').src=item.image; document.getElementById('ana-theory-content').innerText=item.content; document.getElementById('analysis-empty-state').classList.add('hidden'); } }
