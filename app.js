@@ -289,3 +289,35 @@ window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); document.getElementById('tab-'+id).classList.remove('hidden'); if(id==='dashboard') renderDashboard(); };
 window.initTheme = () => { if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark'); }
 window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'; renderCharts(journalData.filter(t=>t.status!=='OPEN'), initialCapital); }
+// --- PSYCHOLOGY LOGIC ---
+window.showAdvice = function(type) {
+    const box = document.getElementById('psychology-advice-box');
+    const title = document.getElementById('psy-advice-title');
+    const content = document.getElementById('psy-advice-content');
+    
+    box.classList.remove('hidden');
+    // Reset classes
+    box.className = "mt-6 p-4 rounded-xl border text-center animate-fade-in";
+
+    if (type === 'fomo') {
+        box.classList.add('border-yellow-500/30', 'bg-yellow-500/10');
+        title.innerText = "🔥 CẢNH BÁO: FOMO";
+        title.className = "font-bold text-lg mb-1 text-yellow-400";
+        content.innerText = "Thị trường luôn còn đó. Đừng đuổi theo giá. Nếu lỡ tàu, hãy đợi setup tiếp theo. Kiên nhẫn là tiền.";
+    } else if (type === 'fear') {
+        box.classList.add('border-rose-500/30', 'bg-rose-500/10');
+        title.innerText = "😨 ĐỪNG SỢ HÃI";
+        title.className = "font-bold text-lg mb-1 text-rose-400";
+        content.innerText = "Hãy giảm volume xuống mức bạn thấy thoải mái. Chấp nhận rủi ro trước khi vào lệnh. Nếu quá sợ, hãy đứng ngoài quan sát.";
+    } else if (type === 'revenge') {
+        box.classList.add('border-purple-500/30', 'bg-purple-500/10');
+        title.innerText = "😡 DỪNG LẠI NGAY";
+        title.className = "font-bold text-lg mb-1 text-purple-400";
+        content.innerText = "Bạn đang muốn trả thù thị trường. Đây là cách nhanh nhất để cháy tài khoản. Tắt máy, đi dạo 15 phút ngay lập tức!";
+    } else if (type === 'calm') {
+        box.classList.add('border-emerald-500/30', 'bg-emerald-500/10');
+        title.innerText = "🧘 TÂM THÁI TỐT";
+        title.className = "font-bold text-lg mb-1 text-emerald-400";
+        content.innerText = "Tuyệt vời. Hãy giữ kỷ luật, tuân thủ kế hoạch và thực hiện giao dịch như một tay súng bắn tỉa.";
+    }
+}

@@ -73,47 +73,79 @@
 
             <div id="tab-library" class="hidden fade-in flex flex-col h-full"><div class="flex justify-between items-center mb-6"><div class="relative w-96 group"><i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition"></i><input type="text" id="library-search" onkeyup="filterLibrary()" placeholder="Tìm kiếm lý thuyết..." class="w-full bg-black/20 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-slate-200 outline-none focus:border-blue-500/50 focus:bg-black/40 transition"></div><button onclick="openWikiEditor(null, 'library')" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg flex items-center gap-2 transition transform active:scale-95"><i data-lucide="book-open" class="w-5 h-5"></i> Thêm Bài</button></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pb-10 custom-scrollbar" id="library-grid"></div></div>
 
-            <div id="tab-psychology" class="hidden fade-in flex flex-col h-full overflow-y-auto custom-scrollbar p-2">
-                <div class="grid grid-cols-1 gap-6 max-w-4xl mx-auto w-full">
-                    <div class="glass-panel p-8 border-l-4 border-l-rose-500 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="skull" class="w-32 h-32 text-rose-500"></i></div>
-                        <h3 class="text-xl font-bold text-rose-400 mb-4 flex items-center gap-2"><span class="bg-rose-500/20 px-2 py-1 rounded text-sm">1/238</span> NỖI SỢ & SỰ BUÔNG BỎ</h3>
-                        <p class="text-slate-300 leading-relaxed mb-4">Nỗi sợ hãi là kẻ thù số 1 hủy hoại kỷ luật. Để không sợ hãi: <strong>Đặt Stoploss ngay khi vào lệnh.</strong></p>
-                        <div class="bg-black/30 p-4 rounded-xl border border-white/5">
-                            <h4 class="text-sm font-bold text-white mb-2 uppercase">Giải pháp: Diễn tập tinh thần</h4>
-                            <p class="text-sm text-slate-400">Hãy hình dung bản thân chấp nhận các khoản lỗ một cách nhẹ nhàng. Khi không quá quan trọng kết quả từng lệnh (buông bỏ), bạn sẽ không còn vội vàng mua đuổi hay dời stoploss.</p>
+            <div id="tab-psychology" class="hidden fade-in flex flex-col h-full overflow-y-auto custom-scrollbar p-6">
+                
+                <div class="glass-panel p-6 mb-8 border border-white/5 bg-gradient-to-r from-slate-900 to-slate-800">
+                    <h3 class="text-center text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">⚠️ TRẠNG THÁI CỦA BẠN TRƯỚC KHI VÀO LỆNH?</h3>
+                    <div class="flex justify-center gap-4 md:gap-8">
+                        <button onclick="showAdvice('fomo')" class="group flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-white/5 transition border border-transparent hover:border-yellow-500/30">
+                            <div class="w-12 h-12 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-2xl group-hover:scale-110 transition">🔥</div>
+                            <span class="text-xs font-bold text-slate-400 group-hover:text-yellow-400">Hưng Phấn / FOMO</span>
+                        </button>
+                        <button onclick="showAdvice('fear')" class="group flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-white/5 transition border border-transparent hover:border-rose-500/30">
+                            <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl group-hover:scale-110 transition">😨</div>
+                            <span class="text-xs font-bold text-slate-400 group-hover:text-rose-400">Sợ Hãi / Lo Âu</span>
+                        </button>
+                        <button onclick="showAdvice('revenge')" class="group flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-white/5 transition border border-transparent hover:border-purple-500/30">
+                            <div class="w-12 h-12 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-2xl group-hover:scale-110 transition">😡</div>
+                            <span class="text-xs font-bold text-slate-400 group-hover:text-purple-400">Cay Cú / Muốn Gỡ</span>
+                        </button>
+                        <button onclick="showAdvice('calm')" class="group flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-white/5 transition border border-transparent hover:border-emerald-500/30">
+                            <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl group-hover:scale-110 transition">🧘</div>
+                            <span class="text-xs font-bold text-slate-400 group-hover:text-emerald-400">Bình Tâm / Sẵn Sàng</span>
+                        </button>
+                    </div>
+                    
+                    <div id="psychology-advice-box" class="hidden mt-6 p-4 rounded-xl border border-white/10 bg-black/20 text-center animate-fade-in">
+                        <h4 id="psy-advice-title" class="font-bold text-lg mb-1"></h4>
+                        <p id="psy-advice-content" class="text-sm text-slate-300"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <div class="lg:col-span-1 glass-panel p-6 flex flex-col items-center justify-center text-center border-t-4 border-t-cyan-500 relative overflow-hidden">
+                        <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-widest mb-8 z-10">Kỹ Thuật Thở 4-7-8</h3>
+                        
+                        <div class="relative w-40 h-40 flex items-center justify-center mb-8">
+                            <div class="absolute inset-0 bg-cyan-500/20 rounded-full animate-[ping_4s_ease-in-out_infinite]"></div>
+                            <div class="absolute inset-0 border-2 border-cyan-500/30 rounded-full animate-[pulse_4s_ease-in-out_infinite]"></div>
+                            <div class="z-10 text-xs font-mono text-cyan-200">
+                                HÍT VÀO<br>(Phình Bụng)
+                            </div>
                         </div>
+                        
+                        <p class="text-xs text-slate-400 leading-relaxed z-10">
+                            "Hơi thở cơ hoành làm tăng vận chuyển bạch cầu gấp 3 lần. Thở ra hóp bụng, hít vào phình bụng."
+                        </p>
                     </div>
-                    <div class="glass-panel p-8 border-l-4 border-l-yellow-500 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="star" class="w-32 h-32 text-yellow-500"></i></div>
-                        <h3 class="text-xl font-bold text-yellow-400 mb-4 flex items-center gap-2"><span class="bg-yellow-500/20 px-2 py-1 rounded text-sm">2/240</span> QUY TRÌNH HƠN KẾT QUẢ</h3>
-                        <p class="text-slate-300 leading-relaxed">"Thành tích của tôi thăng tiến nhờ thực hiện tốt từng quyết định nhỏ."</p>
-                        <p class="text-slate-300 mt-2">Tiền bạc là <strong>hệ quả</strong> của việc thực hiện kế hoạch tốt. Tập trung vào tiền chỉ làm bạn xao nhãng. Hãy tập trung vào việc tuân thủ kế hoạch.</p>
-                    </div>
-                    <div class="glass-panel p-8 border-l-4 border-l-cyan-500 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="wind" class="w-32 h-32 text-cyan-500"></i></div>
-                        <h3 class="text-xl font-bold text-cyan-400 mb-4 flex items-center gap-2"><span class="bg-cyan-500/20 px-2 py-1 rounded text-sm">3/241</span> HƠI THỞ CƠ HOÀNH</h3>
-                        <p class="text-slate-300 leading-relaxed mb-2">Hơi thở làm tăng vận chuyển bạch cầu lympho gấp 3 lần, mang lại sức sống mới.</p>
-                        <div class="flex items-center gap-4 mt-4 text-sm font-bold text-white">
-                            <div class="bg-cyan-900/50 px-4 py-2 rounded-lg">Thở ra: Hóp bụng</div>
-                            <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500"></i>
-                            <div class="bg-cyan-900/50 px-4 py-2 rounded-lg">Hít vào: Phình bụng</div>
+
+                    <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <div class="glass-panel p-5 border-l-2 border-l-rose-500 hover:bg-white/5 transition">
+                            <h4 class="font-bold text-rose-400 text-sm mb-2 flex justify-between">1. NỖI SỢ & BUÔNG BỎ <i data-lucide="shield-alert" class="w-4 h-4"></i></h4>
+                            <p class="text-[11px] text-slate-300 leading-5">Giải pháp: <span class="text-white font-bold">Diễn tập tinh thần</span>. Hình dung trước các khoản lỗ và chấp nhận chúng. Khi không quá coi trọng kết quả từng lệnh, nỗi sợ sẽ biến mất.</p>
                         </div>
-                    </div>
-                    <div class="glass-panel p-8 border-l-4 border-l-purple-500 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="dices" class="w-32 h-32 text-purple-500"></i></div>
-                        <h3 class="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2"><span class="bg-purple-500/20 px-2 py-1 rounded text-sm">4/242</span> TRÒ CHƠI XÁC SUẤT</h3>
-                        <p class="text-slate-300 leading-relaxed">Quy tắc là chưa đủ vì bản tính con người thường phá bỏ chúng. Hãy nhớ: Trading không phải là trò chơi của sự chắc chắn, mà là <strong>Xác Suất</strong>.</p>
-                        <p class="text-slate-400 text-sm mt-2 italic">Đừng để một vài lệnh thua làm bạn mất cái nhìn tổng quan dài hạn.</p>
-                    </div>
-                    <div class="glass-panel p-8 border-l-4 border-l-emerald-500 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="sunrise" class="w-32 h-32 text-emerald-500"></i></div>
-                        <h3 class="text-xl font-bold text-emerald-400 mb-4 flex items-center gap-2"><span class="bg-emerald-500/20 px-2 py-1 rounded text-sm">5/243</span> NGHI THỨC BUỔI SÁNG</h3>
-                        <div class="space-y-3">
-                            <div class="flex gap-3"><span class="text-emerald-500 font-bold">1.</span><p class="text-slate-300 text-sm">Cảm nhận điều tốt đẹp từ giao dịch hôm qua (dù thắng hay thua).</p></div>
-                            <div class="flex gap-3"><span class="text-emerald-500 font-bold">2.</span><p class="text-slate-300 text-sm">Rút ra 2-3 bài học quan trọng.</p></div>
-                            <div class="flex gap-3"><span class="text-emerald-500 font-bold">3.</span><p class="text-slate-300 text-sm">Tự hỏi: "Làm thế nào để tốt hơn hôm nay?"</p></div>
+
+                        <div class="glass-panel p-5 border-l-2 border-l-yellow-500 hover:bg-white/5 transition">
+                            <h4 class="font-bold text-yellow-400 text-sm mb-2 flex justify-between">2. QUY TRÌNH > KẾT QUẢ <i data-lucide="target" class="w-4 h-4"></i></h4>
+                            <p class="text-[11px] text-slate-300 leading-5">Tiền bạc là hệ quả của việc thực hiện kế hoạch tốt. Tập trung vào tiền chỉ làm xao nhãng. Hãy tập trung vào việc <span class="text-white font-bold">ra quyết định đúng</span>.</p>
                         </div>
+
+                        <div class="glass-panel p-5 border-l-2 border-l-purple-500 hover:bg-white/5 transition">
+                            <h4 class="font-bold text-purple-400 text-sm mb-2 flex justify-between">4. TRÒ CHƠI XÁC SUẤT <i data-lucide="dices" class="w-4 h-4"></i></h4>
+                            <p class="text-[11px] text-slate-300 leading-5">Không có gì chắc chắn 100%. Đừng để vài lệnh thua làm mất tự tin. Hãy giữ <span class="text-white font-bold">cái nhìn tổng quan</span> dài hạn.</p>
+                        </div>
+
+                        <div class="glass-panel p-5 border-l-2 border-l-emerald-500 hover:bg-white/5 transition">
+                            <h4 class="font-bold text-emerald-400 text-sm mb-2 flex justify-between">5. NGHI THỨC BUỔI SÁNG <i data-lucide="sun" class="w-4 h-4"></i></h4>
+                            <ul class="text-[11px] text-slate-300 space-y-1 list-disc pl-4">
+                                <li>Cảm nhận điều tốt đẹp hôm qua.</li>
+                                <li>Rút ra 2-3 bài học quan trọng.</li>
+                                <li>Hỏi: "Làm thế nào để tốt hơn hôm nay?"</li>
+                            </ul>
+                        </div>
+
                     </div>
                 </div>
             </div>
