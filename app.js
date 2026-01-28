@@ -65,15 +65,16 @@ function initUI() {
     loadRandomTraining(); // Khởi động tab Rèn Luyện lần đầu
 }
 
-// --- TRAINING LOGIC (MỚI) ---
+// --- TRAINING LOGIC (Cập nhật: Chỉ lấy dữ liệu từ Thư Viện) ---
 window.loadRandomTraining = function() {
-    // 1. Lấy dữ liệu gộp từ Wiki và Thư viện
-    let allData = [...wikiData, ...libraryData];
+    // 1. CHỈ LẤY DỮ LIỆU TỪ THƯ VIỆN (Bỏ WikiData)
+    let allData = [...libraryData];
     
     // 2. Lọc theo chủ đề người dùng chọn
     const filterCat = document.getElementById('training-filter').value;
     if(filterCat !== 'all') {
-        allData = allData.filter(item => item.cat && item.cat.includes(filterCat));
+        // Tìm kiếm linh hoạt hơn: Chứa từ khóa là được
+        allData = allData.filter(item => item.cat && item.cat.toLowerCase().includes(filterCat.toLowerCase()));
     }
 
     // 3. Nếu không có dữ liệu
@@ -82,6 +83,8 @@ window.loadRandomTraining = function() {
         document.getElementById('training-empty').classList.remove('hidden');
         document.getElementById('training-reveal-btn').classList.add('hidden');
         document.getElementById('training-answer-panel').classList.add('hidden');
+        // Cập nhật thông báo cho đúng ngữ cảnh
+        document.querySelector('#training-empty p').innerHTML = `Chưa có bài lý thuyết nào về chủ đề này.<br>Hãy thêm vào tab <b>Thư Viện</b> trước.`;
         return;
     }
 
