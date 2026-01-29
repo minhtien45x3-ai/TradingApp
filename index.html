@@ -67,63 +67,67 @@
             
             <div id="tab-dashboard" class="space-y-6 fade-in"><div class="glass-panel h-14 flex items-center px-6 overflow-hidden border-l-4 border-emerald-500 bg-black/20"><div class="marquee-wrapper w-full"><div id="dashboard-marquee" class="marquee-content text-lg font-medium italic text-emerald-400">Connecting...</div></div></div><div class="grid grid-cols-2 md:grid-cols-4 gap-6"><div class="glass-panel p-6"><p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Vốn Hiện Tại</p><h2 class="text-3xl font-mono font-bold mt-2 text-white" id="dash-balance">$0</h2></div><div class="glass-panel p-6"><p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Tỷ Lệ Thắng</p><h2 class="text-3xl font-mono font-bold mt-2 text-ios-blue" id="dash-winrate">0%</h2></div><div class="glass-panel p-6"><p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Lợi Nhuận</p><h2 class="text-3xl font-mono font-bold mt-2 text-purple-400" id="dash-pnl">$0</h2></div><div class="glass-panel p-6"><p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Sụt Giảm (DD)</p><h2 class="text-3xl font-mono font-bold mt-2 text-rose-400" id="dash-dd">0%</h2></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-48"><div class="glass-panel p-4 flex flex-col h-full bg-white/5 border border-white/10 overflow-hidden relative"><h3 class="text-[10px] font-bold uppercase mb-2 text-slate-400 tracking-wider absolute top-4 left-4 z-10">Tăng Trưởng Vốn</h3><div class="flex-1 w-full h-full relative pt-4"><canvas id="chart-equity" class="w-full h-full"></canvas></div></div><div class="glass-panel p-4 flex flex-col h-full bg-white/5 border border-white/10 overflow-hidden relative"><h3 class="text-[10px] font-bold uppercase mb-2 text-slate-400 tracking-wider absolute top-4 left-4 z-10">Tỷ Lệ Thắng/Thua</h3><div class="flex-1 w-full h-full relative flex items-center justify-center pt-4"><canvas id="chart-winloss" class="w-full h-full"></canvas></div></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="lg:col-span-2 glass-panel p-6 flex flex-col"><h3 class="text-sm font-bold uppercase mb-4 text-slate-300 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i> Hiệu Suất Theo Tháng</h3><div class="overflow-x-auto"><table class="w-full text-left text-sm text-slate-300"><thead class="bg-white/5 text-[10px] uppercase text-slate-500"><tr><th class="p-3 rounded-l-lg">Tháng</th><th class="p-3 text-center">Tổng</th><th class="p-3 text-center text-emerald-400">Thắng</th><th class="p-3 text-center text-rose-400">Thua</th><th class="p-3 text-right rounded-r-lg">PnL Ròng</th></tr></thead><tbody id="stats-monthly-body" class="font-mono"></tbody></table></div></div><div class="glass-panel p-6 flex flex-col"><h3 class="text-sm font-bold uppercase mb-4 text-slate-300 flex items-center gap-2"><i data-lucide="award" class="w-4 h-4"></i> Xếp Hạng Setup</h3><div class="space-y-3 flex-1 overflow-y-auto pr-2" id="stats-pattern-body"></div></div></div></div>
 
-            <div id="tab-training" class="hidden fade-in flex flex-col h-full items-center justify-center">
-    <div class="w-full max-w-4xl flex flex-col h-full max-h-[85vh]">
-        
-        <div class="flex justify-between items-center mb-6 glass-panel p-4 rounded-xl border border-amber-500/20">
-            <div class="flex items-center gap-4">
-                <div class="p-3 bg-amber-500/20 rounded-lg"><i data-lucide="dumbbell" class="w-6 h-6 text-amber-400"></i></div>
-                <div>
-                    <h2 class="text-lg font-bold text-white uppercase">Phòng Rèn Luyện</h2>
-                    <p class="text-[10px] text-slate-400">Ôn tập ngẫu nhiên kiến thức từ <b class="text-blue-400">Thư Viện</b></p>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <select id="training-filter" onchange="loadRandomTraining()" class="bg-black/30 border border-slate-700 text-slate-300 rounded-lg px-4 py-2 text-xs font-bold outline-none focus:border-amber-500">
-                    <option value="all">Tất cả lý thuyết</option>
-                    <option value="Xu hướng">Xu Hướng</option>
-                    <option value="Keylevel">Keylevel</option>
-                    <option value="Trendline">Trendline</option>
-                    <option value="Mô hình nến">Mô hình nến</option>
-                    <option value="Mô hình biểu đồ">Mô hình biểu đồ</option>
-                    <option value="Fibonacci">Fibonacci</option>
-                    <option value="EMA">EMA 50</option>
-                    <option value="Thời gian">Hợp quy thời gian</option>
-                </select>
-                <button onclick="loadRandomTraining()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg transition">Câu Tiếp Theo <i data-lucide="arrow-right" class="w-3 h-3 inline ml-1"></i></button>
-            </div>
-        </div>
-
-        <div class="flex-1 glass-panel rounded-2xl overflow-hidden relative border border-slate-700 shadow-2xl flex flex-col">
-             <div class="flex-1 bg-black/50 flex items-center justify-center p-4 relative group cursor-zoom-in" onclick="viewImageFull(this.querySelector('img').src)">
-                <img id="training-image" class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.02]">
-                <div id="training-empty" class="text-center hidden">
-                    <i data-lucide="box" class="w-16 h-16 text-slate-600 mx-auto mb-4"></i>
-                    <p class="text-slate-500">Chưa có dữ liệu.</p>
-                </div>
-            </div>
-
-            <div id="training-answer-panel" class="hidden bg-[#0f172a] border-t border-amber-500/30 p-6 animate-fade-in-up">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <span class="text-[10px] font-bold text-amber-500 uppercase tracking-widest border border-amber-500/30 px-2 py-1 rounded bg-amber-500/10 mb-2 inline-block" id="training-cat">CATEGORY</span>
-                        <h3 class="text-2xl font-bold text-white" id="training-title">Tiêu đề đáp án</h3>
+            <div id="tab-training" class="hidden fade-in flex flex-col h-full items-center justify-center p-4">
+                <div class="w-full max-w-[90vw] h-[85vh] flex flex-col bg-[#0f172a] border border-slate-700 rounded-2xl overflow-hidden shadow-2xl">
+                    
+                    <div class="flex justify-between items-center p-3 border-b border-white/10 bg-black/20 shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-amber-500/20 rounded-lg"><i data-lucide="brain-circuit" class="w-5 h-5 text-amber-400"></i></div>
+                            <div>
+                                <h2 class="text-sm font-bold text-white uppercase">TRẮC NGHIỆM NHANH</h2>
+                                <p class="text-[10px] text-slate-400">Dữ liệu từ <span class="text-blue-400">Thư Viện</span></p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="training-filter" onchange="loadRandomTraining()" class="bg-black/30 border border-slate-700 text-slate-300 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none focus:border-amber-500">
+                                <option value="all">Tất cả chủ đề</option>
+                                <option value="Xu hướng">Xu Hướng</option>
+                                <option value="Keylevel">Keylevel</option>
+                                <option value="Trendline">Trendline</option>
+                                <option value="Mô hình nến">Mô hình nến</option>
+                                <option value="Mô hình biểu đồ">Mô hình biểu đồ</option>
+                                <option value="Fibonacci">Fibonacci</option>
+                                <option value="EMA">EMA 50</option>
+                            </select>
+                            <button onclick="loadRandomTraining()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg font-bold text-[11px] transition flex items-center gap-1">
+                                Bỏ qua <i data-lucide="skip-forward" class="w-3 h-3"></i>
+                            </button>
+                        </div>
                     </div>
-                    <span class="text-slate-500 font-mono text-xs" id="training-code">CODE</span>
-                </div>
-                <div class="text-sm text-slate-300 font-mono whitespace-pre-line leading-relaxed h-32 overflow-y-auto custom-scrollbar" id="training-content">
-                    Nội dung giải thích chi tiết...
-                </div>
-            </div>
 
-            <div id="training-reveal-btn" class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
-                <button onclick="revealTrainingAnswer()" class="bg-white text-black px-8 py-3 rounded-full font-bold shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 transition flex items-center gap-2">
-                    <i data-lucide="eye" class="w-4 h-4"></i> XEM ĐÁP ÁN
-                </button>
+                    <div class="h-[80%] bg-black/50 flex items-center justify-center relative group border-b border-white/10 p-2 overflow-hidden">
+                        <img id="training-image" class="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105 cursor-zoom-in" onclick="viewImageFull(this.src)">
+                        
+                        <div id="training-empty" class="text-center hidden absolute inset-0 flex flex-col items-center justify-center bg-[#0f172a]">
+                            <i data-lucide="box" class="w-16 h-16 text-slate-600 mb-4"></i>
+                            <p class="text-slate-500 text-sm">Chưa có bài tập nào cho chủ đề này.</p>
+                        </div>
+                    </div>
+
+                    <div class="h-[20%] bg-slate-900 relative">
+                        
+                        <div id="quiz-interface" class="absolute inset-0 p-3 flex flex-col">
+                            <h3 class="text-center text-xs font-bold text-amber-400 mb-2 uppercase tracking-wider">Hình ảnh trên thuộc kiến thức nào?</h3>
+                            <div id="quiz-options-grid" class="grid grid-cols-2 gap-3 h-full">
+                                </div>
+                        </div>
+
+                        <div id="quiz-result-panel" class="absolute inset-0 bg-[#0f172a] z-10 hidden flex flex-col p-4 animate-fade-in-up">
+                            <div class="flex justify-between items-center mb-2 shrink-0">
+                                <h3 id="result-status" class="text-lg font-bold">KẾT QUẢ</h3>
+                                <button onclick="loadRandomTraining()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg text-xs shadow-lg flex items-center gap-2">
+                                    CÂU TIẾP THEO <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar border border-white/5 rounded-lg p-3 bg-black/20">
+                                <h4 id="result-title" class="text-sm font-bold text-white mb-1">Tiêu đề bài học</h4>
+                                <p id="result-content" class="text-[11px] text-slate-300 font-mono whitespace-pre-line leading-relaxed">Nội dung giải thích...</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
 
             <div id="tab-journal" class="hidden fade-in flex flex-col h-full"><div class="flex justify-between items-center mb-4"><button onclick="openEntryModal()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Viết Nhật Ký</button><div class="text-right"><p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">PnL Hôm Nay</p><p class="text-xl font-mono font-bold text-white" id="journal-pnl-today">$0.00</p></div></div><div class="glass-panel flex-1 overflow-hidden flex flex-col"><div class="overflow-auto custom-scrollbar flex-1"><table class="w-full text-left border-collapse text-sm text-slate-300"><thead class="sticky top-0 bg-black/40 backdrop-blur-md z-10 text-[10px] uppercase font-bold text-slate-500"><tr><th class="p-4">Ngày</th><th class="p-4">Cặp/Hướng</th><th class="p-4 text-center">Chart</th><th class="p-4">Mẫu Hình</th><th class="p-4 text-center">R:R</th><th class="p-4 text-center text-blue-400">Trạng Thái</th><th class="p-4 text-right">PnL</th><th class="p-4 text-center">Xóa</th></tr></thead><tbody id="journal-list" class="divide-y divide-white/5 font-medium"></tbody></table></div></div></div>
             <div id="tab-analysis" class="hidden fade-in flex flex-col h-full"><div class="flex h-full gap-6"><div class="w-72 glass-panel flex flex-col overflow-hidden shrink-0"><div class="p-4 border-b border-white/10 font-bold text-center text-slate-300 uppercase text-xs tracking-wider">Danh Sách Setup</div><div class="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar" id="strategy-list-container"></div></div><div class="flex-1 glass-panel flex flex-col relative overflow-hidden"><div id="analysis-empty-state" class="absolute inset-0 flex flex-col items-center justify-center opacity-30 text-slate-400"><i data-lucide="layout-template" class="w-20 h-20 mb-4"></i><p>Chọn Setup bên trái để bắt đầu</p></div><div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/10"><h2 class="text-xl font-bold text-emerald-400" id="current-setup-name">Setup Name</h2><button onclick="transferAnalysisToJournal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs shadow-lg transition">Lưu Vào Nhật Ký</button></div><div class="flex-1 p-6 grid grid-cols-2 gap-6 overflow-y-auto custom-scrollbar"><div class="space-y-2"><div class="aspect-video bg-black/30 rounded-xl overflow-hidden cursor-zoom-in group relative border border-white/5" onclick="viewImageFull(this.querySelector('img').src)"><span class="absolute top-3 left-3 bg-black/60 backdrop-blur text-white text-[10px] px-2 py-1 rounded font-bold border border-white/10">LÝ THUYẾT</span><img id="ana-theory-img" class="w-full h-full object-contain transition duration-500 group-hover:scale-105"></div><div id="ana-theory-content" class="text-sm text-slate-300 bg-white/5 p-4 rounded-xl border border-white/5 whitespace-pre-line leading-relaxed"></div></div><div class="space-y-4"><div class="aspect-video bg-black/30 rounded-xl border-2 border-dashed border-slate-700 hover:border-emerald-500 transition flex items-center justify-center relative group"><input type="file" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleAnalysisUpload(this)"><div class="text-center group-hover:scale-110 transition opacity-50 group-hover:opacity-100"><i data-lucide="upload-cloud" class="w-10 h-10 mx-auto mb-2 text-emerald-500"></i><p class="text-xs font-bold text-slate-400">Tải Chart Thực Tế</p></div><img id="ana-real-img" class="absolute inset-0 w-full h-full object-contain hidden bg-slate-900 rounded-xl z-0"></div><div class="glass-panel p-5 bg-white/5"><h3 class="text-xs font-bold uppercase mb-4 text-slate-400 tracking-wider">Checklist Vào Lệnh</h3><div id="ana-checklist-container" class="grid grid-cols-2 gap-3"></div></div></div></div></div></div></div>

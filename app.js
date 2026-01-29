@@ -65,57 +65,89 @@ function initUI() {
     loadRandomTraining(); // Khởi động tab Rèn Luyện lần đầu
 }
 
-// --- TRAINING LOGIC (Code đầy đủ cho Tab Rèn Luyện) ---
+// --- TRAINING LOGIC (Quiz Mode - Trắc Nghiệm) ---
 
-// 1. Hàm load câu hỏi ngẫu nhiên
+let currentQuizCorrectItem = null; // Lưu đáp án đúng hiện tại
+
 window.loadRandomTraining = function() {
-    // Lấy dữ liệu từ Thư Viện (Library)
+    // 1. Lấy dữ liệu từ Thư Viện
     let allData = [...libraryData];
-    
-    // Lọc theo chủ đề
     const filterCat = document.getElementById('training-filter').value;
+    
+    // 2. Lọc dữ liệu
     if(filterCat !== 'all') {
         allData = allData.filter(item => item.cat && item.cat.toLowerCase().includes(filterCat.toLowerCase()));
     }
 
-    // Xử lý khi không có dữ liệu
+    // 3. Xử lý khi không có dữ liệu
     if(allData.length === 0) {
         document.getElementById('training-image').classList.add('hidden');
         document.getElementById('training-empty').classList.remove('hidden');
-        document.querySelector('#training-empty p').innerHTML = `Chưa có bài lý thuyết nào về chủ đề này.<br>Hãy thêm vào tab <b>Thư Viện</b> trước.`;
-        document.getElementById('training-reveal-btn').classList.add('hidden');
-        document.getElementById('training-answer-panel').classList.add('hidden');
+        document.getElementById('quiz-interface').classList.add('hidden');
         return;
     }
 
-    // Chọn ngẫu nhiên
+    // 4. Chọn đáp án ĐÚNG
     const randomIndex = Math.floor(Math.random() * allData.length);
-    currentPracticeItem = allData[randomIndex];
+    currentQuizCorrectItem = allData[randomIndex];
 
-    // Hiển thị giao diện câu hỏi
+    // 5. Chọn 3 đáp án SAI ngẫu nhiên
+    let wrongOptions = allData.filter(i => i.id !== currentQuizCorrectItem.id);
+    // Nếu không đủ dữ liệu để làm đáp án sai, lấy trùng cũng được nhưng đổi title chút xíu (fallback)
+    while (wrongOptions.length < 3) {
+        wrongOptions.push({title: "Không xác định", id: "dummy"}); 
+        if (wrongOptions.length >= 3) break; 
+    }
+    // Trộn và lấy 3 cái sai
+    wrongOptions = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+    // 6. Gộp Đúng + Sai và Trộn vị trí
+    let quizOptions = [currentQuizCorrectItem, ...wrongOptions];
+    quizOptions = quizOptions.sort(() => 0.5 - Math.random());
+
+    // 7. Hiển thị UI
     document.getElementById('training-empty').classList.add('hidden');
-    const imgEl = document.getElementById('training-image');
-    imgEl.src = currentPracticeItem.image;
-    imgEl.classList.remove('hidden');
+    document.getElementById('training-image').src = currentQuizCorrectItem.image;
+    document.getElementById('training-image').classList.remove('hidden');
     
-    // Reset trạng thái: Ẩn đáp án, Hiện nút xem
-    document.getElementById('training-answer-panel').classList.add('hidden');
-    document.getElementById('training-reveal-btn').classList.remove('hidden');
+    // Reset Panel kết quả
+    document.getElementById('quiz-result-panel').classList.add('hidden');
+    document.getElementById('quiz-interface').classList.remove('hidden');
+
+    // Render nút bấm
+    const grid = document.getElementById('quiz-options-grid');
+    grid.innerHTML = quizOptions.map(opt => `
+        <button onclick="checkQuizAnswer('${opt.id}')" 
+                class="bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-xl px-2 py-1 text-[11px] font-bold transition duration-200 hover:border-amber-500/50 hover:text-white truncate">
+            ${opt.title || "Lựa chọn khác"}
+        </button>
+    `).join('');
 }
 
-// 2. Hàm hiển thị đáp án (QUAN TRỌNG: Bạn có thể đang thiếu hàm này)
-window.revealTrainingAnswer = function() {
-    if(!currentPracticeItem) return;
+// Hàm kiểm tra đáp án
+window.checkQuizAnswer = function(selectedId) {
+    const resultPanel = document.getElementById('quiz-result-panel');
+    const statusTitle = document.getElementById('result-status');
+    const contentText = document.getElementById('result-content');
+    const titleText = document.getElementById('result-title');
     
-    // Điền thông tin vào bảng đáp án
-    document.getElementById('training-title').innerText = currentPracticeItem.title || "Không có tiêu đề";
-    document.getElementById('training-code').innerText = currentPracticeItem.code || "N/A";
-    document.getElementById('training-content').innerText = currentPracticeItem.content || "Chưa có nội dung chi tiết.";
-    document.getElementById('training-cat').innerText = currentPracticeItem.cat || "General";
+    // Hiển thị panel kết quả
+    resultPanel.classList.remove('hidden');
+    
+    if (selectedId === currentQuizCorrectItem.id) {
+        // TRẢ LỜI ĐÚNG
+        statusTitle.innerHTML = `<span class="text-emerald-500">CHÍNH XÁC! 🎉</span>`;
+        // Hiệu ứng âm thanh hoặc rung nếu cần (option)
+    } else {
+        // TRẢ LỜI SAI
+        statusTitle.innerHTML = `<span class="text-rose-500">SAI RỒI! 😅</span>`;
+    }
 
-    // Hiệu ứng: Ẩn nút, Hiện bảng
-    document.getElementById('training-reveal-btn').classList.add('hidden');
-    document.getElementById('training-answer-panel').classList.remove('hidden');
+    // Luôn hiện nội dung giải thích dù đúng hay sai để học
+    titleText.innerText = currentQuizCorrectItem.title;
+    contentText.innerHTML = currentQuizCorrectItem.content 
+        ? currentQuizCorrectItem.content 
+        : "<i class='text-slate-500'>Chưa có nội dung giải thích cho bài này.</i>";
 }
 
 // ... (Giữ nguyên các hàm AUTH, DASHBOARD, JOURNAL, PAIRS, MODAL khác của code cũ) ...
