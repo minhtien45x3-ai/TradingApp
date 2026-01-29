@@ -65,53 +65,55 @@ function initUI() {
     loadRandomTraining(); // Khởi động tab Rèn Luyện lần đầu
 }
 
-// --- TRAINING LOGIC (Cập nhật: Chỉ lấy dữ liệu từ Thư Viện) ---
+// --- TRAINING LOGIC (Code đầy đủ cho Tab Rèn Luyện) ---
+
+// 1. Hàm load câu hỏi ngẫu nhiên
 window.loadRandomTraining = function() {
-    // 1. CHỈ LẤY DỮ LIỆU TỪ THƯ VIỆN (Bỏ WikiData)
+    // Lấy dữ liệu từ Thư Viện (Library)
     let allData = [...libraryData];
     
-    // 2. Lọc theo chủ đề người dùng chọn
+    // Lọc theo chủ đề
     const filterCat = document.getElementById('training-filter').value;
     if(filterCat !== 'all') {
-        // Tìm kiếm linh hoạt hơn: Chứa từ khóa là được
         allData = allData.filter(item => item.cat && item.cat.toLowerCase().includes(filterCat.toLowerCase()));
     }
 
-    // 3. Nếu không có dữ liệu
+    // Xử lý khi không có dữ liệu
     if(allData.length === 0) {
         document.getElementById('training-image').classList.add('hidden');
         document.getElementById('training-empty').classList.remove('hidden');
+        document.querySelector('#training-empty p').innerHTML = `Chưa có bài lý thuyết nào về chủ đề này.<br>Hãy thêm vào tab <b>Thư Viện</b> trước.`;
         document.getElementById('training-reveal-btn').classList.add('hidden');
         document.getElementById('training-answer-panel').classList.add('hidden');
-        // Cập nhật thông báo cho đúng ngữ cảnh
-        document.querySelector('#training-empty p').innerHTML = `Chưa có bài lý thuyết nào về chủ đề này.<br>Hãy thêm vào tab <b>Thư Viện</b> trước.`;
         return;
     }
 
-    // 4. Chọn ngẫu nhiên 1 câu
+    // Chọn ngẫu nhiên
     const randomIndex = Math.floor(Math.random() * allData.length);
     currentPracticeItem = allData[randomIndex];
 
-    // 5. Hiển thị UI (Ẩn đáp án, hiện ảnh)
+    // Hiển thị giao diện câu hỏi
     document.getElementById('training-empty').classList.add('hidden');
     const imgEl = document.getElementById('training-image');
     imgEl.src = currentPracticeItem.image;
     imgEl.classList.remove('hidden');
     
+    // Reset trạng thái: Ẩn đáp án, Hiện nút xem
     document.getElementById('training-answer-panel').classList.add('hidden');
     document.getElementById('training-reveal-btn').classList.remove('hidden');
 }
 
+// 2. Hàm hiển thị đáp án (QUAN TRỌNG: Bạn có thể đang thiếu hàm này)
 window.revealTrainingAnswer = function() {
     if(!currentPracticeItem) return;
     
-    // Điền thông tin đáp án
-    document.getElementById('training-title').innerText = currentPracticeItem.title;
-    document.getElementById('training-code').innerText = currentPracticeItem.code;
-    document.getElementById('training-content').innerText = currentPracticeItem.content;
-    document.getElementById('training-cat').innerText = currentPracticeItem.cat;
+    // Điền thông tin vào bảng đáp án
+    document.getElementById('training-title').innerText = currentPracticeItem.title || "Không có tiêu đề";
+    document.getElementById('training-code').innerText = currentPracticeItem.code || "N/A";
+    document.getElementById('training-content').innerText = currentPracticeItem.content || "Chưa có nội dung chi tiết.";
+    document.getElementById('training-cat').innerText = currentPracticeItem.cat || "General";
 
-    // Hiệu ứng hiện đáp án
+    // Hiệu ứng: Ẩn nút, Hiện bảng
     document.getElementById('training-reveal-btn').classList.add('hidden');
     document.getElementById('training-answer-panel').classList.remove('hidden');
 }
