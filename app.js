@@ -242,5 +242,68 @@ window.initTheme = () => {
 }
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); document.getElementById('tab-'+id).classList.remove('hidden'); if(id==='dashboard') renderDashboard(); };
-window.initTheme = () => { if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark'); }
-window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'; renderCharts(journalData.filter(t=>t.status!=='OPEN'), initialCapital); }
+// --- XỬ LÝ SÁNG / TỐI (THEME TOGGLE) ---
+window.initTheme = () => { 
+    const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    // Nạp class dark
+    if(isDark) document.documentElement.classList.add('dark'); 
+    else document.documentElement.classList.remove('dark'); 
+    
+    // Cập nhật icon nút bấm lúc mới tải trang
+    const btn = document.getElementById('theme-toggle-btn');
+    if(btn) {
+        btn.innerHTML = isDark 
+            ? `<i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>` 
+            : `<i data-lucide="moon" class="w-5 h-5 text-slate-600"></i>`;
+    }
+    
+    // Khôi phục màu nền đã lưu
+    const savedBg = localStorage.getItem('min_sys_custom_bg');
+    if (savedBg) {
+        document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${savedBg}`;
+        const globalBg = document.querySelector('.global-bg');
+        if (globalBg) {
+            if (savedBg === 'bg-black' || savedBg === 'bg-slate-950' || savedBg === 'bg-slate-50' || savedBg === 'bg-blue-50') {
+                globalBg.style.display = 'none'; // Tắt hiệu ứng mờ ảo cho các màu trơn
+            } else {
+                globalBg.style.display = 'block';
+            }
+        }
+    }
+}
+
+window.toggleTheme = () => { 
+    // Đảo ngược trạng thái Sáng/Tối
+    document.documentElement.classList.toggle('dark'); 
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    // Lưu vào bộ nhớ
+    localStorage.theme = isDark ? 'dark' : 'light'; 
+    
+    // Đổi icon tương ứng (Mặt trời cho Dark, Mặt trăng cho Light)
+    const btn = document.getElementById('theme-toggle-btn');
+    if(btn) {
+        btn.innerHTML = isDark 
+            ? `<i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>` 
+            : `<i data-lucide="moon" class="w-5 h-5 text-slate-600"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+    
+    // Bật màu nền sáng mặc định nếu đang ở nền Sáng, và trả lại nền tối nếu về Dark
+    if (!isDark) {
+        window.setBackground('bg-slate-50'); // Chuyển sang Trắng khi bật Light Mode
+    } else {
+        const savedBg = localStorage.getItem('min_sys_custom_bg');
+        if (savedBg === 'bg-slate-50' || savedBg === 'bg-blue-50') {
+            window.setBackground('bg-theme-default'); // Reset về mặc định nếu đang bị kẹt màu sáng
+        } else {
+            window.setBackground(savedBg || 'bg-theme-default'); 
+        }
+    }
+    
+    // Cập nhật lại màu sắc cho biểu đồ (nếu có)
+    if (typeof renderCharts === 'function' && typeof journalData !== 'undefined') {
+        renderCharts(journalData.filter(t=>t.status!=='OPEN'), initialCapital);
+    }
+}

@@ -10,7 +10,20 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <style>.no-scrollbar::-webkit-scrollbar{display:none}</style>
+    <style>
+        .no-scrollbar::-webkit-scrollbar{display:none}
+        
+        /* MAGIC CSS: Tự động đảo màu giao diện khi ở chế độ SÁNG (Light Mode) */
+        html:not(.dark) .glass-panel { background-color: rgba(255, 255, 255, 0.85) !important; border-color: rgba(203, 213, 225, 0.8) !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+        html:not(.dark) .text-white { color: #0f172a !important; } /* Đổi chữ trắng thành đen */
+        html:not(.dark) .bg-black\/20 { background-color: rgba(241, 245, 249, 0.8) !important; }
+        html:not(.dark) .bg-black\/30 { background-color: rgba(226, 232, 240, 0.9) !important; border-color: #cbd5e1 !important; }
+        html:not(.dark) .bg-black\/40, html:not(.dark) .bg-black\/50 { background-color: rgba(203, 213, 225, 0.8) !important; }
+        html:not(.dark) input, html:not(.dark) select, html:not(.dark) textarea { background-color: #ffffff !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
+        html:not(.dark) .text-slate-300 { color: #475569 !important; }
+        html:not(.dark) .text-slate-400 { color: #64748b !important; }
+        html:not(.dark) .border-white\/10, html:not(.dark) .border-white\/5 { border-color: rgba(0,0,0,0.1) !important; }
+    </style>
 </head>
 <body class="bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden">
 
@@ -60,7 +73,14 @@
                 <button onclick="switchTab('capital')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Vốn</button>
                 <button id="btn-admin-panel" onclick="openAdminPanel()" class="hidden px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/50 rounded-xl text-xs font-bold uppercase ml-2">DUYỆT</button>
             </nav>
-            <div class="flex items-center gap-4"><button onclick="openBgModal()"><i data-lucide="palette" class="w-5 h-5 text-blue-400 hover:text-blue-300"></i></button><button onclick="authLogout()"><i data-lucide="log-out" class="w-5 h-5 text-rose-400 hover:text-rose-300"></i></button></div>
+           <div class="flex items-center gap-4">
+                <button onclick="toggleTheme()" id="theme-toggle-btn" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition shadow-sm">
+                    <i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>
+                </button>
+                
+                <button onclick="openBgModal()" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition"><i data-lucide="palette" class="w-5 h-5 text-blue-400"></i></button>
+                <button onclick="authLogout()" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition"><i data-lucide="log-out" class="w-5 h-5 text-rose-400"></i></button>
+            </div>
         </header>
 
         <main class="flex-1 overflow-y-auto no-scrollbar p-6 w-full max-w-[1920px] mx-auto space-y-6">
@@ -277,7 +297,15 @@
                         <div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-900 border border-blue-400"></div> 🌌 Xanh Dương (Deep Ocean)
                     </button>
                 </div>
-                
+                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-6">Phong cách Sáng (Light)</div>
+                    
+                    <button onclick="setBackground('bg-slate-50')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold p-3 rounded-xl border border-slate-300 transition text-left flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 shadow-sm"></div> ⚪ Trắng Tinh Tế (Clean White)
+                    </button>
+                    
+                    <button onclick="setBackground('bg-blue-50')" class="w-full bg-blue-100 hover:bg-blue-200 text-slate-800 font-bold p-3 rounded-xl border border-blue-300 transition text-left flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-blue-50 border border-blue-300 shadow-sm"></div> 🌤️ Xanh Da Trời (Sky Blue)
+                    </button>
                 <button onclick="closeModal('bg-settings-modal')" class="w-full mt-6 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 font-bold p-3 rounded-xl border border-rose-500/50 transition">Đóng Cài Đặt</button>
             </div>
         </div>
