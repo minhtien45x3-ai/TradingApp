@@ -189,7 +189,36 @@ window.viewImageFull = (src) => { document.getElementById('image-viewer-img').sr
 window.calcRiskPreview = () => { const v=parseFloat(document.getElementById('inp-risk').value)||0; const mode=document.getElementById('inp-risk-mode').value; const rr=parseFloat(document.getElementById('inp-rr').value)||0; const curBalText = document.getElementById('dash-balance').innerText.replace('$','').replace(/,/g,''); const curBal = parseFloat(curBalText) || initialCapital; const r = mode==='%'? curBal*(v/100) : v; }
 window.saveInitialCapital = () => { initialCapital = parseFloat(document.getElementById('real-init-capital').value)||20000; saveUserData(); renderDashboard(); alert("Đã lưu!"); };
 window.updateCapitalCalc = () => { const start = parseFloat(document.getElementById('cap-sim-start').value)||0; const pct = parseFloat(document.getElementById('cap-risk-pct').value)||1; const rr = parseFloat(document.getElementById('cap-rr').value)||2; const n = 20; let bal = start, html = ''; for(let i=1; i<=n; i++) { const risk = bal*(pct/100); const profit = risk*rr; const end = bal+profit; html += `<tr class="border-b border-slate-200 dark:border-slate-800"><td class="p-2 text-center">${i}</td><td class="p-2 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-2 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-2 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`; bal = end; } document.getElementById('cap-projection-list').innerHTML = html; }
-window.openBgModal = () => alert("Chế độ iOS Glass được bật mặc định!");
+// --- XỬ LÝ ĐỔI MÀU NỀN ---
+window.openBgModal = () => {
+    document.getElementById('bg-settings-modal').classList.remove('hidden');
+    if(window.lucide) lucide.createIcons();
+};
+
+window.setBackground = (bgClass) => {
+    // Xóa các màu nền cũ và nạp màu mới vào thẻ <body>
+    document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${bgClass}`;
+    
+    // Lưu vào localStorage để lần sau vào web không bị mất
+    localStorage.setItem('min_sys_custom_bg', bgClass);
+    
+    // Đóng bảng cài đặt
+    window.closeModal('bg-settings-modal');
+};
+
+// Cập nhật lại hàm initTheme để tự động load màu nền lúc vừa vào web
+window.initTheme = () => { 
+    if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) 
+        document.documentElement.classList.add('dark'); 
+    else 
+        document.documentElement.classList.remove('dark'); 
+    
+    // Tự động khôi phục màu nền Gradient nếu trước đó đã chọn
+    const savedBg = localStorage.getItem('min_sys_custom_bg');
+    if (savedBg) {
+        document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${savedBg}`;
+    }
+}
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); document.getElementById('tab-'+id).classList.remove('hidden'); if(id==='dashboard') renderDashboard(); };
 window.initTheme = () => { if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark'); }
