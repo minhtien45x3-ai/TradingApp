@@ -196,27 +196,48 @@ window.openBgModal = () => {
 };
 
 window.setBackground = (bgClass) => {
-    // Xóa các màu nền cũ và nạp màu mới vào thẻ <body>
+    // 1. Cập nhật màu nền cho thẻ body
     document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${bgClass}`;
     
-    // Lưu vào localStorage để lần sau vào web không bị mất
+    // 2. Lưu lại lựa chọn
     localStorage.setItem('min_sys_custom_bg', bgClass);
+    
+    // 3. Xử lý tắt/bật hiệu ứng lơ lửng (blobs)
+    const globalBg = document.querySelector('.global-bg');
+    if (globalBg) {
+        // Nếu chọn màu trơn (Tối giản) thì ẩn hiệu ứng đi
+        if (bgClass === 'bg-black' || bgClass === 'bg-slate-950') {
+            globalBg.style.display = 'none';
+        } else {
+            // Nếu chọn Gradient hoặc Mặc định thì bật lại
+            globalBg.style.display = 'block';
+        }
+    }
     
     // Đóng bảng cài đặt
     window.closeModal('bg-settings-modal');
 };
 
-// Cập nhật lại hàm initTheme để tự động load màu nền lúc vừa vào web
+// Cập nhật lại hàm initTheme để tự động load màu nền + tắt hiệu ứng lúc vừa vào web
 window.initTheme = () => { 
-    if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) 
+    if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark'); 
-    else 
+    } else {
         document.documentElement.classList.remove('dark'); 
+    }
     
-    // Tự động khôi phục màu nền Gradient nếu trước đó đã chọn
+    // Khôi phục màu nền đã lưu
     const savedBg = localStorage.getItem('min_sys_custom_bg');
     if (savedBg) {
         document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${savedBg}`;
+        const globalBg = document.querySelector('.global-bg');
+        if (globalBg) {
+            if (savedBg === 'bg-black' || savedBg === 'bg-slate-950') {
+                globalBg.style.display = 'none';
+            } else {
+                globalBg.style.display = 'block';
+            }
+        }
     }
 }
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
