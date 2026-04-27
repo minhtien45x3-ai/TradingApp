@@ -49,9 +49,33 @@ window.loadData = async function() {
         initUI(); safeSetText('dashboard-marquee', QUOTES[0]);
     } catch (e) { alert("Lỗi tải dữ liệu: " + e.message); }
 }
-async function saveUserData() { if(!window.currentUser) return; await setDoc(doc(db, "users", window.currentUser), { journal: journalData, pairs: pairsData, capital: initialCapital }, { merge: true }); }
-async function saveWikiData() { if(!isAdmin) return; await setDoc(doc(db, "system", "wiki_master"), { items: wikiData, last_updated: new Date().toISOString() }, { merge: true }); }
-async function saveLibraryData() { if(!isAdmin) return; await setDoc(doc(db, "system", "library_master"), { items: libraryData, last_updated: new Date().toISOString() }, { merge: true }); }
+// --- BỘ LỌC LÀM SẠCH DỮ LIỆU TRƯỚC KHI LƯU ---
+const sanitize = (data) => JSON.parse(JSON.stringify(data));
+
+async function saveUserData() { 
+    if(!window.currentUser) return; 
+    await setDoc(doc(db, "users", window.currentUser), { 
+        journal: sanitize(journalData), 
+        pairs: sanitize(pairsData), 
+        capital: initialCapital 
+    }, { merge: true }); 
+}
+
+async function saveWikiData() { 
+    if(!isAdmin) return; 
+    await setDoc(doc(db, "system", "wiki_master"), { 
+        items: sanitize(wikiData), 
+        last_updated: new Date().toISOString() 
+    }, { merge: true }); 
+}
+
+async function saveLibraryData() { 
+    if(!isAdmin) return; 
+    await setDoc(doc(db, "system", "library_master"), { 
+        items: sanitize(libraryData), 
+        last_updated: new Date().toISOString() 
+    }, { merge: true }); 
+}
 
 function initUI() {
     renderDashboard(); renderJournalList(); populateStrategies(); renderWikiGrid(); renderLibraryGrid(); renderPairsList(); renderPairSelects();
