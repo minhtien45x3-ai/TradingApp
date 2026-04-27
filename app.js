@@ -61,20 +61,34 @@ async function saveUserData() {
     }, { merge: true }); 
 }
 
+// Hàm lưu dữ liệu Wiki (Có thông báo lỗi)
 async function saveWikiData() { 
     if(!isAdmin) return; 
-    await setDoc(doc(db, "system", "wiki_master"), { 
-        items: sanitize(wikiData), 
-        last_updated: new Date().toISOString() 
-    }, { merge: true }); 
+    try {
+        await setDoc(doc(db, "system", "wiki_master"), { 
+            items: sanitize(wikiData), 
+            last_updated: new Date().toISOString() 
+        }, { merge: true }); 
+        console.log("Đã lưu Wiki thành công");
+    } catch (error) {
+        alert("🚨 LỖI LƯU WIKI:\n" + error.message);
+        console.error(error);
+    }
 }
 
+// Hàm lưu dữ liệu Thư Viện (Có thông báo lỗi)
 async function saveLibraryData() { 
     if(!isAdmin) return; 
-    await setDoc(doc(db, "system", "library_master"), { 
-        items: sanitize(libraryData), 
-        last_updated: new Date().toISOString() 
-    }, { merge: true }); 
+    try {
+        await setDoc(doc(db, "system", "library_master"), { 
+            items: sanitize(libraryData), 
+            last_updated: new Date().toISOString() 
+        }, { merge: true }); 
+        console.log("Đã lưu Thư viện thành công");
+    } catch (error) {
+        alert("🚨 LỖI LƯU THƯ VIỆN:\n" + error.message);
+        console.error(error);
+    }
 }
 
 function initUI() {
