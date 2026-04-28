@@ -691,7 +691,88 @@ window.enterSystem = function() {
     setTimeout(() => { if (loginInput) loginInput.focus(); }, 50);
 };
 function showAuthScreen() { window.enterSystem(); }
-window.authLogin = async function() { const u = document.getElementById('login-user').value.trim(); const p = document.getElementById('login-pass').value.trim(); if(!u || !p) return alert("Thiếu thông tin!"); try { const userDocRef = doc(db, "users", u); const snap = await getDoc(userDocRef); if(!snap.exists()) { if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) { await setDoc(userDocRef, { username:u, password:p, email:"admin@sys", status:"approved", journal:[], pairs:DEFAULT_PAIRS, capital:20000 }); alert("Đã tạo Admin!"); return; } return alert("Chưa có tài khoản!"); } const d = snap.data(); let passValid = (d.password === p); if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) passValid = true; if(!passValid) return alert("Sai mật khẩu!"); if(d.status === 'pending' && !ADMIN_LIST.includes(u)) return alert("Chờ duyệt!"); window.currentUser = u; localStorage.setItem('min_sys_current_user', u); document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('app-container').classList.remove('hidden'); document.getElementById('app-container').classList.add('flex'); window.loadData(); } catch(e) { alert("Lỗi: " + e.message); } }
+function showAppAfterLogin(username) {
+    window.currentUser = username;
+    localStorage.setItem('min_sys_current_user', username);
+
+    const landing = document.getElementById('landing-page');
+    const auth = document.getElementById('auth-screen');
+    const app = document.getElementById('app-container');
+
+    if (landing) {
+        landing.classList.add('hidden');
+        landing.style.display = 'none';
+        landing.style.pointerEvents = 'none';
+    }
+    if (auth) {
+        auth.classList.add('hidden');
+        auth.classList.remove('fade-in');
+        auth.style.display = 'none';
+        auth.style.opacity = '0';
+        auth.style.pointerEvents = 'none';
+    }
+    if (app) {
+        app.classList.remove('hidden');
+        app.classList.add('flex');
+        app.style.display = 'flex';
+        app.style.opacity = '1';
+        app.style.pointerEvents = 'auto';
+    }
+}
+
+window.authLogin = async function() {
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value.trim();
+    if(!u || !p) return alert('Thiếu thông tin!');
+
+    const loginBtn = document.querySelector('#login-form button[onclick="authLogin()"]');
+    const oldBtnText = loginBtn ? loginBtn.innerHTML : '';
+    if (loginBtn) {
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = 'ĐANG ĐĂNG NHẬP...';
+    }
+
+    try {
+        const userDocRef = doc(db, 'users', u);
+        const snap = await getDoc(userDocRef);
+
+        if(!snap.exists()) {
+            if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) {
+                await setDoc(userDocRef, {
+                    username:u,
+                    password:p,
+                    email:'admin@sys',
+                    status:'approved',
+                    journal:[],
+                    pairs:DEFAULT_PAIRS,
+                    capital:20000,
+                    created_at:new Date().toISOString()
+                }, { merge: true });
+                showAppAfterLogin(u);
+                await window.loadData();
+                return;
+            }
+            return alert('Chưa có tài khoản! Nếu là tài khoản mới, hãy bấm Đăng ký trước.');
+        }
+
+        const d = snap.data();
+        let passValid = (String(d.password || '') === p);
+        if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) passValid = true;
+        if(!passValid) return alert('Sai mật khẩu!');
+        if(d.status === 'pending' && !ADMIN_LIST.includes(u)) return alert('Tài khoản đang chờ Admin duyệt!');
+
+        showAppAfterLogin(u);
+        await window.loadData();
+    } catch(e) {
+        console.error('Login error:', e);
+        alert('Lỗi đăng nhập: ' + e.message);
+    } finally {
+        if (loginBtn) {
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = oldBtnText || 'VÀO HỆ THỐNG';
+        }
+    }
+}
 window.authRegister = async function() { const u = document.getElementById('reg-user').value.trim(); const p = document.getElementById('reg-pass').value.trim(); const e = document.getElementById('reg-email').value.trim(); if(!u || !p) return; try { const snap = await getDoc(doc(db, "users", u)); if(snap.exists()) return alert("Tên tồn tại!"); await setDoc(doc(db, "users", u), { username:u, password:p, email:e, status: ADMIN_LIST.includes(u) ? 'approved':'pending', journal:[], pairs:DEFAULT_PAIRS, capital:20000, created_at:new Date().toISOString() }); alert("Đăng ký thành công!"); window.toggleAuth(); } catch(e) { alert("Lỗi: "+e.message); } }
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
 window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); location.reload(); }
