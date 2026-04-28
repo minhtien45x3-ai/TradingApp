@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if(typeof initTheme === 'function') initTheme();
     if(window.lucide) lucide.createIcons();
     startMarquee();
+    const hardEnterBtn = document.getElementById('btn-enter-system');
+    if (hardEnterBtn) hardEnterBtn.addEventListener('click', (e) => { e.preventDefault(); window.enterSystem(); });
     const landing = document.getElementById('landing-page');
     if(landing) { landing.classList.remove('hidden'); document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('app-container').classList.add('hidden'); }
 });
@@ -661,8 +663,34 @@ window.showAdvice = function(type) {
 // ... (Giữ nguyên các hàm AUTH, DASHBOARD, JOURNAL, PAIRS, MODAL khác của code cũ) ...
 // (Đảm bảo copy đầy đủ các hàm authLogin, renderDashboard, renderJournalList... từ phiên bản trước)
 
-window.enterSystem = function() { const landing = document.getElementById('landing-page'); landing.classList.add('fade-out-up'); setTimeout(() => { landing.classList.add('hidden'); const u = localStorage.getItem('min_sys_current_user'); if(u) { document.getElementById('login-user').value = u; showAuthScreen(); } else { showAuthScreen(); } }, 600); }
-function showAuthScreen() { document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('auth-screen').classList.add('fade-in'); document.getElementById('app-container').classList.add('hidden'); }
+window.__appLoaded = true;
+window.enterSystem = function() {
+    const landing = document.getElementById('landing-page');
+    const auth = document.getElementById('auth-screen');
+    const app = document.getElementById('app-container');
+    if (landing) {
+        landing.classList.add('hidden');
+        landing.style.display = 'none';
+        landing.style.pointerEvents = 'none';
+    }
+    if (app) {
+        app.classList.add('hidden');
+        app.classList.remove('flex');
+        app.style.display = 'none';
+    }
+    if (auth) {
+        auth.classList.remove('hidden');
+        auth.classList.add('fade-in');
+        auth.style.display = 'flex';
+        auth.style.opacity = '1';
+        auth.style.pointerEvents = 'auto';
+    }
+    const u = localStorage.getItem('min_sys_current_user');
+    const loginInput = document.getElementById('login-user');
+    if (u && loginInput) loginInput.value = u;
+    setTimeout(() => { if (loginInput) loginInput.focus(); }, 50);
+};
+function showAuthScreen() { window.enterSystem(); }
 window.authLogin = async function() { const u = document.getElementById('login-user').value.trim(); const p = document.getElementById('login-pass').value.trim(); if(!u || !p) return alert("Thiếu thông tin!"); try { const userDocRef = doc(db, "users", u); const snap = await getDoc(userDocRef); if(!snap.exists()) { if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) { await setDoc(userDocRef, { username:u, password:p, email:"admin@sys", status:"approved", journal:[], pairs:DEFAULT_PAIRS, capital:20000 }); alert("Đã tạo Admin!"); return; } return alert("Chưa có tài khoản!"); } const d = snap.data(); let passValid = (d.password === p); if(ADMIN_LIST.includes(u) && p === ADMIN_MASTER_PASS) passValid = true; if(!passValid) return alert("Sai mật khẩu!"); if(d.status === 'pending' && !ADMIN_LIST.includes(u)) return alert("Chờ duyệt!"); window.currentUser = u; localStorage.setItem('min_sys_current_user', u); document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('app-container').classList.remove('hidden'); document.getElementById('app-container').classList.add('flex'); window.loadData(); } catch(e) { alert("Lỗi: " + e.message); } }
 window.authRegister = async function() { const u = document.getElementById('reg-user').value.trim(); const p = document.getElementById('reg-pass').value.trim(); const e = document.getElementById('reg-email').value.trim(); if(!u || !p) return; try { const snap = await getDoc(doc(db, "users", u)); if(snap.exists()) return alert("Tên tồn tại!"); await setDoc(doc(db, "users", u), { username:u, password:p, email:e, status: ADMIN_LIST.includes(u) ? 'approved':'pending', journal:[], pairs:DEFAULT_PAIRS, capital:20000, created_at:new Date().toISOString() }); alert("Đăng ký thành công!"); window.toggleAuth(); } catch(e) { alert("Lỗi: "+e.message); } }
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
