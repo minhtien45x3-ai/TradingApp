@@ -38,6 +38,18 @@ const TRADER_MISTAKES = [
     { id: "no-journal", name: "Không ghi nhật ký", symptom: "Lặp lại lỗi cũ vì không đo lường hành vi.", wrong: "Chỉ nhớ lệnh thắng, quên nguyên nhân lệnh thua.", right: "Ghi ảnh chart, lý do vào lệnh, cảm xúc, lỗi và bài học.", frequency: 54, impact: -22, fix: "Sau mỗi lệnh ghi 3 dòng: setup, lỗi, hành động sửa lần sau." }
 ];
 
+const TRADER_DISCIPLINE_MODULES = [
+    { id: "pretrade", icon: "shield-check", title: "Pre-Trade Gate", priority: "Bắt buộc", desc: "Khoá lệnh nếu chưa đủ điều kiện: xu hướng, điểm mua, R:R, stop-loss, tâm lý.", build: "Thêm checklist bắt buộc vào modal Nhật ký; chỉ bật nút Lưu khi đạt điểm tối thiểu." },
+    { id: "setup-score", icon: "badge-check", title: "Trade Quality Score", priority: "Rất nên có", desc: "Chấm điểm A+/A/B/C/D cho mỗi lệnh theo setup, volume, keylevel, EMA50, market regime.", build: "Tự động tính điểm từ checklist Phân tích và lưu cùng Journal." },
+    { id: "risk-guard", icon: "lock-keyhole", title: "Risk Guardrail", priority: "Bắt buộc", desc: "Cảnh báo khi risk/lệnh quá cao, vào vị thế quá lớn, hoặc drawdown vượt giới hạn.", build: "Liên kết vốn hiện tại, stop-loss và position sizing để cảnh báo trước khi đặt lệnh." },
+    { id: "loss-autopsy", icon: "activity", title: "Loss Autopsy", priority: "Sau mỗi lệnh thua", desc: "Mổ xẻ lệnh thua: lỗi setup, lỗi timing, lỗi thị trường hay lỗi tâm lý.", build: "Khi chọn LOSS, mở form bắt buộc chọn nguyên nhân và bài học sửa." },
+    { id: "mistake-heatmap", icon: "flame", title: "Mistake Heatmap", priority: "Hàng tuần", desc: "Thống kê lỗi nào lặp lại nhiều nhất và lỗi nào làm mất tiền nhiều nhất.", build: "Gắn tag lỗi vào Journal, sau đó vẽ heatmap theo tuần/tháng." },
+    { id: "market-regime", icon: "bar-chart-3", title: "Market Regime Filter", priority: "Trước phiên", desc: "Xác định Uptrend / Sideway / Downtrend và số ngày phân phối để quyết định có được phép đánh không.", build: "Thêm tab Thị trường với trạng thái VNI, EMA50, ngày phân phối, nhóm ngành dẫn dắt." },
+    { id: "playbook", icon: "book-open-check", title: "Setup Playbook Coach", priority: "Huấn luyện", desc: "So sánh lệnh thực tế với mẫu hình chuẩn: VCP, Cup with Handle, 3C, Tight Flag.", build: "Link ảnh lý thuyết từ Wiki với ảnh Journal, chấm mức giống/khác." },
+    { id: "weekly-review", icon: "calendar-check", title: "Weekly Review Sprint", priority: "Cuối tuần", desc: "Tự động tổng kết tuần: lãi/lỗ, lỗi lặp lại, setup tốt nhất, hành động sửa tuần sau.", build: "Tạo báo cáo 1 trang từ Journal và Mistake Radar." }
+];
+
+
 function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
 
 // --- CORE INIT ---
@@ -109,7 +121,7 @@ async function saveLibraryData() {
 }
 
 function initUI() {
-    renderDashboard(); renderJournalList(); populateStrategies(); renderWikiGrid(); renderLibraryGrid(); renderPairsList(); renderPairSelects(); renderQuotePosters(); renderMistakesPreview(); renderMistakeCharts();
+    renderDashboard(); renderJournalList(); populateStrategies(); renderWikiGrid(); renderLibraryGrid(); renderPairsList(); renderPairSelects(); renderQuotePosters(); renderMistakesPreview(); renderMistakeCharts(); renderDisciplineModules();
     const cap = document.getElementById('real-init-capital'); if(cap) cap.value = initialCapital; updateCapitalCalc();
     // (Render Checklist - giữ nguyên)
     const checklistContainer = document.getElementById('ana-checklist-container');
@@ -359,6 +371,24 @@ function renderMistakeCharts() {
     window.showMistakeDetail('fomo');
 }
 
+
+function renderDisciplineModules() {
+    const grid = document.getElementById('discipline-module-grid');
+    if(!grid) return;
+    grid.innerHTML = TRADER_DISCIPLINE_MODULES.map((m, idx) => `
+        <article class="discipline-card">
+            <div class="discipline-icon"><i data-lucide="${m.icon}" class="w-5 h-5"></i></div>
+            <div class="discipline-content">
+                <div class="flex items-center justify-between gap-3"><h3>${escapeHtml(m.title)}</h3><span>${idx + 1}</span></div>
+                <p>${escapeHtml(m.desc)}</p>
+                <div class="discipline-meta"><b>${escapeHtml(m.priority)}</b></div>
+                <small>${escapeHtml(m.build)}</small>
+            </div>
+        </article>
+    `).join('');
+    if(window.lucide) lucide.createIcons();
+}
+
 window.filterWiki = function() {
     const q = (document.getElementById('wiki-search')?.value || '').toLowerCase();
     const grid = document.getElementById('wiki-grid');
@@ -396,7 +426,7 @@ window.authLogin = async function() { const u = document.getElementById('login-u
 window.authRegister = async function() { const u = document.getElementById('reg-user').value.trim(); const p = document.getElementById('reg-pass').value.trim(); const e = document.getElementById('reg-email').value.trim(); if(!u || !p) return; try { const snap = await getDoc(doc(db, "users", u)); if(snap.exists()) return alert("Tên tồn tại!"); await setDoc(doc(db, "users", u), { username:u, password:p, email:e, status: ADMIN_LIST.includes(u) ? 'approved':'pending', journal:[], pairs:DEFAULT_PAIRS, capital:20000, created_at:new Date().toISOString() }); alert("Đăng ký thành công!"); window.toggleAuth(); } catch(e) { alert("Lỗi: "+e.message); } }
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
 window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); location.reload(); }
-window.renderDashboard = function() { if(!journalData) return; const closed = journalData.filter(t=>t.status!=='OPEN'); let wins=0, pnl=0, maxDD=0, peak=initialCapital, bal=initialCapital, monthStats = {}, patternStats = {}; closed.forEach(t=>{ const v = parseFloat(t.pnl); pnl+=v; bal+=v; if(t.status==='WIN') wins++; if(bal > peak) peak = bal; const dd = peak > 0 ? (peak - bal)/peak : 0; if(dd > maxDD) maxDD = dd; const parts = t.date.split('/'); if(parts.length === 3) { const mKey = `${parts[1]}/${parts[2]}`; if(!monthStats[mKey]) monthStats[mKey] = {total:0, win:0, loss:0, pnl:0}; monthStats[mKey].total++; monthStats[mKey].pnl += v; if(t.status==='WIN') monthStats[mKey].win++; else if(t.status==='LOSS') monthStats[mKey].loss++; } const strat = t.strategy || "Unknown"; if(!patternStats[strat]) patternStats[strat] = {pnl:0, win:0, total:0}; patternStats[strat].pnl += v; patternStats[strat].total++; if(t.status==='WIN') patternStats[strat].win++; }); safeSetText('dash-balance', `$${bal.toLocaleString()}`); safeSetText('dash-pnl', `$${pnl.toLocaleString()}`); safeSetText('dash-winrate', `${closed.length ? Math.round((wins/closed.length)*100) : 0}%`); safeSetText('dash-dd', `${(maxDD*100).toFixed(2)}%`); const mBody = document.getElementById('stats-monthly-body'); if(mBody) mBody.innerHTML = Object.entries(monthStats).sort((a,b) => { const [m1, y1] = a[0].split('/'); const [m2, y2] = b[0].split('/'); return new Date(y2, m2) - new Date(y1, m1); }).map(([k,v]) => `<tr class="border-b dark:border-slate-800"><td class="p-3 font-bold text-slate-500">${k}</td><td class="p-3 text-center">${v.total}</td><td class="p-3 text-center text-green-500 font-bold">${v.win}</td><td class="p-3 text-center text-red-500 font-bold">${v.loss}</td><td class="p-3 text-right font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center text-slate-500">Trống</td></tr>'; const pBody = document.getElementById('stats-pattern-body'); if(pBody) pBody.innerHTML = Object.entries(patternStats).sort((a,b) => b[1].pnl - a[1].pnl).map(([k,v], i) => `<div class="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><div class="flex items-center gap-3"><span class="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${i===0?'bg-yellow-500 text-black':'bg-slate-300 text-slate-600'}">${i+1}</span><div><p class="text-sm font-bold truncate w-32">${k}</p><p class="text-[10px] text-slate-500">${v.win}/${v.total} wins</p></div></div><span class="font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</span></div>`).join('') || '<div class="text-center text-slate-500">Trống</div>'; renderCharts(closed, initialCapital); renderQuotePosters(); renderMistakesPreview(); renderMistakeCharts(); }
+window.renderDashboard = function() { if(!journalData) return; const closed = journalData.filter(t=>t.status!=='OPEN'); let wins=0, pnl=0, maxDD=0, peak=initialCapital, bal=initialCapital, monthStats = {}, patternStats = {}; closed.forEach(t=>{ const v = parseFloat(t.pnl); pnl+=v; bal+=v; if(t.status==='WIN') wins++; if(bal > peak) peak = bal; const dd = peak > 0 ? (peak - bal)/peak : 0; if(dd > maxDD) maxDD = dd; const parts = t.date.split('/'); if(parts.length === 3) { const mKey = `${parts[1]}/${parts[2]}`; if(!monthStats[mKey]) monthStats[mKey] = {total:0, win:0, loss:0, pnl:0}; monthStats[mKey].total++; monthStats[mKey].pnl += v; if(t.status==='WIN') monthStats[mKey].win++; else if(t.status==='LOSS') monthStats[mKey].loss++; } const strat = t.strategy || "Unknown"; if(!patternStats[strat]) patternStats[strat] = {pnl:0, win:0, total:0}; patternStats[strat].pnl += v; patternStats[strat].total++; if(t.status==='WIN') patternStats[strat].win++; }); safeSetText('dash-balance', `$${bal.toLocaleString()}`); safeSetText('dash-pnl', `$${pnl.toLocaleString()}`); safeSetText('dash-winrate', `${closed.length ? Math.round((wins/closed.length)*100) : 0}%`); safeSetText('dash-dd', `${(maxDD*100).toFixed(2)}%`); const mBody = document.getElementById('stats-monthly-body'); if(mBody) mBody.innerHTML = Object.entries(monthStats).sort((a,b) => { const [m1, y1] = a[0].split('/'); const [m2, y2] = b[0].split('/'); return new Date(y2, m2) - new Date(y1, m1); }).map(([k,v]) => `<tr class="border-b dark:border-slate-800"><td class="p-3 font-bold text-slate-500">${k}</td><td class="p-3 text-center">${v.total}</td><td class="p-3 text-center text-green-500 font-bold">${v.win}</td><td class="p-3 text-center text-red-500 font-bold">${v.loss}</td><td class="p-3 text-right font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center text-slate-500">Trống</td></tr>'; const pBody = document.getElementById('stats-pattern-body'); if(pBody) pBody.innerHTML = Object.entries(patternStats).sort((a,b) => b[1].pnl - a[1].pnl).map(([k,v], i) => `<div class="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><div class="flex items-center gap-3"><span class="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${i===0?'bg-yellow-500 text-black':'bg-slate-300 text-slate-600'}">${i+1}</span><div><p class="text-sm font-bold truncate w-32">${k}</p><p class="text-[10px] text-slate-500">${v.win}/${v.total} wins</p></div></div><span class="font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</span></div>`).join('') || '<div class="text-center text-slate-500">Trống</div>'; renderCharts(closed, initialCapital); renderQuotePosters(); renderMistakesPreview(); renderMistakeCharts(); renderDisciplineModules(); }
 window.renderCharts = function(data, start) { const ctx1=document.getElementById('chart-equity'); const ctx2=document.getElementById('chart-winloss'); if(chartInst.eq) { chartInst.eq.destroy(); chartInst.eq = null; } if(chartInst.wl) { chartInst.wl.destroy(); chartInst.wl = null; } if(ctx1 && window.Chart) { let b = start; const pts = [start, ...data.map(t=>b+=parseFloat(t.pnl))]; chartInst.eq = new Chart(ctx1, {type:'line', data:{labels:pts.map((_,i)=>i), datasets:[{data:pts, borderColor:'#10b981', fill:true, backgroundColor:'rgba(16,185,129,0.1)', tension:0.4}]}, options:{plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'rgba(255,255,255,0.05)'}}}}}); } if(ctx2 && window.Chart) { let w=0, l=0; data.forEach(t=>t.status==='WIN'?w++:l++); chartInst.wl = new Chart(ctx2, {type:'doughnut', data:{labels:['Win','Loss'], datasets:[{data:[w,l], backgroundColor:['#10b981','#ef4444'], borderWidth:0}]}, options:{cutout:'70%', plugins:{legend:{position:'right', labels:{color:'#94a3b8'}}}}}); } }
 window.openWikiEditor = function(id = null, mode = 'wiki') { if (!isAdmin) return alert("Chỉ Admin!"); document.getElementById('wiki-editor-modal').classList.remove('hidden'); document.getElementById('edit-mode').value = mode; document.getElementById('wiki-editor-title').innerText = mode === 'wiki' ? "Editor: Setup" : "Editor: Thư Viện"; const dataSource = mode === 'wiki' ? wikiData : libraryData; const cats = [...new Set(dataSource.map(i => i.cat))]; const dl = document.getElementById('cat-suggestions'); if(dl) dl.innerHTML = cats.map(c => `<option value="${c}">`).join(''); const imgPreview = document.getElementById('wiki-image-preview'); const uploadHint = document.getElementById('wiki-upload-hint'); const imgInput = document.getElementById('edit-image-url'); if (id) { const i = dataSource.find(x => x.id == id); if (i) { document.getElementById('edit-id').value = i.id; document.getElementById('edit-title').value = i.title; document.getElementById('edit-code').value = i.code; document.getElementById('edit-cat').value = i.cat; document.getElementById('edit-content').value = i.content; imgInput.value = i.image || ""; if (i.image) { imgPreview.src = i.image; imgPreview.classList.remove('hidden'); if(uploadHint) uploadHint.classList.add('hidden'); } else { imgPreview.classList.add('hidden'); if(uploadHint) uploadHint.classList.remove('hidden'); } } } else { document.getElementById('edit-id').value = ""; document.getElementById('edit-title').value = ""; document.getElementById('edit-code').value = ""; document.getElementById('edit-cat').value = ""; document.getElementById('edit-content').value = ""; imgInput.value = ""; imgPreview.src = ""; imgPreview.classList.add('hidden'); if(uploadHint) uploadHint.classList.remove('hidden'); } }
 window.handleWikiImageUpload = function(input) { if (input.files[0]) { const r = new FileReader(); r.onload = (e) => { document.getElementById('wiki-image-preview').src = e.target.result; document.getElementById('wiki-image-preview').classList.remove('hidden'); document.getElementById('edit-image-url').value = e.target.result; document.getElementById('wiki-upload-hint').classList.add('hidden'); }; r.readAsDataURL(input.files[0]); } }
@@ -426,121 +456,44 @@ window.viewImageFull = (src) => { document.getElementById('image-viewer-img').sr
 window.calcRiskPreview = () => { const v=parseFloat(document.getElementById('inp-risk').value)||0; const mode=document.getElementById('inp-risk-mode').value; const rr=parseFloat(document.getElementById('inp-rr').value)||0; const curBalText = document.getElementById('dash-balance').innerText.replace('$','').replace(/,/g,''); const curBal = parseFloat(curBalText) || initialCapital; const r = mode==='%'? curBal*(v/100) : v; }
 window.saveInitialCapital = () => { initialCapital = parseFloat(document.getElementById('real-init-capital').value)||20000; saveUserData(); renderDashboard(); alert("Đã lưu!"); };
 window.updateCapitalCalc = () => { const start = parseFloat(document.getElementById('cap-sim-start').value)||0; const pct = parseFloat(document.getElementById('cap-risk-pct').value)||1; const rr = parseFloat(document.getElementById('cap-rr').value)||2; const n = 20; let bal = start, html = ''; for(let i=1; i<=n; i++) { const risk = bal*(pct/100); const profit = risk*rr; const end = bal+profit; html += `<tr class="border-b border-slate-200 dark:border-slate-800"><td class="p-2 text-center">${i}</td><td class="p-2 text-right">$${Math.round(bal).toLocaleString()}</td><td class="p-2 text-right text-rose-500 text-xs">-$${Math.round(risk).toLocaleString()}</td><td class="p-2 text-right text-emerald-500 font-bold">+$${Math.round(profit).toLocaleString()}</td><td class="p-3 text-right font-bold">$${Math.round(end).toLocaleString()}</td></tr>`; bal = end; } document.getElementById('cap-projection-list').innerHTML = html; }
-// --- XỬ LÝ ĐỔI MÀU NỀN ---
-window.openBgModal = () => {
-    document.getElementById('bg-settings-modal').classList.remove('hidden');
+// --- MINIMAL THEME: bỏ Morphil / blob / gradient config ---
+window.openBgModal = () => alert('Bản v39 đã bỏ cấu hình Morphil. Giao diện chỉ còn Dark/Light tối giản.');
+window.setBackground = () => {
+    const isDark = document.documentElement.classList.contains('dark');
+    document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${isDark ? 'bg-theme-default' : 'bg-slate-50'}`;
+};
+
+window.initTheme = () => { 
+    const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if(isDark) document.documentElement.classList.add('dark'); 
+    else document.documentElement.classList.remove('dark');
+    document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${isDark ? 'bg-theme-default' : 'bg-slate-50'}`;
+    const btn = document.getElementById('theme-toggle-btn');
+    if(btn) btn.innerHTML = isDark ? `<i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>` : `<i data-lucide="moon" class="w-5 h-5 text-slate-600"></i>`;
     if(window.lucide) lucide.createIcons();
 };
 
-window.setBackground = (bgClass) => {
-    // 1. Cập nhật màu nền cho thẻ body
-    document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${bgClass}`;
-    
-    // 2. Lưu lại lựa chọn
-    localStorage.setItem('min_sys_custom_bg', bgClass);
-    
-    // 3. Xử lý tắt/bật hiệu ứng lơ lửng (blobs)
-    const globalBg = document.querySelector('.global-bg');
-    if (globalBg) {
-        // Nếu chọn màu trơn (Tối giản) thì ẩn hiệu ứng đi
-        if (bgClass === 'bg-black' || bgClass === 'bg-slate-950') {
-            globalBg.style.display = 'none';
-        } else {
-            // Nếu chọn Gradient hoặc Mặc định thì bật lại
-            globalBg.style.display = 'block';
-        }
-    }
-    
-    // Đóng bảng cài đặt
-    window.closeModal('bg-settings-modal');
+window.closeModal = (id) => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); };
+window.switchTab = (id) => { 
+    document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); 
+    const tab = document.getElementById('tab-'+id); 
+    if(tab) tab.classList.remove('hidden'); 
+    if(id==='dashboard') renderDashboard(); 
+    if(id==='mistakes') { renderMistakesPreview(); setTimeout(renderMistakeCharts, 50); }
+    if(id==='discipline') renderDisciplineModules();
+    if(window.lucide) lucide.createIcons(); 
 };
 
-// Cập nhật lại hàm initTheme để tự động load màu nền + tắt hiệu ứng lúc vừa vào web
-window.initTheme = () => { 
-    if(localStorage.theme==='dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark'); 
-    } else {
-        document.documentElement.classList.remove('dark'); 
-    }
-    
-    // Khôi phục màu nền đã lưu
-    const savedBg = localStorage.getItem('min_sys_custom_bg');
-    if (savedBg) {
-        document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${savedBg}`;
-        const globalBg = document.querySelector('.global-bg');
-        if (globalBg) {
-            if (savedBg === 'bg-black' || savedBg === 'bg-slate-950') {
-                globalBg.style.display = 'none';
-            } else {
-                globalBg.style.display = 'block';
-            }
-        }
-    }
-}
-window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
-window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); const tab = document.getElementById('tab-'+id); if(tab) tab.classList.remove('hidden'); if(id==='dashboard') renderDashboard(); if(id==='mistakes') { renderMistakesPreview(); setTimeout(renderMistakeCharts, 50); } if(window.lucide) lucide.createIcons(); };
-// --- XỬ LÝ SÁNG / TỐI (THEME TOGGLE) ---
-window.initTheme = () => { 
-    const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    // Nạp class dark
-    if(isDark) document.documentElement.classList.add('dark'); 
-    else document.documentElement.classList.remove('dark'); 
-    
-    // Cập nhật icon nút bấm lúc mới tải trang
-    const btn = document.getElementById('theme-toggle-btn');
-    if(btn) {
-        btn.innerHTML = isDark 
-            ? `<i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>` 
-            : `<i data-lucide="moon" class="w-5 h-5 text-slate-600"></i>`;
-    }
-    
-    // Khôi phục màu nền đã lưu
-    const savedBg = localStorage.getItem('min_sys_custom_bg');
-    if (savedBg) {
-        document.body.className = `text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden ${savedBg}`;
-        const globalBg = document.querySelector('.global-bg');
-        if (globalBg) {
-            if (savedBg === 'bg-black' || savedBg === 'bg-slate-950' || savedBg === 'bg-slate-50' || savedBg === 'bg-blue-50') {
-                globalBg.style.display = 'none'; // Tắt hiệu ứng mờ ảo cho các màu trơn
-            } else {
-                globalBg.style.display = 'block';
-            }
-        }
-    }
-}
-
 window.toggleTheme = () => { 
-    // Đảo ngược trạng thái Sáng/Tối
     document.documentElement.classList.toggle('dark'); 
     const isDark = document.documentElement.classList.contains('dark');
-    
-    // Lưu vào bộ nhớ
-    localStorage.theme = isDark ? 'dark' : 'light'; 
-    
-    // Đổi icon tương ứng (Mặt trời cho Dark, Mặt trăng cho Light)
+    localStorage.theme = isDark ? 'dark' : 'light';
+    window.setBackground();
     const btn = document.getElementById('theme-toggle-btn');
-    if(btn) {
-        btn.innerHTML = isDark 
-            ? `<i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>` 
-            : `<i data-lucide="moon" class="w-5 h-5 text-slate-600"></i>`;
-        if(window.lucide) lucide.createIcons();
-    }
-    
-    // Bật màu nền sáng mặc định nếu đang ở nền Sáng, và trả lại nền tối nếu về Dark
-    if (!isDark) {
-        window.setBackground('bg-slate-50'); // Chuyển sang Trắng khi bật Light Mode
-    } else {
-        const savedBg = localStorage.getItem('min_sys_custom_bg');
-        if (savedBg === 'bg-slate-50' || savedBg === 'bg-blue-50') {
-            window.setBackground('bg-theme-default'); // Reset về mặc định nếu đang bị kẹt màu sáng
-        } else {
-            window.setBackground(savedBg || 'bg-theme-default'); 
-        }
-    }
-    
-    // Cập nhật lại màu sắc cho biểu đồ (nếu có)
+    if(btn) btn.innerHTML = isDark ? `<i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>` : `<i data-lucide="moon" class="w-5 h-5 text-slate-600"></i>`;
+    if(window.lucide) lucide.createIcons();
     if (typeof renderCharts === 'function' && typeof journalData !== 'undefined') {
         renderCharts(journalData.filter(t=>t.status!=='OPEN'), initialCapital);
+        renderMistakeCharts();
     }
-}
+};

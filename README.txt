@@ -1,12 +1,9 @@
-CACON STOCK JOURNAL PRO v38
+CACON STOCK JOURNAL PRO v39 - Minimal Discipline System
 
 Nâng cấp chính:
-1. Dashboard tối giản, chuyên nghiệp hơn.
-2. Thêm bảng chèn ảnh/câu nói bất hủ của trader legends.
-3. Thêm module Sai Lầm Trader với biểu đồ so sánh và bảng cách sửa lỗi.
-4. Lưu quotePosters vào Firestore trong document users/{username}.
+1. Bỏ cấu hình Morphil/glass/blob/gradient, đưa giao diện về phong cách tối giản.
+2. Giữ Quote Poster trên Dashboard.
+3. Giữ module Sai Lầm với biểu đồ so sánh.
+4. Thêm tab Kỷ Luật gồm roadmap module: Pre-Trade Gate, Trade Quality Score, Risk Guardrail, Loss Autopsy, Mistake Heatmap, Market Regime Filter, Setup Playbook Coach, Weekly Review Sprint.
 
-Cách dùng:
-- Upload toàn bộ 5 file lên hosting/GitHub Pages của bạn.
-- Giữ nguyên firebase.js nếu dự án Firebase hiện tại đang dùng đúng.
-- Đăng nhập, vào Dashboard, chèn ảnh/câu nói, bấm Lưu poster.
+Cách dùng: upload toàn bộ 5 file index.html, style.css, app.js, firebase.js, manifest.json lên hosting/GitHub Pages thay bản cũ.

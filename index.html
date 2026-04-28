@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CACON STOCK JOURNAL PRO v38.0</title>
+    <title>CACON STOCK JOURNAL PRO v39.0 Minimal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{slate:{850:'#1e293b'}}}}}</script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -12,55 +12,14 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .no-scrollbar::-webkit-scrollbar{display:none}
-        /* MAGIC CSS: Giao diện TÍM NEON ĐẶC (Bỏ hiệu ứng Morphil/Kính) */
-        body.theme-neon-solid { background: linear-gradient(135deg, #1a0b2e, #3b185f) !important; }
-        body.theme-neon-solid .global-bg { display: none !important; } /* Tắt hoàn toàn bong bóng mờ ảo */
-        
-        /* Chuyển các bảng kính thành khối màu tím đặc, viền nhẹ */
-        body.theme-neon-solid .glass-panel { 
-            background-color: #2a114b !important; 
-            backdrop-filter: none !important; 
-            border: 1px solid rgba(255, 140, 55, 0.2) !important; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5) !important; 
-        }
-        
-        /* Các ô nhập liệu và thanh menu chuyển thành tím siêu đậm */
-        body.theme-neon-solid .bg-black\/20, 
-        body.theme-neon-solid .bg-black\/30, 
-        body.theme-neon-solid .bg-black\/40 { 
-            background-color: #1d0935 !important; 
-            backdrop-filter: none !important; 
-            border-color: rgba(255,255,255,0.05) !important; 
-        }
-        
-        /* Đổi màu Xanh Ngọc mặc định thành dải Gradient Cam/Hồng rực rỡ */
-        body.theme-neon-solid .bg-emerald-600 { 
-            background: linear-gradient(to right, #ff3c7f, #ff8c37) !important; 
-            border: none !important; 
-            color: #fff !important;
-            box-shadow: 0 10px 20px rgba(255, 60, 127, 0.3) !important;
-        }
-        body.theme-neon-solid .text-emerald-400 { color: #ff8c37 !important; }
-        body.theme-neon-solid .border-emerald-500 { border-color: #ff3c7f !important; }
-        body.theme-neon-solid .border-l-emerald-500 { border-left-color: #ff3c7f !important; }
-        
-        /* Riêng trạng thái Thắng/Đúng vẫn giữ màu Xanh Lá cho dễ nhìn */
-        body.theme-neon-solid .text-emerald-500 { color: #00c853 !important; }
-        /* MAGIC CSS: Tự động đảo màu giao diện khi ở chế độ SÁNG (Light Mode) */
-        html:not(.dark) .glass-panel { background-color: rgba(255, 255, 255, 0.85) !important; border-color: rgba(203, 213, 225, 0.8) !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
-        html:not(.dark) .text-white { color: #0f172a !important; } /* Đổi chữ trắng thành đen */
-        html:not(.dark) .bg-black\/20 { background-color: rgba(241, 245, 249, 0.8) !important; }
-        html:not(.dark) .bg-black\/30 { background-color: rgba(226, 232, 240, 0.9) !important; border-color: #cbd5e1 !important; }
-        html:not(.dark) .bg-black\/40, html:not(.dark) .bg-black\/50 { background-color: rgba(203, 213, 225, 0.8) !important; }
-        html:not(.dark) input, html:not(.dark) select, html:not(.dark) textarea { background-color: #ffffff !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
-        html:not(.dark) .text-slate-300 { color: #475569 !important; }
-        html:not(.dark) .text-slate-400 { color: #64748b !important; }
-        html:not(.dark) .border-white\/10, html:not(.dark) .border-white\/5 { border-color: rgba(0,0,0,0.1) !important; }
+        html:not(.dark) .text-white { color:#0f172a !important; }
+        html:not(.dark) .text-slate-300 { color:#475569 !important; }
+        html:not(.dark) .text-slate-400 { color:#64748b !important; }
+        html:not(.dark) input, html:not(.dark) select, html:not(.dark) textarea { background:#ffffff !important; color:#0f172a !important; border-color:#cbd5e1 !important; }
     </style>
 </head>
 <body class="bg-theme-default text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden">
 
-    <div class="global-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div><div class="noise-overlay"></div></div>
 
     <div id="landing-page" class="fixed inset-0 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
         <div class="intro-glass relative z-10 p-12 rounded-[40px] max-w-lg w-full flex flex-col items-center fade-in">
@@ -92,12 +51,13 @@
     </div>
 
     <div id="app-container" class="hidden flex-col h-screen relative z-10">
-        <header class="border-b border-white/10 bg-black/20 sticky top-0 z-50 backdrop-blur-md h-16 flex items-center justify-between px-6">
+        <header class="app-header border-b border-white/10 sticky top-0 z-50 h-16 flex items-center justify-between px-6">
             <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('dashboard')"><div class="bg-emerald-500/20 p-2 rounded-xl border border-emerald-500/30"><i data-lucide="layers" class="text-emerald-400 w-5 h-5"></i></div><h1 class="font-bold font-mono text-lg tracking-wide text-white hidden md:block">CACON STOCK</h1></div>
             <nav class="flex gap-2 overflow-x-auto no-scrollbar">
                 <button onclick="switchTab('dashboard')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Tổng Quan</button>
                 <button onclick="switchTab('journal')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Nhật Ký</button>
                 <button onclick="switchTab('mistakes')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-rose-300 hover:text-rose-100 transition border border-rose-500/20 bg-rose-500/5">Sai Lầm</button>
+                <button onclick="switchTab('discipline')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-emerald-300 hover:text-emerald-100 transition border border-emerald-500/20 bg-emerald-500/5">Kỷ Luật</button>
                 <button onclick="switchTab('analysis')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Phân Tích</button>
                 <button onclick="switchTab('training')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-amber-400 hover:text-amber-200 transition border border-amber-500/30 bg-amber-500/10">Rèn Luyện</button>
                 
@@ -112,7 +72,6 @@
                     <i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>
                 </button>
                 
-                <button onclick="openBgModal()" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition"><i data-lucide="palette" class="w-5 h-5 text-blue-400"></i></button>
                 <button onclick="authLogout()" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition"><i data-lucide="log-out" class="w-5 h-5 text-rose-400"></i></button>
             </div>
         </header>
@@ -211,6 +170,47 @@
                     <div class="xl:col-span-5 glass-panel p-5"><div class="section-heading mb-4"><div><p class="eyebrow">Error Cards</p><h3>Danh sách lỗi</h3></div></div><div id="mistake-card-grid" class="grid md:grid-cols-2 xl:grid-cols-1 gap-3"></div></div>
                     <div class="xl:col-span-7 glass-panel p-6"><div class="section-heading mb-4"><div><p class="eyebrow">Corrective Action</p><h3>So sánh cách làm sai và đúng</h3></div></div><div id="mistake-detail-panel" class="mb-5"></div><div class="overflow-x-auto rounded-2xl border border-white/10"><table class="w-full text-left text-sm"><thead class="bg-white/5 text-[10px] uppercase text-slate-500"><tr><th class="p-4">Sai lầm</th><th class="p-4 text-rose-300">Cách làm sai</th><th class="p-4 text-emerald-300">Cách làm đúng</th><th class="p-4">Cách sửa</th></tr></thead><tbody id="mistake-comparison-body" class="divide-y divide-white/5"></tbody></table></div></div>
                 </div>
+            </div>
+
+
+            <div id="tab-discipline" class="hidden fade-in space-y-6">
+                <section class="glass-panel p-6 discipline-hero">
+                    <div class="max-w-4xl">
+                        <p class="eyebrow">Discipline Operating System</p>
+                        <h2 class="text-3xl md:text-4xl font-bold text-white mt-2">Trung tâm kỷ luật giao dịch</h2>
+                        <p class="text-slate-400 mt-3">Bộ module giúp trader giao dịch như một nhà quản trị rủi ro: kiểm tra trước lệnh, khóa sai lầm, đo chất lượng setup, xem lại lệnh thua và xây dựng thói quen giống các huyền thoại giao dịch.</p>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                    <section class="xl:col-span-8 glass-panel p-6">
+                        <div class="section-heading mb-5"><div><p class="eyebrow">Module Roadmap</p><h3>Các module nên bổ sung để trader hiệu quả hơn</h3></div><i data-lucide="blocks" class="w-5 h-5 text-emerald-400"></i></div>
+                        <div id="discipline-module-grid" class="discipline-grid"></div>
+                    </section>
+                    <section class="xl:col-span-4 glass-panel p-6">
+                        <div class="section-heading mb-5"><div><p class="eyebrow">Daily Gate</p><h3>Checklist trước khi bấm mua</h3></div><i data-lucide="shield-check" class="w-5 h-5 text-blue-400"></i></div>
+                        <div class="gate-list">
+                            <label><input type="checkbox"> Thị trường chung đang Uptrend hoặc ít nhất không phân phối mạnh.</label>
+                            <label><input type="checkbox"> Cổ phiếu/asset mạnh hơn thị trường, có thanh khoản tốt.</label>
+                            <label><input type="checkbox"> Setup thuộc playbook đã học, không mua theo cảm xúc.</label>
+                            <label><input type="checkbox"> Điểm mua chưa bị đuổi quá xa, R:R tối thiểu còn hấp dẫn.</label>
+                            <label><input type="checkbox"> Stop-loss đã xác định trước, rủi ro mỗi lệnh trong giới hạn.</label>
+                            <label><input type="checkbox"> Trạng thái tâm lý bình tĩnh, không FOMO, không revenge trade.</label>
+                        </div>
+                        <div class="mt-5 p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
+                            <p class="text-xs text-slate-400 leading-relaxed"><b class="text-emerald-300">Quy tắc:</b> Nếu chưa tích đủ checklist, không vào lệnh. Cơ hội tốt sẽ quay lại; vốn mất thì rất khó lấy lại.</p>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="glass-panel p-6">
+                    <div class="section-heading mb-5"><div><p class="eyebrow">Legendary Trader Principles</p><h3>Nguyên tắc học từ các huyền thoại trader</h3></div><i data-lucide="landmark" class="w-5 h-5 text-amber-400"></i></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="principle-card"><span>01</span><h4>Bảo vệ vốn trước</h4><p>Trước khi nghĩ đến lợi nhuận, hãy kiểm soát khoản lỗ. Một chuỗi lệnh sai nhỏ không được biến thành thảm họa tài khoản.</p></div>
+                        <div class="principle-card"><span>02</span><h4>Chờ setup chất lượng</h4><p>Không cần giao dịch mỗi ngày. Lợi thế đến từ việc chỉ hành động khi xác suất, xu hướng và điểm mua cùng đồng thuận.</p></div>
+                        <div class="principle-card"><span>03</span><h4>Đo lường hành vi</h4><p>Nhật ký không chỉ ghi PnL, mà phải ghi lỗi, cảm xúc, mức tuân thủ checklist và bài học sửa trong lệnh kế tiếp.</p></div>
+                    </div>
+                </section>
             </div>
 
             <div id="tab-training" class="hidden fade-in flex flex-col h-full items-center justify-center p-4">
@@ -391,53 +391,6 @@
         <div id="entry-modal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4"><div class="glass-panel w-full max-w-lg bg-[#0f172a] border border-slate-700 flex flex-col max-h-[90vh]"><div class="p-5 border-b border-slate-700 flex justify-between items-center"><h3 class="font-bold text-xl text-white">Nhật Ký Giao Dịch</h3><button onclick="closeModal('entry-modal')" class="p-2 hover:bg-white/10 rounded-full text-slate-400 transition"><i data-lucide="x"></i></button></div><div class="p-6 overflow-y-auto space-y-5 custom-scrollbar"><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Ngày</label><input type="date" id="inp-date" class="w-full bg-black/30 border border-slate-600 p-3 rounded-xl font-bold text-white outline-none"></div><div><label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Phiên</label><select id="inp-session" class="w-full bg-black/30 border border-slate-600 p-3 rounded-xl font-bold text-white outline-none"><option>ASIA</option><option>LONDON</option><option>NEWYORK</option></select></div></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Cặp Tiền</label><select id="inp-pair" class="w-full bg-black/30 border border-slate-600 p-3 rounded-xl font-bold uppercase text-white outline-none"></select></div><div><label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Hướng</label><select id="inp-dir" class="w-full bg-black/30 border border-slate-600 p-3 rounded-xl font-bold text-white outline-none"><option value="BUY" class="text-emerald-500">BUY 🟢</option><option value="SELL" class="text-rose-500">SELL 🔴</option></select></div></div><div><label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Chiến Lược</label><select id="inp-strategy" class="w-full bg-black/30 border border-slate-600 p-3 rounded-xl font-bold text-white outline-none text-sm"></select></div><div class="border-2 border-dashed border-slate-600 rounded-xl p-4 text-center relative group hover:border-emerald-500 transition cursor-pointer"><input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleEntryImage(this)"><div id="entry-upload-hint"><i data-lucide="image" class="mx-auto w-8 h-8 text-slate-500 mb-1 group-hover:text-emerald-500 transition"></i><p class="text-xs font-bold text-slate-500">Thêm ảnh Chart</p></div><img id="entry-img-preview" class="hidden w-full h-40 object-cover rounded-lg mt-2 relative z-0"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Rủi Ro (Risk)</label><div class="flex"><input type="number" id="inp-risk" class="w-full rounded-l-xl bg-black/30 border border-slate-600 border-r-0 p-3 font-bold text-white outline-none" value="1"><select id="inp-risk-mode" class="rounded-r-xl bg-slate-700 px-3 font-bold text-xs text-white border border-slate-600 border-l-0 outline-none"><option value="%">%</option><option value="$">$</option></select></div></div><div><label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Tỷ lệ R:R</label><input type="number" id="inp-rr" class="w-full bg-black/30 border border-slate-600 p-3 rounded-xl font-bold text-white outline-none" value="2"></div></div><textarea id="inp-note" class="w-full bg-black/30 border border-slate-600 p-3 rounded-xl h-24 font-medium text-white text-sm outline-none resize-none" placeholder="Ghi chú phân tích..."></textarea></div><div class="p-5 border-t border-slate-700 flex justify-end"><button onclick="saveEntry()" class="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition transform active:scale-95">LƯU LỆNH</button></div></div></div>
         <div id="admin-modal" class="fixed inset-0 z-[200] bg-black/90 hidden flex items-center justify-center p-4"><div class="glass-panel w-full max-w-2xl bg-slate-900 border border-slate-700"><div class="p-4 border-b border-white/10 flex justify-between"><h3 class="font-bold text-white">Duyệt Thành Viên</h3><button onclick="closeModal('admin-modal')"><i data-lucide="x"></i></button></div><div class="p-4"><table class="w-full text-left text-sm text-slate-300"><tbody id="admin-user-list"></tbody></table><div id="admin-empty" class="text-center text-slate-500 hidden">Trống</div></div></div></div>
         <div id="image-viewer-modal" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center cursor-zoom-out" onclick="closeModal('image-viewer-modal')"><img id="image-viewer-img" class="max-w-full max-h-full p-4 rounded-lg shadow-2xl"></div>
-        <div id="bg-settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-[250] flex items-center justify-center p-4">
-            <div class="glass-panel w-full max-w-md bg-[#0f172a] border border-slate-700 rounded-2xl p-6 shadow-2xl animate-fade-in-up">
-                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <i data-lucide="palette" class="w-5 h-5 text-emerald-400"></i> Tuỳ Chỉnh Giao Diện
-                </h3>
-                
-                <div class="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
-                    
-                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-2">Phong cách Tối Giản (Trơn)</div>
-                    
-                    <button onclick="setBackground('bg-black')" class="w-full bg-[#0a0a0a] hover:bg-[#111] text-white font-bold p-3 rounded-xl border border-white/10 transition text-left flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full bg-black border border-white/20 shadow-inner"></div> ⬛ Đen Tuyền (Pure Black)
-                    </button>
-                    
-                    <button onclick="setBackground('bg-slate-950')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold p-3 rounded-xl border border-slate-700 transition text-left flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full bg-slate-950 border border-slate-600"></div> 🌫️ Xám Than (Deep Slate)
-                    </button>
-
-                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-6">Phong cách Sáng Tạo (Gradient)</div>
-
-                    <button onclick="setBackground('bg-theme-default')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold p-3 rounded-xl border border-slate-600 transition text-left flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full bg-slate-900 border border-slate-500"></div> 🌑 Mặc Định (Có hiệu ứng)
-                    </button>
-                    
-                    <button onclick="setBackground('bg-gradient-to-br from-[#1e0b2e] via-[#2d1b4e] to-[#0f172a]')" class="w-full bg-gradient-to-r from-purple-900/50 to-slate-900 hover:from-purple-800 hover:to-slate-800 text-white font-bold p-3 rounded-xl border border-purple-500/50 transition text-left flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-900 border border-purple-400"></div> 🔮 Tím Gradient (Nebula)
-                    </button>
-                    <button onclick="setBackground('theme-neon-solid')" class="w-full bg-[#2a114b] hover:bg-[#3b185f] text-white font-bold p-3 rounded-xl border border-[#ff3c7f] shadow-[0_0_15px_rgba(255,60,127,0.2)] transition text-left flex items-center gap-3 mt-2">
-                        <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#ff3c7f] to-[#ff8c37] border border-white/20"></div> 💥 Tím Neon (Đặc / Bỏ hiệu ứng kính)
-                    </button>
-                    <button onclick="setBackground('bg-gradient-to-br from-[#021024] via-[#052659] to-[#021024]')" class="w-full bg-gradient-to-r from-blue-900/50 to-slate-900 hover:from-blue-800 hover:to-slate-800 text-white font-bold p-3 rounded-xl border border-blue-500/50 transition text-left flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-900 border border-blue-400"></div> 🌌 Xanh Dương (Deep Ocean)
-                    </button>
-                </div>
-                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-6">Phong cách Sáng (Light)</div>
-                    
-                    <button onclick="setBackground('bg-slate-50')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold p-3 rounded-xl border border-slate-300 transition text-left flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 shadow-sm"></div> ⚪ Trắng Tinh Tế (Clean White)
-                    </button>
-                    
-                    <button onclick="setBackground('bg-blue-50')" class="w-full bg-blue-100 hover:bg-blue-200 text-slate-800 font-bold p-3 rounded-xl border border-blue-300 transition text-left flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full bg-blue-50 border border-blue-300 shadow-sm"></div> 🌤️ Xanh Da Trời (Sky Blue)
-                    </button>
-                <button onclick="closeModal('bg-settings-modal')" class="w-full mt-6 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 font-bold p-3 rounded-xl border border-rose-500/50 transition">Đóng Cài Đặt</button>
-            </div>
-        </div>
-
-    <script type="module" src="app.js"></script>
+        <script type="module" src="app.js"></script>
 </body>
 </html>
