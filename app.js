@@ -66,7 +66,7 @@ function updateMarquee(text) { safeSetText('dashboard-marquee', text); }
 // --- DATA LOAD ---
 window.loadData = async function() {
     if (!window.currentUser) return;
-    updateMarquee("Đang đồng bộ dữ liệu...");
+    updateMarquee('Đang đồng bộ dữ liệu...');
     isAdmin = ADMIN_LIST.includes(window.currentUser);
     const adminBtn = document.getElementById('btn-admin-panel');
     if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
@@ -77,25 +77,28 @@ window.loadData = async function() {
         roleChip.className = isAdmin ? 'admin-role' : '';
     }
     try {
-        const uRef = doc(db, "users", window.currentUser);
+        const uRef = doc(db, 'users', window.currentUser);
         const uSnap = await getDoc(uRef);
         let legacyPosters = null;
         if (uSnap.exists()) {
             const d = uSnap.data();
-            journalData = d.journal || [];
-            pairsData = d.pairs || DEFAULT_PAIRS;
+            journalData = Array.isArray(d.journal) ? d.journal : [];
+            pairsData = Array.isArray(d.pairs) && d.pairs.length ? d.pairs : DEFAULT_PAIRS;
             initialCapital = d.capital || 20000;
             legacyPosters = d.quotePosters || null;
         } else {
             await saveUserData();
         }
-        const wRef = doc(db, "system", "wiki_master");
-        const wSnap = await getDoc(wRef);
-        wikiData = wSnap.exists() ? wSnap.data().items : DEFAULT_WIKI;
-        const lRef = doc(db, "system", "library_master");
-        const lSnap = await getDoc(lRef);
-        libraryData = lSnap.exists() ? lSnap.data().items : [];
-        const qRef = doc(db, "system", "quote_posters_master");
+
+        const wSnap = await getDoc(doc(db, 'system', SYSTEM_MASTER_DOC.wiki));
+        const wikiFallback = wSnap.exists() && Array.isArray(wSnap.data().items) ? wSnap.data().items : DEFAULT_WIKI;
+        wikiData = await loadSystemItems('wiki', wikiFallback);
+
+        const lSnap = await getDoc(doc(db, 'system', SYSTEM_MASTER_DOC.library));
+        const libraryFallback = lSnap.exists() && Array.isArray(lSnap.data().items) ? lSnap.data().items : [];
+        libraryData = await loadSystemItems('library', libraryFallback);
+
+        const qRef = doc(db, 'system', 'quote_posters_master');
         const qSnap = await getDoc(qRef);
         quotePostersData = qSnap.exists() && Array.isArray(qSnap.data().items)
             ? qSnap.data().items
@@ -103,10 +106,145 @@ window.loadData = async function() {
         if (isAdmin && !qSnap.exists()) await saveQuotePostersData(false);
         initUI();
         safeSetText('dashboard-marquee', QUOTES[0]);
-    } catch (e) { alert("Lỗi tải dữ liệu: " + e.message); }
+    } catch (e) {
+        alert('Lỗi tải dữ liệu: ' + e.message);
+        console.error(e);
+    }
 }
+
 // --- BỘ LỌC LÀM SẠCH DỮ LIỆU TRƯỚC KHI LƯU ---
-const sanitize = (data) => JSON.parse(JSON.stringify(data));
+const sanitize = (data) => JSON.parse(JSON.stringify(data, (key, value) => {
+    if (value === undefined) return null;
+    if (typeof value === 'number' && Number.isNaN(value)) return null;
+    if (typeof HTMLElement !== 'undefined' && value instanceof HTMLElement) return undefined;
+    return value;
+}));
+
+const SYSTEM_ITEM_PREFIX = { wiki: 'wiki_item_', library: 'library_item_' };
+const SYSTEM_INDEX_DOC = { wiki: 'wiki_items_index', library: 'library_items_index' };
+const SYSTEM_MASTER_DOC = { wiki: 'wiki_master', library: 'library_master' };
+const MAX_IMAGE_DATA_URL_CHARS = 760000;
+let wikiImageProcessing = false;
+
+function normalizeContentItem(raw = {}) {
+    const id = (raw.id || Date.now()).toString();
+    return {
+        id,
+        title: (raw.title || '').toString(),
+        code: (raw.code || '').toString(),
+        cat: (raw.cat || '').toString(),
+        image: typeof raw.image === 'string' ? raw.image : '',
+        content: (raw.content || '').toString(),
+        updated_at: raw.updated_at || new Date().toISOString()
+    };
+}
+
+function escapeHtml(value = '') {
+    return value.toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+async function loadSystemItems(mode, fallbackItems = []) {
+    const prefix = SYSTEM_ITEM_PREFIX[mode];
+    const loaded = [];
+    try {
+        const snap = await getDocs(collection(db, 'system'));
+        snap.forEach(docSnap => {
+            if (docSnap.id.startsWith(prefix)) {
+                const data = docSnap.data() || {};
+                loaded.push(normalizeContentItem({ ...data, id: data.id || docSnap.id.replace(prefix, '') }));
+            }
+        });
+    } catch (error) {
+        console.warn('Không đọc được item docs, dùng dữ liệu master nếu có', error);
+    }
+    if (loaded.length) {
+        return loaded.sort((a, b) => (a.code || '').localeCompare(b.code || '', 'vi') || (a.title || '').localeCompare(b.title || '', 'vi'));
+    }
+    return Array.isArray(fallbackItems) ? fallbackItems.map(normalizeContentItem) : [];
+}
+
+async function saveSystemItems(mode, items) {
+    if (!isAdmin) throw new Error('Chỉ Admin mới được lưu dữ liệu này.');
+    const prefix = SYSTEM_ITEM_PREFIX[mode];
+    const normalizedItems = (items || []).map(normalizeContentItem);
+    await Promise.all(normalizedItems.map(item => {
+        const cleanItem = sanitize({ ...item, updated_at: new Date().toISOString(), updated_by: window.currentUser || 'admin' });
+        return setDoc(doc(db, 'system', `${prefix}${item.id}`), cleanItem, { merge: false });
+    }));
+    await setDoc(doc(db, 'system', SYSTEM_INDEX_DOC[mode]), {
+        ids: normalizedItems.map(item => item.id),
+        count: normalizedItems.length,
+        last_updated: new Date().toISOString(),
+        updated_by: window.currentUser || 'admin'
+    }, { merge: true });
+}
+
+async function saveSystemItem(mode, item) {
+    if (!isAdmin) throw new Error('Chỉ Admin mới được lưu dữ liệu này.');
+    const prefix = SYSTEM_ITEM_PREFIX[mode];
+    const cleanItem = sanitize({ ...normalizeContentItem(item), updated_at: new Date().toISOString(), updated_by: window.currentUser || 'admin' });
+    await setDoc(doc(db, 'system', `${prefix}${cleanItem.id}`), cleanItem, { merge: false });
+    await setDoc(doc(db, 'system', SYSTEM_INDEX_DOC[mode]), { last_updated: new Date().toISOString(), updated_by: window.currentUser || 'admin' }, { merge: true });
+}
+
+async function deleteSystemItem(mode, id) {
+    if (!isAdmin) throw new Error('Chỉ Admin mới được xóa dữ liệu này.');
+    await deleteDoc(doc(db, 'system', `${SYSTEM_ITEM_PREFIX[mode]}${id}`));
+    await setDoc(doc(db, 'system', SYSTEM_INDEX_DOC[mode]), { last_updated: new Date().toISOString(), updated_by: window.currentUser || 'admin' }, { merge: true });
+}
+
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function imageToCanvasDataURL(img, maxWidth, maxHeight, quality) {
+    const ratio = Math.min(maxWidth / img.width, maxHeight / img.height, 1);
+    const width = Math.max(1, Math.round(img.width * ratio));
+    const height = Math.max(1, Math.round(img.height * ratio));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL('image/jpeg', quality);
+}
+
+async function compressImageFile(file) {
+    if (!file || !file.type || !file.type.startsWith('image/')) throw new Error('File chọn vào không phải ảnh.');
+    const originalUrl = await readFileAsDataURL(file);
+    const img = await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Không đọc được ảnh. Hãy thử ảnh JPG/PNG khác.'));
+        image.src = originalUrl;
+    });
+    const attempts = [
+        { w: 1280, h: 820, q: 0.72 },
+        { w: 1100, h: 720, q: 0.64 },
+        { w: 900, h: 620, q: 0.56 },
+        { w: 760, h: 520, q: 0.48 }
+    ];
+    let output = originalUrl;
+    for (const a of attempts) {
+        output = imageToCanvasDataURL(img, a.w, a.h, a.q);
+        if (output.length <= MAX_IMAGE_DATA_URL_CHARS) break;
+    }
+    if (output.length > MAX_IMAGE_DATA_URL_CHARS) throw new Error('Ảnh vẫn quá nặng sau khi nén. Hãy dùng ảnh dưới 500KB hoặc crop nhỏ hơn.');
+    return output;
+}
+
 
 async function saveUserData() { 
     if(!window.currentUser) return; 
@@ -132,33 +270,29 @@ async function saveQuotePostersData(showToast = true) {
     }
 }
 
-// Hàm lưu dữ liệu Wiki (Có thông báo lỗi)
+// Hàm lưu dữ liệu Wiki: bản v40.2 lưu từng Setup thành document riêng
 async function saveWikiData() { 
     if(!isAdmin) return; 
     try {
-        await setDoc(doc(db, "system", "wiki_master"), { 
-            items: sanitize(wikiData), 
-            last_updated: new Date().toISOString() 
-        }, { merge: true }); 
-        console.log("Đã lưu Wiki thành công");
+        await saveSystemItems('wiki', wikiData);
+        console.log('Đã lưu Wiki thành công');
     } catch (error) {
-        alert("🚨 LỖI LƯU WIKI:\n" + error.message);
+        alert('🚨 LỖI LƯU WIKI:\n' + error.message);
         console.error(error);
+        throw error;
     }
 }
 
-// Hàm lưu dữ liệu Thư Viện (Có thông báo lỗi)
+// Hàm lưu dữ liệu Thư Viện: bản v40.2 lưu từng bài thành document riêng
 async function saveLibraryData() { 
     if(!isAdmin) return; 
     try {
-        await setDoc(doc(db, "system", "library_master"), { 
-            items: sanitize(libraryData), 
-            last_updated: new Date().toISOString() 
-        }, { merge: true }); 
-        console.log("Đã lưu Thư viện thành công");
+        await saveSystemItems('library', libraryData);
+        console.log('Đã lưu Thư viện thành công');
     } catch (error) {
-        alert("🚨 LỖI LƯU THƯ VIỆN:\n" + error.message);
+        alert('🚨 LỖI LƯU THƯ VIỆN:\n' + error.message);
         console.error(error);
+        throw error;
     }
 }
 
@@ -535,12 +669,184 @@ window.toggleAuth = () => { document.getElementById('login-form').classList.togg
 window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); location.reload(); }
 window.renderDashboard = function() { if(!journalData) return; const closed = journalData.filter(t=>t.status!=='OPEN'); let wins=0, pnl=0, maxDD=0, peak=initialCapital, bal=initialCapital, monthStats = {}, patternStats = {}; closed.forEach(t=>{ const v = parseFloat(t.pnl); pnl+=v; bal+=v; if(t.status==='WIN') wins++; if(bal > peak) peak = bal; const dd = peak > 0 ? (peak - bal)/peak : 0; if(dd > maxDD) maxDD = dd; const parts = t.date.split('/'); if(parts.length === 3) { const mKey = `${parts[1]}/${parts[2]}`; if(!monthStats[mKey]) monthStats[mKey] = {total:0, win:0, loss:0, pnl:0}; monthStats[mKey].total++; monthStats[mKey].pnl += v; if(t.status==='WIN') monthStats[mKey].win++; else if(t.status==='LOSS') monthStats[mKey].loss++; } const strat = t.strategy || "Unknown"; if(!patternStats[strat]) patternStats[strat] = {pnl:0, win:0, total:0}; patternStats[strat].pnl += v; patternStats[strat].total++; if(t.status==='WIN') patternStats[strat].win++; }); safeSetText('dash-balance', `$${bal.toLocaleString()}`); safeSetText('dash-pnl', `$${pnl.toLocaleString()}`); safeSetText('dash-winrate', `${closed.length ? Math.round((wins/closed.length)*100) : 0}%`); safeSetText('dash-dd', `${(maxDD*100).toFixed(2)}%`); const mBody = document.getElementById('stats-monthly-body'); if(mBody) mBody.innerHTML = Object.entries(monthStats).sort((a,b) => { const [m1, y1] = a[0].split('/'); const [m2, y2] = b[0].split('/'); return new Date(y2, m2) - new Date(y1, m1); }).map(([k,v]) => `<tr class="border-b dark:border-slate-800"><td class="p-3 font-bold text-slate-500">${k}</td><td class="p-3 text-center">${v.total}</td><td class="p-3 text-center text-green-500 font-bold">${v.win}</td><td class="p-3 text-center text-red-500 font-bold">${v.loss}</td><td class="p-3 text-right font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center text-slate-500">Trống</td></tr>'; const pBody = document.getElementById('stats-pattern-body'); if(pBody) pBody.innerHTML = Object.entries(patternStats).sort((a,b) => b[1].pnl - a[1].pnl).map(([k,v], i) => `<div class="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><div class="flex items-center gap-3"><span class="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${i===0?'bg-yellow-500 text-black':'bg-slate-300 text-slate-600'}">${i+1}</span><div><p class="text-sm font-bold truncate w-32">${k}</p><p class="text-[10px] text-slate-500">${v.win}/${v.total} wins</p></div></div><span class="font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</span></div>`).join('') || '<div class="text-center text-slate-500">Trống</div>'; renderCharts(closed, initialCapital); renderQuotePosters(); renderMistakesPreview(); renderMistakeCharts(); renderDisciplineModules(); }
 window.renderCharts = function(data, start) { const ctx1=document.getElementById('chart-equity'); const ctx2=document.getElementById('chart-winloss'); if(chartInst.eq) { chartInst.eq.destroy(); chartInst.eq = null; } if(chartInst.wl) { chartInst.wl.destroy(); chartInst.wl = null; } if(ctx1 && window.Chart) { let b = start; const pts = [start, ...data.map(t=>b+=parseFloat(t.pnl))]; chartInst.eq = new Chart(ctx1, {type:'line', data:{labels:pts.map((_,i)=>i), datasets:[{data:pts, borderColor:'#10b981', fill:true, backgroundColor:'rgba(16,185,129,0.1)', tension:0.4}]}, options:{plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'rgba(255,255,255,0.05)'}}}}}); } if(ctx2 && window.Chart) { let w=0, l=0; data.forEach(t=>t.status==='WIN'?w++:l++); chartInst.wl = new Chart(ctx2, {type:'doughnut', data:{labels:['Win','Loss'], datasets:[{data:[w,l], backgroundColor:['#10b981','#ef4444'], borderWidth:0}]}, options:{cutout:'70%', plugins:{legend:{position:'right', labels:{color:'#94a3b8'}}}}}); } }
-window.openWikiEditor = function(id = null, mode = 'wiki') { if (!isAdmin) return alert("Chỉ Admin!"); document.getElementById('wiki-editor-modal').classList.remove('hidden'); document.getElementById('edit-mode').value = mode; document.getElementById('wiki-editor-title').innerText = mode === 'wiki' ? "Editor: Setup" : "Editor: Thư Viện"; const dataSource = mode === 'wiki' ? wikiData : libraryData; const cats = [...new Set(dataSource.map(i => i.cat))]; const dl = document.getElementById('cat-suggestions'); if(dl) dl.innerHTML = cats.map(c => `<option value="${c}">`).join(''); const imgPreview = document.getElementById('wiki-image-preview'); const uploadHint = document.getElementById('wiki-upload-hint'); const imgInput = document.getElementById('edit-image-url'); if (id) { const i = dataSource.find(x => x.id == id); if (i) { document.getElementById('edit-id').value = i.id; document.getElementById('edit-title').value = i.title; document.getElementById('edit-code').value = i.code; document.getElementById('edit-cat').value = i.cat; document.getElementById('edit-content').value = i.content; imgInput.value = i.image || ""; if (i.image) { imgPreview.src = i.image; imgPreview.classList.remove('hidden'); if(uploadHint) uploadHint.classList.add('hidden'); } else { imgPreview.classList.add('hidden'); if(uploadHint) uploadHint.classList.remove('hidden'); } } } else { document.getElementById('edit-id').value = ""; document.getElementById('edit-title').value = ""; document.getElementById('edit-code').value = ""; document.getElementById('edit-cat').value = ""; document.getElementById('edit-content').value = ""; imgInput.value = ""; imgPreview.src = ""; imgPreview.classList.add('hidden'); if(uploadHint) uploadHint.classList.remove('hidden'); } }
-window.handleWikiImageUpload = function(input) { if (input.files[0]) { const r = new FileReader(); r.onload = (e) => { document.getElementById('wiki-image-preview').src = e.target.result; document.getElementById('wiki-image-preview').classList.remove('hidden'); document.getElementById('edit-image-url').value = e.target.result; document.getElementById('wiki-upload-hint').classList.add('hidden'); }; r.readAsDataURL(input.files[0]); } }
-window.saveWiki = function() { if (!isAdmin) return; const id = document.getElementById('edit-id').value || Date.now().toString(); const mode = document.getElementById('edit-mode').value; const item = { id, title: document.getElementById('edit-title').value, code: document.getElementById('edit-code').value, cat: document.getElementById('edit-cat').value, image: document.getElementById('edit-image-url').value, content: document.getElementById('edit-content').value }; if (!item.code || !item.title) return alert("Nhập đủ thông tin!"); if (mode === 'wiki') { const idx = wikiData.findIndex(x => x.id == id); if (idx !== -1) wikiData[idx] = item; else wikiData.push(item); saveWikiData(); renderWikiGrid(); populateStrategies(); } else { const idx = libraryData.findIndex(x => x.id == id); if (idx !== -1) libraryData[idx] = item; else libraryData.push(item); saveLibraryData(); renderLibraryGrid(); } window.closeModal('wiki-editor-modal'); }
-window.renderWikiGrid = function() { document.getElementById('wiki-grid').innerHTML = wikiData.map(i => `<div class="glass-panel p-4 cursor-pointer hover:bg-white/5" onclick="viewWikiDetail('${i.id}', 'wiki')"><div class="h-32 bg-black/20 rounded-lg mb-3 overflow-hidden"><img src="${i.image}" class="w-full h-full object-cover"></div><h4 class="font-bold text-sm truncate">${i.title}</h4><span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300 mt-1 inline-block">${i.code}</span></div>`).join(''); }
-window.renderLibraryGrid = function() { document.getElementById('library-grid').innerHTML = libraryData.map(i => `<div class="glass-panel p-4 cursor-pointer hover:bg-white/5 border border-blue-500/20" onclick="viewWikiDetail('${i.id}', 'library')"><div class="h-32 bg-black/20 rounded-lg mb-3 overflow-hidden"><img src="${i.image}" class="w-full h-full object-cover"></div><h4 class="font-bold text-sm truncate text-blue-200">${i.title}</h4><span class="text-[10px] bg-blue-900/50 px-2 py-1 rounded text-blue-300 mt-1 inline-block">${i.cat}</span></div>`).join(''); }
-window.viewWikiDetail = function(id, mode = 'wiki') { const dataSource = mode === 'wiki' ? wikiData : libraryData; const i = dataSource.find(x => x.id == id); if(!i) return; document.getElementById('view-title').innerText = i.title; document.getElementById('view-image').src = i.image; document.getElementById('view-content').innerText = i.content; const btnEdit = document.getElementById('btn-edit-entry'); const btnDel = document.getElementById('btn-delete-entry'); if(isAdmin) { btnEdit.style.display='inline-block'; btnDel.style.display='inline-block'; const ne = btnEdit.cloneNode(true); const nd = btnDel.cloneNode(true); btnEdit.parentNode.replaceChild(ne, btnEdit); btnDel.parentNode.replaceChild(nd, btnDel); ne.onclick = () => { window.closeModal('wiki-detail-modal'); window.openWikiEditor(id, mode); }; nd.onclick = () => { if(confirm("Xóa?")) { if(mode==='wiki') { wikiData=wikiData.filter(x=>x.id!=id); saveWikiData(); renderWikiGrid(); } else { libraryData=libraryData.filter(x=>x.id!=id); saveLibraryData(); renderLibraryGrid(); } window.closeModal('wiki-detail-modal'); } }; } else { btnEdit.style.display='none'; btnDel.style.display='none'; } document.getElementById('wiki-detail-modal').classList.remove('hidden'); }
+window.openWikiEditor = function(id = null, mode = 'wiki') {
+    if (!isAdmin) return alert('Chỉ Admin!');
+    wikiImageProcessing = false;
+    const modal = document.getElementById('wiki-editor-modal');
+    if(modal) modal.classList.remove('hidden');
+    document.getElementById('edit-mode').value = mode;
+    document.getElementById('wiki-editor-title').innerText = mode === 'wiki' ? 'Editor: Setup' : 'Editor: Thư Viện';
+    const dataSource = mode === 'wiki' ? wikiData : libraryData;
+    const cats = [...new Set(dataSource.map(i => i.cat).filter(Boolean))];
+    const dl = document.getElementById('cat-suggestions');
+    if(dl) dl.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
+    const imgPreview = document.getElementById('wiki-image-preview');
+    const uploadHint = document.getElementById('wiki-upload-hint');
+    const imgInput = document.getElementById('edit-image-url');
+    const fileInput = document.getElementById('wiki-file-input');
+    if(fileInput) fileInput.value = '';
+    const setImagePreview = (src = '') => {
+        imgInput.value = src || '';
+        if (src) {
+            imgPreview.src = src;
+            imgPreview.classList.remove('hidden');
+            if(uploadHint) uploadHint.classList.add('hidden');
+        } else {
+            imgPreview.removeAttribute('src');
+            imgPreview.classList.add('hidden');
+            if(uploadHint) uploadHint.classList.remove('hidden');
+        }
+    };
+    if (id) {
+        const i = dataSource.find(x => x.id == id);
+        if (i) {
+            document.getElementById('edit-id').value = i.id;
+            document.getElementById('edit-title').value = i.title || '';
+            document.getElementById('edit-code').value = i.code || '';
+            document.getElementById('edit-cat').value = i.cat || '';
+            document.getElementById('edit-content').value = i.content || '';
+            setImagePreview(i.image || '');
+        }
+    } else {
+        document.getElementById('edit-id').value = '';
+        document.getElementById('edit-title').value = '';
+        document.getElementById('edit-code').value = '';
+        document.getElementById('edit-cat').value = '';
+        document.getElementById('edit-content').value = '';
+        setImagePreview('');
+    }
+    if(window.lucide) lucide.createIcons();
+}
+
+window.handleWikiImageUpload = async function(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    wikiImageProcessing = true;
+    const imgPreview = document.getElementById('wiki-image-preview');
+    const uploadHint = document.getElementById('wiki-upload-hint');
+    try {
+        if(uploadHint) {
+            uploadHint.classList.remove('hidden');
+            uploadHint.innerHTML = `<p class="text-sm font-bold text-amber-400">Đang nén ảnh...</p><p class="text-[10px] text-slate-500 mt-1">Vui lòng đợi trước khi bấm lưu</p>`;
+        }
+        const dataUrl = await compressImageFile(file);
+        document.getElementById('edit-image-url').value = dataUrl;
+        imgPreview.src = dataUrl;
+        imgPreview.classList.remove('hidden');
+        if(uploadHint) {
+            uploadHint.classList.add('hidden');
+            uploadHint.innerHTML = `<div class="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition"><i data-lucide="image-plus" class="w-5 h-5"></i></div><p class="text-sm font-bold text-slate-400">Bấm để chọn ảnh</p>`;
+        }
+        if(window.lucide) lucide.createIcons();
+    } catch (error) {
+        alert('Không thay được ảnh:\n' + error.message);
+        console.error(error);
+    } finally {
+        wikiImageProcessing = false;
+        input.value = '';
+    }
+}
+
+window.saveWiki = async function() {
+    if (!isAdmin) return alert('Chỉ Admin!');
+    if (wikiImageProcessing) return alert('Ảnh đang được nén. Vui lòng đợi vài giây rồi bấm lưu lại.');
+    const id = document.getElementById('edit-id').value || Date.now().toString();
+    const mode = document.getElementById('edit-mode').value === 'library' ? 'library' : 'wiki';
+    const item = normalizeContentItem({
+        id,
+        title: document.getElementById('edit-title').value,
+        code: document.getElementById('edit-code').value,
+        cat: document.getElementById('edit-cat').value,
+        image: document.getElementById('edit-image-url').value,
+        content: document.getElementById('edit-content').value
+    });
+    if (!item.code || !item.title) return alert('Nhập đủ Mã và Tiêu đề!');
+    try {
+        await saveSystemItem(mode, item);
+        if (mode === 'wiki') {
+            const idx = wikiData.findIndex(x => x.id == id);
+            if (idx !== -1) wikiData[idx] = item; else wikiData.push(item);
+            renderWikiGrid();
+            populateStrategies();
+        } else {
+            const idx = libraryData.findIndex(x => x.id == id);
+            if (idx !== -1) libraryData[idx] = item; else libraryData.push(item);
+            renderLibraryGrid();
+        }
+        window.closeModal('wiki-editor-modal');
+        alert('Đã lưu thành công. Ảnh mới đã được cập nhật.');
+    } catch (error) {
+        alert('🚨 LỖI LƯU DỮ LIỆU:\n' + error.message + '\n\nGợi ý: dùng ảnh nhẹ hơn hoặc kiểm tra Firestore Rules cho collection system.');
+        console.error(error);
+    }
+}
+
+window.renderWikiGrid = function() {
+    const grid = document.getElementById('wiki-grid');
+    if(!grid) return;
+    grid.innerHTML = wikiData.map(i => `
+        <div class="content-card p-4 cursor-pointer" onclick="viewWikiDetail('${i.id}', 'wiki')">
+            <div class="h-32 content-thumb rounded-xl mb-3 overflow-hidden flex items-center justify-center bg-slate-950/60">
+                ${i.image ? `<img src="${i.image}" class="w-full h-full object-cover" onerror="this.outerHTML='<span class=&quot;text-[10px] text-slate-500&quot;>Ảnh lỗi / quá nặng</span>'">` : `<span class="text-[10px] text-slate-500">Chưa có ảnh</span>`}
+            </div>
+            <h4 class="font-bold text-sm truncate">${escapeHtml(i.title)}</h4>
+            <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300 mt-1 inline-block">${escapeHtml(i.code)}</span>
+        </div>
+    `).join('');
+}
+
+window.renderLibraryGrid = function() {
+    const grid = document.getElementById('library-grid');
+    if(!grid) return;
+    grid.innerHTML = libraryData.map(i => `
+        <div class="content-card p-4 cursor-pointer border border-blue-500/20" onclick="viewWikiDetail('${i.id}', 'library')">
+            <div class="h-32 content-thumb rounded-xl mb-3 overflow-hidden flex items-center justify-center bg-slate-950/60">
+                ${i.image ? `<img src="${i.image}" class="w-full h-full object-cover" onerror="this.outerHTML='<span class=&quot;text-[10px] text-slate-500&quot;>Ảnh lỗi / quá nặng</span>'">` : `<span class="text-[10px] text-slate-500">Chưa có ảnh</span>`}
+            </div>
+            <h4 class="font-bold text-sm truncate text-blue-200">${escapeHtml(i.title)}</h4>
+            <span class="text-[10px] bg-blue-900/50 px-2 py-1 rounded text-blue-300 mt-1 inline-block">${escapeHtml(i.cat || i.code)}</span>
+        </div>
+    `).join('');
+}
+
+window.viewWikiDetail = function(id, mode = 'wiki') {
+    const dataSource = mode === 'wiki' ? wikiData : libraryData;
+    const i = dataSource.find(x => x.id == id);
+    if(!i) return;
+    document.getElementById('view-title').innerText = i.title || '';
+    const viewImg = document.getElementById('view-image');
+    if(viewImg) viewImg.src = i.image || '';
+    document.getElementById('view-content').innerText = i.content || '';
+    const btnEdit = document.getElementById('btn-edit-entry');
+    const btnDel = document.getElementById('btn-delete-entry');
+    if(isAdmin) {
+        btnEdit.style.display='inline-block';
+        btnDel.style.display='inline-block';
+        const ne = btnEdit.cloneNode(true);
+        const nd = btnDel.cloneNode(true);
+        btnEdit.parentNode.replaceChild(ne, btnEdit);
+        btnDel.parentNode.replaceChild(nd, btnDel);
+        ne.onclick = () => { window.closeModal('wiki-detail-modal'); window.openWikiEditor(id, mode); };
+        nd.onclick = async () => {
+            if(!confirm('Xóa mục này?')) return;
+            try {
+                await deleteSystemItem(mode, id);
+                if(mode === 'wiki') { wikiData = wikiData.filter(x => x.id != id); renderWikiGrid(); populateStrategies(); }
+                else { libraryData = libraryData.filter(x => x.id != id); renderLibraryGrid(); }
+                window.closeModal('wiki-detail-modal');
+            } catch(error) {
+                alert('Không xóa được:\n' + error.message);
+                console.error(error);
+            }
+        };
+    } else {
+        btnEdit.style.display='none';
+        btnDel.style.display='none';
+    }
+    document.getElementById('wiki-detail-modal').classList.remove('hidden');
+    if(window.lucide) lucide.createIcons();
+}
+
 window.openAdminPanel = async () => { document.getElementById('admin-modal').classList.remove('hidden'); const tb = document.getElementById('admin-user-list'); tb.innerHTML = 'Loading...'; const s = await getDocs(collection(db, "users")); let h = ''; s.forEach(d => { const u = d.data(); const delBtn = u.username===window.currentUser ? '' : `<button onclick="deleteUser('${u.username}')" class="text-red-500 ml-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`; const appBtn = u.status==='pending' ? `<button onclick="approveUser('${u.username}')" class="bg-green-600 px-2 py-1 rounded text-xs">Duyệt</button>` : `<span class="text-green-500 text-xs">Duyệt</span>`; h += `<tr><td class="p-3">${u.username}</td><td class="p-3 text-right">${appBtn} ${delBtn}</td></tr>`; }); tb.innerHTML = h || 'Trống'; if(window.lucide) lucide.createIcons(); }
 window.approveUser = async (u) => { if(confirm("Duyệt?")) { await updateDoc(doc(db,"users",u),{status:'approved'}); window.openAdminPanel(); } }
 window.deleteUser = async (u) => { if(confirm("Xóa vĩnh viễn?")) { await deleteDoc(doc(db,"users",u)); window.openAdminPanel(); } }
