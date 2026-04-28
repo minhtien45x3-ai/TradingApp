@@ -3,7 +3,7 @@ import { db, doc, getDoc, setDoc, collection, getDocs, updateDoc, deleteDoc } fr
 // ... (Giữ nguyên các config ADMIN, DEFAULT_PAIRS, v.v...) ...
 const ADMIN_LIST = ["admin", "minhtien45x3"];
 const ADMIN_MASTER_PASS = "admin123";
-let journalData = [], wikiData = [], libraryData = [], pairsData = [];
+let journalData = [], wikiData = [], libraryData = [], pairsData = [], quotePostersData = [];
 let initialCapital = 20000;
 let isAdmin = false;
 let currentEntryImgBase64 = null, currentAnalysisTabImg = null, currentPracticeItem = null;
@@ -22,6 +22,22 @@ const CRITERIA_LIST = [
     { name: "9. THỜI GIAN", desc: "Session/Timing" }, { name: "10. TỶ LỆ R:R", desc: "Risk Reward" }
 ];
 const QUOTES = ["Hành trình vạn dặm bắt đầu bằng một bước chân.", "Kỷ luật là cầu nối giữa mục tiêu và thành tựu."];
+const DEFAULT_QUOTE_POSTERS = [
+    { id: "legend-1", title: "Kỷ luật trước lợi nhuận", author: "Paul Tudor Jones", quote: "Đừng tập trung vào việc kiếm tiền, hãy tập trung vào việc bảo vệ những gì bạn có.", image: "", theme: "emerald" },
+    { id: "legend-2", title: "Cắt lỗ là kỹ năng sinh tồn", author: "Stanley Druckenmiller", quote: "Điều quan trọng không phải là đúng hay sai, mà là bạn kiếm được bao nhiêu khi đúng và mất bao nhiêu khi sai.", image: "", theme: "blue" },
+    { id: "legend-3", title: "Chờ thời điểm chất lượng", author: "Jesse Livermore", quote: "Tiền lớn không nằm ở việc mua bán liên tục, mà nằm ở việc ngồi yên đúng lúc.", image: "", theme: "amber" }
+];
+
+const TRADER_MISTAKES = [
+    { id: "fomo", name: "FOMO - Đuổi giá", symptom: "Mua khi giá đã chạy xa khỏi điểm mua chuẩn.", wrong: "Nhảy vào sau cây nến tăng mạnh vì sợ lỡ cơ hội.", right: "Chỉ mua khi có nền giá, điểm pivot rõ và R:R còn đủ hấp dẫn.", frequency: 86, impact: -34, fix: "Đặt quy tắc: nếu giá vượt điểm mua quá 5-7% thì bỏ qua, chờ nền mới." },
+    { id: "no-stop", name: "Không cắt lỗ", symptom: "Biến lệnh sai thành khoản lỗ lớn.", wrong: "Hy vọng giá quay lại, bình quân giá xuống không có kế hoạch.", right: "Cắt lỗ theo mức đã định trước khi vào lệnh.", frequency: 78, impact: -48, fix: "Luôn nhập stop-loss trước khi bấm mua; rủi ro mỗi lệnh tối đa 0.5-1.5% NAV." },
+    { id: "overtrade", name: "Giao dịch quá nhiều", symptom: "Vào lệnh vì buồn chán hoặc muốn gỡ nhanh.", wrong: "Ngày nào cũng tìm lý do để mua bán.", right: "Chỉ giao dịch khi setup đạt chuẩn và thị trường thuận lợi.", frequency: 72, impact: -29, fix: "Giới hạn số lệnh/ngày và checklist bắt buộc trước khi vào lệnh." },
+    { id: "against-market", name: "Đánh ngược thị trường", symptom: "Mua mạnh khi thị trường đang phân phối/downtrend.", wrong: "Tin rằng cổ phiếu của mình sẽ đi ngược xu hướng chung.", right: "Ưu tiên tiền mặt khi VNI xấu, giảm size khi thị trường sideway.", frequency: 66, impact: -41, fix: "Theo dõi ngày phân phối, EMA50 của chỉ số và nhóm ngành dẫn dắt." },
+    { id: "oversize", name: "Vào vị thế quá lớn", symptom: "Một lệnh sai làm tổn thương tâm lý và tài khoản.", wrong: "All-in vì quá tự tin vào một setup.", right: "Tính position sizing theo điểm cắt lỗ.", frequency: 61, impact: -45, fix: "Dùng công thức: Số tiền rủi ro / khoảng cách stop-loss." },
+    { id: "sell-early", name: "Bán non cổ phiếu mạnh", symptom: "Chốt lời quá sớm vì sợ mất lãi.", wrong: "Thấy lãi nhỏ đã bán hết dù xu hướng vẫn khỏe.", right: "Bán theo quy tắc: một phần ở R:R, phần còn lại bám EMA/trailing stop.", frequency: 58, impact: -24, fix: "Tách lệnh thành 2 phần: bảo vệ vốn và để lãi chạy." },
+    { id: "no-journal", name: "Không ghi nhật ký", symptom: "Lặp lại lỗi cũ vì không đo lường hành vi.", wrong: "Chỉ nhớ lệnh thắng, quên nguyên nhân lệnh thua.", right: "Ghi ảnh chart, lý do vào lệnh, cảm xúc, lỗi và bài học.", frequency: 54, impact: -22, fix: "Sau mỗi lệnh ghi 3 dòng: setup, lỗi, hành động sửa lần sau." }
+];
+
 function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
 
 // --- CORE INIT ---
@@ -43,7 +59,7 @@ window.loadData = async function() {
     const adminBtn = document.getElementById('btn-admin-panel'); if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
     try {
         const uRef = doc(db, "users", window.currentUser); const uSnap = await getDoc(uRef);
-        if (uSnap.exists()) { const d = uSnap.data(); journalData = d.journal || []; pairsData = d.pairs || DEFAULT_PAIRS; initialCapital = d.capital || 20000; } else { await saveUserData(); }
+        if (uSnap.exists()) { const d = uSnap.data(); journalData = d.journal || []; pairsData = d.pairs || DEFAULT_PAIRS; initialCapital = d.capital || 20000; quotePostersData = d.quotePosters || DEFAULT_QUOTE_POSTERS; } else { quotePostersData = DEFAULT_QUOTE_POSTERS; await saveUserData(); }
         const wRef = doc(db, "system", "wiki_master"); const wSnap = await getDoc(wRef); wikiData = wSnap.exists() ? wSnap.data().items : DEFAULT_WIKI;
         const lRef = doc(db, "system", "library_master"); const lSnap = await getDoc(lRef); libraryData = lSnap.exists() ? lSnap.data().items : [];
         initUI(); safeSetText('dashboard-marquee', QUOTES[0]);
@@ -57,7 +73,8 @@ async function saveUserData() {
     await setDoc(doc(db, "users", window.currentUser), { 
         journal: sanitize(journalData), 
         pairs: sanitize(pairsData), 
-        capital: initialCapital 
+        capital: initialCapital,
+        quotePosters: sanitize(quotePostersData) 
     }, { merge: true }); 
 }
 
@@ -92,20 +109,16 @@ async function saveLibraryData() {
 }
 
 function initUI() {
-    renderDashboard(); renderJournalList(); populateStrategies(); renderWikiGrid(); renderLibraryGrid(); renderPairsList(); renderPairSelects();
+    renderDashboard(); renderJournalList(); populateStrategies(); renderWikiGrid(); renderLibraryGrid(); renderPairsList(); renderPairSelects(); renderQuotePosters(); renderMistakesPreview(); renderMistakeCharts();
     const cap = document.getElementById('real-init-capital'); if(cap) cap.value = initialCapital; updateCapitalCalc();
+    // (Render Checklist - giữ nguyên)
     const checklistContainer = document.getElementById('ana-checklist-container');
-    if(checklistContainer) {
-        checklistContainer.innerHTML = CRITERIA_LIST.map(c => `<label class="criteria-item"><input type="checkbox" class="w-4 h-4" style="accent-color:#34d399;"><div><p class="text-[11px] font-semibold text-slate-300">${c.name}</p><p class="text-[10px] text-slate-500">${c.desc}</p></div></label>`).join('');
-    }
+    if(checklistContainer) { checklistContainer.innerHTML = CRITERIA_LIST.map(c => `<label class="flex items-center gap-2 p-3 rounded-lg bg-slate-100 dark:bg-slate-800 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition"><input type="checkbox" class="accent-blue-500 w-5 h-5"><div><p class="text-xs font-bold">${c.name}</p><p class="text-[10px] opacity-70">${c.desc}</p></div></label>`).join(''); }
     const btnCreate = document.querySelector('#tab-wiki button[onclick^="openWikiEditor"]'); if(btnCreate) btnCreate.style.display = isAdmin ? 'flex' : 'none';
     const btnLib = document.querySelector('#tab-library button[onclick^="openWikiEditor"]'); if(btnLib) btnLib.style.display = isAdmin ? 'flex' : 'none';
-    const headerUser = document.getElementById('header-username');
-    if(headerUser && window.currentUser) headerUser.textContent = window.currentUser;
     if(window.lucide) lucide.createIcons();
-    loadRandomTraining();
+    loadRandomTraining(); // Khởi động tab Rèn Luyện lần đầu
 }
-
 
 // --- TRAINING LOGIC (Quiz Mode - Trắc Nghiệm) ---
 
@@ -153,15 +166,14 @@ window.loadRandomTraining = function() {
     document.getElementById('training-image').classList.remove('hidden');
     
     // Reset Panel kết quả
-    const qr = document.getElementById('quiz-result'); if(qr) qr.classList.add('hidden');
-    const qi = document.getElementById('quiz-interface'); if(qi) qi.classList.remove('hidden');
-    const qrp = document.getElementById('quiz-result'); if(qrp) qrp.classList.add('hidden');
+    document.getElementById('quiz-result-panel').classList.add('hidden');
+    document.getElementById('quiz-interface').classList.remove('hidden');
 
     // Render nút bấm
     const grid = document.getElementById('quiz-options-grid');
     grid.innerHTML = quizOptions.map(opt => `
         <button onclick="checkQuizAnswer('${opt.id}')" 
-                class="quiz-option">
+                class="bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-xl px-2 py-1 text-[11px] font-bold transition duration-200 hover:border-amber-500/50 hover:text-white truncate">
             ${opt.title || "Lựa chọn khác"}
         </button>
     `).join('');
@@ -169,30 +181,211 @@ window.loadRandomTraining = function() {
 
 // Hàm kiểm tra đáp án
 window.checkQuizAnswer = function(selectedId) {
-    // Show compact result in quiz area
-    const quizInterface = document.getElementById('quiz-interface');
-    const resultPanel = document.getElementById('quiz-result');
-    if(quizInterface) quizInterface.classList.add('hidden');
-    if(resultPanel) resultPanel.classList.remove('hidden');
-    const iconEl = document.getElementById('quiz-result-icon');
-    const textEl = document.getElementById('quiz-result-text');
+    const resultPanel = document.getElementById('quiz-result-panel');
+    const statusTitle = document.getElementById('result-status');
+    const contentText = document.getElementById('result-content');
+    const titleText = document.getElementById('result-title');
+    
+    // Hiển thị panel kết quả
+    resultPanel.classList.remove('hidden');
     
     if (selectedId === currentQuizCorrectItem.id) {
         // TRẢ LỜI ĐÚNG
-        if(iconEl) iconEl.innerHTML = '🎉'; if(textEl) textEl.innerHTML = `<span class="text-emerald-400">CHÍNH XÁC! — ${currentQuizCorrectItem.title}</span>`;
+        statusTitle.innerHTML = `<span class="text-emerald-500">CHÍNH XÁC! 🎉</span>`;
         // Hiệu ứng âm thanh hoặc rung nếu cần (option)
     } else {
         // TRẢ LỜI SAI
-        if(iconEl) iconEl.innerHTML = '😅'; if(textEl) textEl.innerHTML = `<span class="text-rose-400">SAI RỒI! — Đáp án: ${currentQuizCorrectItem.title}</span>`;
+        statusTitle.innerHTML = `<span class="text-rose-500">SAI RỒI! 😅</span>`;
     }
 
-    // Highlight correct answer button
-    document.querySelectorAll('#quiz-options-grid button').forEach(btn => {
-        if(btn.getAttribute('onclick')?.includes(currentQuizCorrectItem.id)) btn.classList.add('correct');
-        else btn.classList.add('wrong');
-        btn.disabled = true;
-    });
+    // Luôn hiện nội dung giải thích dù đúng hay sai để học
+    titleText.innerText = currentQuizCorrectItem.title;
+    contentText.innerHTML = currentQuizCorrectItem.content 
+        ? currentQuizCorrectItem.content 
+        : "<i class='text-slate-500'>Chưa có nội dung giải thích cho bài này.</i>";
 }
+
+
+// --- PRO DASHBOARD: QUOTE POSTERS + TRADER MISTAKES ---
+const escapeHtml = (value = "") => String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+window.handlePosterUpload = function(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const imgData = e.target.result;
+        const hidden = document.getElementById('poster-image-data');
+        const preview = document.getElementById('poster-image-preview');
+        const hint = document.getElementById('poster-upload-hint');
+        if (hidden) hidden.value = imgData;
+        if (preview) { preview.src = imgData; preview.classList.remove('hidden'); }
+        if (hint) hint.classList.add('hidden');
+    };
+    reader.readAsDataURL(input.files[0]);
+};
+
+window.addQuotePoster = function() {
+    const title = document.getElementById('poster-title')?.value?.trim() || 'Bài học giao dịch';
+    const author = document.getElementById('poster-author')?.value?.trim() || 'Trader Legend';
+    const quote = document.getElementById('poster-quote')?.value?.trim();
+    const image = document.getElementById('poster-image-data')?.value || '';
+    if (!quote && !image) return alert('Hãy nhập câu nói hoặc chọn ảnh poster trước khi lưu.');
+    quotePostersData.unshift({ id: Date.now().toString(), title, author, quote, image, theme: 'custom' });
+    saveUserData();
+    renderQuotePosters();
+    ['poster-title','poster-author','poster-quote','poster-image-data'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    const preview = document.getElementById('poster-image-preview');
+    const hint = document.getElementById('poster-upload-hint');
+    if (preview) { preview.src = ''; preview.classList.add('hidden'); }
+    if (hint) hint.classList.remove('hidden');
+};
+
+window.deleteQuotePoster = function(id) {
+    if (!confirm('Xóa poster/câu nói này?')) return;
+    quotePostersData = quotePostersData.filter(item => item.id !== id);
+    saveUserData();
+    renderQuotePosters();
+};
+
+function renderQuotePosters() {
+    const grid = document.getElementById('quote-poster-grid');
+    if (!grid) return;
+    const items = quotePostersData && quotePostersData.length ? quotePostersData : DEFAULT_QUOTE_POSTERS;
+    grid.innerHTML = items.map(item => `
+        <article class="poster-card group">
+            ${item.image ? `<img src="${item.image}" class="poster-card-img" onclick="viewImageFull('${item.image}')">` : `<div class="poster-card-placeholder"><i data-lucide="quote" class="w-10 h-10"></i></div>`}
+            <div class="poster-card-overlay">
+                <p class="poster-label">${escapeHtml(item.title || 'Trader Wisdom')}</p>
+                <h4>“${escapeHtml(item.quote || 'Thêm ảnh hoặc câu nói để nhắc nhở bản thân mỗi ngày.')}”</h4>
+                <div class="poster-footer">
+                    <span>— ${escapeHtml(item.author || 'Legend')}</span>
+                    <button onclick="event.stopPropagation(); deleteQuotePoster('${item.id}')" class="poster-delete" title="Xóa"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+        </article>
+    `).join('');
+    if (window.lucide) lucide.createIcons();
+}
+
+function renderMistakesPreview() {
+    const list = document.getElementById('mistakes-preview-list');
+    if (list) {
+        list.innerHTML = TRADER_MISTAKES.slice(0, 4).map((m, i) => `
+            <button onclick="switchTab('mistakes'); showMistakeDetail('${m.id}')" class="mistake-mini-card">
+                <span class="mistake-rank">${i + 1}</span>
+                <span class="flex-1 text-left"><b>${escapeHtml(m.name)}</b><small>${escapeHtml(m.symptom)}</small></span>
+                <span class="font-mono text-rose-400">${m.impact}%</span>
+            </button>
+        `).join('');
+    }
+
+    const grid = document.getElementById('mistake-card-grid');
+    if (grid) {
+        grid.innerHTML = TRADER_MISTAKES.map(m => `
+            <button onclick="showMistakeDetail('${m.id}')" class="mistake-card-pro">
+                <div class="flex justify-between items-start gap-3 mb-3">
+                    <h3>${escapeHtml(m.name)}</h3>
+                    <span>${m.frequency}%</span>
+                </div>
+                <p>${escapeHtml(m.symptom)}</p>
+                <div class="mt-4 h-1.5 rounded-full bg-white/10 overflow-hidden"><div class="h-full bg-rose-500" style="width:${m.frequency}%"></div></div>
+            </button>
+        `).join('');
+    }
+
+    const body = document.getElementById('mistake-comparison-body');
+    if (body) {
+        body.innerHTML = TRADER_MISTAKES.map(m => `
+            <tr>
+                <td class="p-4 font-bold text-slate-200">${escapeHtml(m.name)}</td>
+                <td class="p-4 text-rose-300">${escapeHtml(m.wrong)}</td>
+                <td class="p-4 text-emerald-300">${escapeHtml(m.right)}</td>
+                <td class="p-4 text-slate-300">${escapeHtml(m.fix)}</td>
+            </tr>
+        `).join('');
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+window.showMistakeDetail = function(id) {
+    const m = TRADER_MISTAKES.find(x => x.id === id) || TRADER_MISTAKES[0];
+    const panel = document.getElementById('mistake-detail-panel');
+    if (!panel || !m) return;
+    panel.innerHTML = `
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-11 h-11 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center"><i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i></div>
+            <div><p class="text-[10px] uppercase tracking-[0.25em] text-slate-500 font-bold">Sai lầm cần sửa</p><h3 class="text-xl font-bold text-white">${escapeHtml(m.name)}</h3></div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="mistake-detail-box danger"><b>Cách làm sai</b><p>${escapeHtml(m.wrong)}</p></div>
+            <div class="mistake-detail-box success"><b>Cách làm đúng</b><p>${escapeHtml(m.right)}</p></div>
+        </div>
+        <div class="mt-4 p-4 rounded-2xl bg-white/5 border border-white/10 text-sm text-slate-300"><b class="text-amber-300">Hành động sửa ngay:</b> ${escapeHtml(m.fix)}</div>
+    `;
+    if (window.lucide) lucide.createIcons();
+};
+
+function makeChart(canvasId, chartKey, config) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !window.Chart) return;
+    if (chartInst[chartKey]) { chartInst[chartKey].destroy(); chartInst[chartKey] = null; }
+    chartInst[chartKey] = new Chart(canvas, config);
+}
+
+function renderMistakeCharts() {
+    renderMistakesPreview();
+    const labels = TRADER_MISTAKES.map(m => m.name.replace(' - ', '\n'));
+    const frequency = TRADER_MISTAKES.map(m => m.frequency);
+    const impact = TRADER_MISTAKES.map(m => Math.abs(m.impact));
+    const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.08)' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.08)' } } } };
+
+    makeChart('chart-mistake-preview', 'mistakePreview', {
+        type: 'bar', data: { labels: TRADER_MISTAKES.slice(0,4).map(m => m.name), datasets: [{ data: TRADER_MISTAKES.slice(0,4).map(m => Math.abs(m.impact)), borderRadius: 12, backgroundColor: 'rgba(244,63,94,.65)' }] },
+        options: { ...commonOptions, indexAxis: 'y' }
+    });
+    makeChart('chart-mistake-freq', 'mistakeFreq', {
+        type: 'bar', data: { labels, datasets: [{ data: frequency, borderRadius: 12, backgroundColor: 'rgba(245,158,11,.65)' }] },
+        options: commonOptions
+    });
+    makeChart('chart-mistake-impact', 'mistakeImpact', {
+        type: 'line', data: { labels, datasets: [{ data: impact, tension: .35, borderColor: 'rgba(244,63,94,.95)', backgroundColor: 'rgba(244,63,94,.12)', fill: true, pointRadius: 4 }] },
+        options: commonOptions
+    });
+    window.showMistakeDetail('fomo');
+}
+
+window.filterWiki = function() {
+    const q = (document.getElementById('wiki-search')?.value || '').toLowerCase();
+    const grid = document.getElementById('wiki-grid');
+    if (!grid) return;
+    grid.innerHTML = wikiData.filter(i => [i.title, i.code, i.cat, i.content].join(' ').toLowerCase().includes(q)).map(i => `<div class="glass-panel p-4 cursor-pointer hover:bg-white/5" onclick="viewWikiDetail('${i.id}', 'wiki')"><div class="h-32 bg-black/20 rounded-lg mb-3 overflow-hidden"><img src="${i.image}" class="w-full h-full object-cover"></div><h4 class="font-bold text-sm truncate">${escapeHtml(i.title)}</h4><span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300 mt-1 inline-block">${escapeHtml(i.code)}</span></div>`).join('');
+};
+
+window.filterLibrary = function() {
+    const q = (document.getElementById('library-search')?.value || '').toLowerCase();
+    const grid = document.getElementById('library-grid');
+    if (!grid) return;
+    grid.innerHTML = libraryData.filter(i => [i.title, i.code, i.cat, i.content].join(' ').toLowerCase().includes(q)).map(i => `<div class="glass-panel p-4 cursor-pointer hover:bg-white/5 border border-blue-500/20" onclick="viewWikiDetail('${i.id}', 'library')"><div class="h-32 bg-black/20 rounded-lg mb-3 overflow-hidden"><img src="${i.image}" class="w-full h-full object-cover"></div><h4 class="font-bold text-sm truncate text-blue-200">${escapeHtml(i.title)}</h4><span class="text-[10px] bg-blue-900/50 px-2 py-1 rounded text-blue-300 mt-1 inline-block">${escapeHtml(i.cat)}</span></div>`).join('');
+};
+
+window.showAdvice = function(type) {
+    const advice = {
+        fomo: ['🔥 FOMO: dừng lại 3 phút', 'Không vào lệnh khi tim đập nhanh và sợ lỡ cơ hội. Hãy hỏi: điểm mua còn hợp lệ không, stop-loss ở đâu, R:R còn đủ không?'],
+        fear: ['😨 Sợ hãi: giảm quy mô', 'Nếu setup đúng nhưng bạn sợ, hãy giảm size. Nếu không biết vì sao vào lệnh, bỏ qua.'],
+        revenge: ['😡 Muốn gỡ: đóng màn hình', 'Sau 2 lệnh thua liên tiếp, dừng giao dịch. Việc cần làm là ghi nhật ký, không phải trả thù thị trường.'],
+        calm: ['🧘 Bình tâm: làm checklist', 'Khi cảm xúc ổn định, hãy giao dịch theo checklist: thị trường, cổ phiếu, setup, điểm mua, stop-loss, R:R.']
+    };
+    const [title, content] = advice[type] || advice.calm;
+    const box = document.getElementById('psychology-advice-box');
+    if (box) box.classList.remove('hidden');
+    safeSetText('psy-advice-title', title);
+    safeSetText('psy-advice-content', content);
+};
 
 // ... (Giữ nguyên các hàm AUTH, DASHBOARD, JOURNAL, PAIRS, MODAL khác của code cũ) ...
 // (Đảm bảo copy đầy đủ các hàm authLogin, renderDashboard, renderJournalList... từ phiên bản trước)
@@ -203,97 +396,8 @@ window.authLogin = async function() { const u = document.getElementById('login-u
 window.authRegister = async function() { const u = document.getElementById('reg-user').value.trim(); const p = document.getElementById('reg-pass').value.trim(); const e = document.getElementById('reg-email').value.trim(); if(!u || !p) return; try { const snap = await getDoc(doc(db, "users", u)); if(snap.exists()) return alert("Tên tồn tại!"); await setDoc(doc(db, "users", u), { username:u, password:p, email:e, status: ADMIN_LIST.includes(u) ? 'approved':'pending', journal:[], pairs:DEFAULT_PAIRS, capital:20000, created_at:new Date().toISOString() }); alert("Đăng ký thành công!"); window.toggleAuth(); } catch(e) { alert("Lỗi: "+e.message); } }
 window.toggleAuth = () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
 window.authLogout = () => { localStorage.removeItem('min_sys_current_user'); location.reload(); }
-window.renderDashboard = function() { if(!journalData) return; const closed = journalData.filter(t=>t.status!=='OPEN'); let wins=0, pnl=0, maxDD=0, peak=initialCapital, bal=initialCapital, monthStats = {}, patternStats = {}; closed.forEach(t=>{ const v = parseFloat(t.pnl); pnl+=v; bal+=v; if(t.status==='WIN') wins++; if(bal > peak) peak = bal; const dd = peak > 0 ? (peak - bal)/peak : 0; if(dd > maxDD) maxDD = dd; const parts = t.date.split('/'); if(parts.length === 3) { const mKey = `${parts[1]}/${parts[2]}`; if(!monthStats[mKey]) monthStats[mKey] = {total:0, win:0, loss:0, pnl:0}; monthStats[mKey].total++; monthStats[mKey].pnl += v; if(t.status==='WIN') monthStats[mKey].win++; else if(t.status==='LOSS') monthStats[mKey].loss++; } const strat = t.strategy || "Unknown"; if(!patternStats[strat]) patternStats[strat] = {pnl:0, win:0, total:0}; patternStats[strat].pnl += v; patternStats[strat].total++; if(t.status==='WIN') patternStats[strat].win++; }); safeSetText('dash-balance', `$${bal.toLocaleString()}`); safeSetText('dash-pnl', `$${pnl.toLocaleString()}`); safeSetText('dash-winrate', `${closed.length ? Math.round((wins/closed.length)*100) : 0}%`); safeSetText('dash-dd', `${(maxDD*100).toFixed(2)}%`); const mBody = document.getElementById('stats-monthly-body'); if(mBody) mBody.innerHTML = Object.entries(monthStats).sort((a,b) => { const [m1, y1] = a[0].split('/'); const [m2, y2] = b[0].split('/'); return new Date(y2, m2) - new Date(y1, m1); }).map(([k,v]) => `<tr class="border-b dark:border-slate-800"><td class="p-3 font-bold text-slate-500">${k}</td><td class="p-3 text-center">${v.total}</td><td class="p-3 text-center text-green-500 font-bold">${v.win}</td><td class="p-3 text-center text-red-500 font-bold">${v.loss}</td><td class="p-3 text-right font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center text-slate-500">Trống</td></tr>'; const pBody = document.getElementById('stats-pattern-body'); if(pBody) pBody.innerHTML = Object.entries(patternStats).sort((a,b) => b[1].pnl - a[1].pnl).map(([k,v], i) => `<div class="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><div class="flex items-center gap-3"><span class="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${i===0?'bg-yellow-500 text-black':'bg-slate-300 text-slate-600'}">${i+1}</span><div><p class="text-sm font-bold truncate w-32">${k}</p><p class="text-[10px] text-slate-500">${v.win}/${v.total} wins</p></div></div><span class="font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</span></div>`).join('') || '<div class="text-center text-slate-500">Trống</div>'; renderCharts(closed, initialCapital); }
-window.renderCharts = function(data, start) {
-    const ctx1 = document.getElementById('chart-equity');
-    const ctx2 = document.getElementById('chart-winloss');
-    if(chartInst.eq) { chartInst.eq.destroy(); chartInst.eq = null; }
-    if(chartInst.wl) { chartInst.wl.destroy(); chartInst.wl = null; }
-
-    const gridColor = 'rgba(255,255,255,0.04)';
-    const tickColor = '#475569';
-
-    if(ctx1 && window.Chart) {
-        let b = start;
-        const pts = [start, ...data.map(t => { b += parseFloat(t.pnl); return b; })];
-        const isProfit = pts[pts.length - 1] >= start;
-        const lineColor = isProfit ? '#34d399' : '#f87171';
-        const fillColor = isProfit ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.08)';
-
-        chartInst.eq = new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: pts.map((_, i) => i),
-                datasets: [{
-                    data: pts,
-                    borderColor: lineColor,
-                    borderWidth: 1.5,
-                    fill: true,
-                    backgroundColor: fillColor,
-                    tension: 0.35,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverBackgroundColor: lineColor
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 600, easing: 'easeOutQuart' },
-                plugins: { legend: { display: false }, tooltip: {
-                    mode: 'index', intersect: false,
-                    backgroundColor: 'rgba(8,15,30,0.9)',
-                    titleColor: '#64748b', bodyColor: '#f0f4f8',
-                    borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
-                    callbacks: { label: ctx => ` $${ctx.parsed.y.toLocaleString()}` }
-                }},
-                scales: {
-                    x: { display: false },
-                    y: {
-                        grid: { color: gridColor, drawBorder: false },
-                        ticks: { color: tickColor, font: { size: 10, family: "'DM Mono', monospace" }, callback: v => '$' + v.toLocaleString() },
-                        border: { display: false }
-                    }
-                }
-            }
-        });
-    }
-
-    if(ctx2 && window.Chart) {
-        let w = 0, l = 0;
-        data.forEach(t => t.status === 'WIN' ? w++ : l++);
-        chartInst.wl = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: ['Win', 'Loss'],
-                datasets: [{
-                    data: [w || 0, l || 0],
-                    backgroundColor: ['#34d399', '#f87171'],
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 1,
-                animation: { duration: 600 },
-                cutout: '72%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#64748b', font: { size: 10, family: "'DM Mono', monospace" }, boxWidth: 10, padding: 12 }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(8,15,30,0.9)',
-                        titleColor: '#64748b', bodyColor: '#f0f4f8',
-                        borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1
-                    }
-                }
-            }
-        });
-    }
-}
+window.renderDashboard = function() { if(!journalData) return; const closed = journalData.filter(t=>t.status!=='OPEN'); let wins=0, pnl=0, maxDD=0, peak=initialCapital, bal=initialCapital, monthStats = {}, patternStats = {}; closed.forEach(t=>{ const v = parseFloat(t.pnl); pnl+=v; bal+=v; if(t.status==='WIN') wins++; if(bal > peak) peak = bal; const dd = peak > 0 ? (peak - bal)/peak : 0; if(dd > maxDD) maxDD = dd; const parts = t.date.split('/'); if(parts.length === 3) { const mKey = `${parts[1]}/${parts[2]}`; if(!monthStats[mKey]) monthStats[mKey] = {total:0, win:0, loss:0, pnl:0}; monthStats[mKey].total++; monthStats[mKey].pnl += v; if(t.status==='WIN') monthStats[mKey].win++; else if(t.status==='LOSS') monthStats[mKey].loss++; } const strat = t.strategy || "Unknown"; if(!patternStats[strat]) patternStats[strat] = {pnl:0, win:0, total:0}; patternStats[strat].pnl += v; patternStats[strat].total++; if(t.status==='WIN') patternStats[strat].win++; }); safeSetText('dash-balance', `$${bal.toLocaleString()}`); safeSetText('dash-pnl', `$${pnl.toLocaleString()}`); safeSetText('dash-winrate', `${closed.length ? Math.round((wins/closed.length)*100) : 0}%`); safeSetText('dash-dd', `${(maxDD*100).toFixed(2)}%`); const mBody = document.getElementById('stats-monthly-body'); if(mBody) mBody.innerHTML = Object.entries(monthStats).sort((a,b) => { const [m1, y1] = a[0].split('/'); const [m2, y2] = b[0].split('/'); return new Date(y2, m2) - new Date(y1, m1); }).map(([k,v]) => `<tr class="border-b dark:border-slate-800"><td class="p-3 font-bold text-slate-500">${k}</td><td class="p-3 text-center">${v.total}</td><td class="p-3 text-center text-green-500 font-bold">${v.win}</td><td class="p-3 text-center text-red-500 font-bold">${v.loss}</td><td class="p-3 text-right font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center text-slate-500">Trống</td></tr>'; const pBody = document.getElementById('stats-pattern-body'); if(pBody) pBody.innerHTML = Object.entries(patternStats).sort((a,b) => b[1].pnl - a[1].pnl).map(([k,v], i) => `<div class="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><div class="flex items-center gap-3"><span class="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${i===0?'bg-yellow-500 text-black':'bg-slate-300 text-slate-600'}">${i+1}</span><div><p class="text-sm font-bold truncate w-32">${k}</p><p class="text-[10px] text-slate-500">${v.win}/${v.total} wins</p></div></div><span class="font-mono font-bold ${v.pnl>=0?'text-green-500':'text-red-500'}">${v.pnl>=0?'+':''}$${v.pnl.toLocaleString()}</span></div>`).join('') || '<div class="text-center text-slate-500">Trống</div>'; renderCharts(closed, initialCapital); renderQuotePosters(); renderMistakesPreview(); renderMistakeCharts(); }
+window.renderCharts = function(data, start) { const ctx1=document.getElementById('chart-equity'); const ctx2=document.getElementById('chart-winloss'); if(chartInst.eq) { chartInst.eq.destroy(); chartInst.eq = null; } if(chartInst.wl) { chartInst.wl.destroy(); chartInst.wl = null; } if(ctx1 && window.Chart) { let b = start; const pts = [start, ...data.map(t=>b+=parseFloat(t.pnl))]; chartInst.eq = new Chart(ctx1, {type:'line', data:{labels:pts.map((_,i)=>i), datasets:[{data:pts, borderColor:'#10b981', fill:true, backgroundColor:'rgba(16,185,129,0.1)', tension:0.4}]}, options:{plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'rgba(255,255,255,0.05)'}}}}}); } if(ctx2 && window.Chart) { let w=0, l=0; data.forEach(t=>t.status==='WIN'?w++:l++); chartInst.wl = new Chart(ctx2, {type:'doughnut', data:{labels:['Win','Loss'], datasets:[{data:[w,l], backgroundColor:['#10b981','#ef4444'], borderWidth:0}]}, options:{cutout:'70%', plugins:{legend:{position:'right', labels:{color:'#94a3b8'}}}}}); } }
 window.openWikiEditor = function(id = null, mode = 'wiki') { if (!isAdmin) return alert("Chỉ Admin!"); document.getElementById('wiki-editor-modal').classList.remove('hidden'); document.getElementById('edit-mode').value = mode; document.getElementById('wiki-editor-title').innerText = mode === 'wiki' ? "Editor: Setup" : "Editor: Thư Viện"; const dataSource = mode === 'wiki' ? wikiData : libraryData; const cats = [...new Set(dataSource.map(i => i.cat))]; const dl = document.getElementById('cat-suggestions'); if(dl) dl.innerHTML = cats.map(c => `<option value="${c}">`).join(''); const imgPreview = document.getElementById('wiki-image-preview'); const uploadHint = document.getElementById('wiki-upload-hint'); const imgInput = document.getElementById('edit-image-url'); if (id) { const i = dataSource.find(x => x.id == id); if (i) { document.getElementById('edit-id').value = i.id; document.getElementById('edit-title').value = i.title; document.getElementById('edit-code').value = i.code; document.getElementById('edit-cat').value = i.cat; document.getElementById('edit-content').value = i.content; imgInput.value = i.image || ""; if (i.image) { imgPreview.src = i.image; imgPreview.classList.remove('hidden'); if(uploadHint) uploadHint.classList.add('hidden'); } else { imgPreview.classList.add('hidden'); if(uploadHint) uploadHint.classList.remove('hidden'); } } } else { document.getElementById('edit-id').value = ""; document.getElementById('edit-title').value = ""; document.getElementById('edit-code').value = ""; document.getElementById('edit-cat').value = ""; document.getElementById('edit-content').value = ""; imgInput.value = ""; imgPreview.src = ""; imgPreview.classList.add('hidden'); if(uploadHint) uploadHint.classList.remove('hidden'); } }
 window.handleWikiImageUpload = function(input) { if (input.files[0]) { const r = new FileReader(); r.onload = (e) => { document.getElementById('wiki-image-preview').src = e.target.result; document.getElementById('wiki-image-preview').classList.remove('hidden'); document.getElementById('edit-image-url').value = e.target.result; document.getElementById('wiki-upload-hint').classList.add('hidden'); }; r.readAsDataURL(input.files[0]); } }
 window.saveWiki = function() { if (!isAdmin) return; const id = document.getElementById('edit-id').value || Date.now().toString(); const mode = document.getElementById('edit-mode').value; const item = { id, title: document.getElementById('edit-title').value, code: document.getElementById('edit-code').value, cat: document.getElementById('edit-cat').value, image: document.getElementById('edit-image-url').value, content: document.getElementById('edit-content').value }; if (!item.code || !item.title) return alert("Nhập đủ thông tin!"); if (mode === 'wiki') { const idx = wikiData.findIndex(x => x.id == id); if (idx !== -1) wikiData[idx] = item; else wikiData.push(item); saveWikiData(); renderWikiGrid(); populateStrategies(); } else { const idx = libraryData.findIndex(x => x.id == id); if (idx !== -1) libraryData[idx] = item; else libraryData.push(item); saveLibraryData(); renderLibraryGrid(); } window.closeModal('wiki-editor-modal'); }
@@ -303,18 +407,7 @@ window.viewWikiDetail = function(id, mode = 'wiki') { const dataSource = mode ==
 window.openAdminPanel = async () => { document.getElementById('admin-modal').classList.remove('hidden'); const tb = document.getElementById('admin-user-list'); tb.innerHTML = 'Loading...'; const s = await getDocs(collection(db, "users")); let h = ''; s.forEach(d => { const u = d.data(); const delBtn = u.username===window.currentUser ? '' : `<button onclick="deleteUser('${u.username}')" class="text-red-500 ml-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`; const appBtn = u.status==='pending' ? `<button onclick="approveUser('${u.username}')" class="bg-green-600 px-2 py-1 rounded text-xs">Duyệt</button>` : `<span class="text-green-500 text-xs">Duyệt</span>`; h += `<tr><td class="p-3">${u.username}</td><td class="p-3 text-right">${appBtn} ${delBtn}</td></tr>`; }); tb.innerHTML = h || 'Trống'; if(window.lucide) lucide.createIcons(); }
 window.approveUser = async (u) => { if(confirm("Duyệt?")) { await updateDoc(doc(db,"users",u),{status:'approved'}); window.openAdminPanel(); } }
 window.deleteUser = async (u) => { if(confirm("Xóa vĩnh viễn?")) { await deleteDoc(doc(db,"users",u)); window.openAdminPanel(); } }
-window.selectAnalysisStrategy = function(id) {
-    const item = wikiData.find(x=>x.id==id);
-    if(item) {
-        selectedAnalysisStrategy=item;
-        document.getElementById('current-setup-name').innerText=item.title;
-        document.getElementById('ana-theory-img').src=item.image;
-        document.getElementById('ana-theory-content').innerText=item.content;
-        document.getElementById('analysis-empty-state').classList.add('hidden');
-        const content = document.getElementById('analysis-content');
-        if(content) content.classList.remove('hidden');
-    }
-}
+window.selectAnalysisStrategy = function(id) { const item = wikiData.find(x=>x.id==id); if(item) { selectedAnalysisStrategy=item; document.getElementById('current-setup-name').innerText=item.title; document.getElementById('ana-theory-img').src=item.image; document.getElementById('ana-theory-content').innerText=item.content; document.getElementById('analysis-empty-state').classList.add('hidden'); } }
 window.handleAnalysisUpload = function(inp) { if(inp.files[0]) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('ana-real-img').src=e.target.result; document.getElementById('ana-real-img').classList.remove('hidden'); document.getElementById('ana-upload-hint').classList.add('hidden'); currentAnalysisTabImg=e.target.result; }; r.readAsDataURL(inp.files[0]); } }
 window.transferAnalysisToJournal = function() { if(!selectedAnalysisStrategy) return alert("Chọn Setup trước!"); window.switchTab('journal'); window.openEntryModal(); if(currentAnalysisTabImg) { currentEntryImgBase64=currentAnalysisTabImg; document.getElementById('entry-img-preview').src=currentAnalysisTabImg; document.getElementById('entry-img-preview').classList.remove('hidden'); document.getElementById('entry-upload-hint').classList.add('hidden'); } }
 window.openEntryModal = function() { document.getElementById('entry-modal').classList.remove('hidden'); const now=new Date(); document.getElementById('inp-date').value = new Date(now - now.getTimezoneOffset()*60000).toISOString().split('T')[0]; if(!currentEntryImgBase64) { document.getElementById('entry-img-preview').classList.add('hidden'); document.getElementById('entry-upload-hint').classList.remove('hidden'); } calcRiskPreview(); }
@@ -385,12 +478,7 @@ window.initTheme = () => {
     }
 }
 window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
-window.switchTab = (id) => {
-    document.querySelectorAll('main > div').forEach(e => e.classList.remove('active-tab'));
-    const tab = document.getElementById('tab-' + id);
-    if(tab) tab.classList.add('active-tab');
-    if(id === 'dashboard') renderDashboard();
-};
+window.switchTab = (id) => { document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); const tab = document.getElementById('tab-'+id); if(tab) tab.classList.remove('hidden'); if(id==='dashboard') renderDashboard(); if(id==='mistakes') { renderMistakesPreview(); setTimeout(renderMistakeCharts, 50); } if(window.lucide) lucide.createIcons(); };
 // --- XỬ LÝ SÁNG / TỐI (THEME TOGGLE) ---
 window.initTheme = () => { 
     const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
