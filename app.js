@@ -68,13 +68,41 @@ window.loadData = async function() {
     if (!window.currentUser) return;
     updateMarquee("Đang đồng bộ dữ liệu...");
     isAdmin = ADMIN_LIST.includes(window.currentUser);
-    const adminBtn = document.getElementById('btn-admin-panel'); if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    const adminBtn = document.getElementById('btn-admin-panel');
+    if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    safeSetText('current-user-chip', window.currentUser || 'User');
+    const roleChip = document.getElementById('role-chip');
+    if(roleChip) {
+        roleChip.innerText = isAdmin ? 'Admin' : 'Member';
+        roleChip.className = isAdmin ? 'admin-role' : '';
+    }
     try {
-        const uRef = doc(db, "users", window.currentUser); const uSnap = await getDoc(uRef);
-        if (uSnap.exists()) { const d = uSnap.data(); journalData = d.journal || []; pairsData = d.pairs || DEFAULT_PAIRS; initialCapital = d.capital || 20000; quotePostersData = d.quotePosters || DEFAULT_QUOTE_POSTERS; } else { quotePostersData = DEFAULT_QUOTE_POSTERS; await saveUserData(); }
-        const wRef = doc(db, "system", "wiki_master"); const wSnap = await getDoc(wRef); wikiData = wSnap.exists() ? wSnap.data().items : DEFAULT_WIKI;
-        const lRef = doc(db, "system", "library_master"); const lSnap = await getDoc(lRef); libraryData = lSnap.exists() ? lSnap.data().items : [];
-        initUI(); safeSetText('dashboard-marquee', QUOTES[0]);
+        const uRef = doc(db, "users", window.currentUser);
+        const uSnap = await getDoc(uRef);
+        let legacyPosters = null;
+        if (uSnap.exists()) {
+            const d = uSnap.data();
+            journalData = d.journal || [];
+            pairsData = d.pairs || DEFAULT_PAIRS;
+            initialCapital = d.capital || 20000;
+            legacyPosters = d.quotePosters || null;
+        } else {
+            await saveUserData();
+        }
+        const wRef = doc(db, "system", "wiki_master");
+        const wSnap = await getDoc(wRef);
+        wikiData = wSnap.exists() ? wSnap.data().items : DEFAULT_WIKI;
+        const lRef = doc(db, "system", "library_master");
+        const lSnap = await getDoc(lRef);
+        libraryData = lSnap.exists() ? lSnap.data().items : [];
+        const qRef = doc(db, "system", "quote_posters_master");
+        const qSnap = await getDoc(qRef);
+        quotePostersData = qSnap.exists() && Array.isArray(qSnap.data().items)
+            ? qSnap.data().items
+            : (Array.isArray(legacyPosters) && legacyPosters.length ? legacyPosters : DEFAULT_QUOTE_POSTERS);
+        if (isAdmin && !qSnap.exists()) await saveQuotePostersData(false);
+        initUI();
+        safeSetText('dashboard-marquee', QUOTES[0]);
     } catch (e) { alert("Lỗi tải dữ liệu: " + e.message); }
 }
 // --- BỘ LỌC LÀM SẠCH DỮ LIỆU TRƯỚC KHI LƯU ---
@@ -85,9 +113,23 @@ async function saveUserData() {
     await setDoc(doc(db, "users", window.currentUser), { 
         journal: sanitize(journalData), 
         pairs: sanitize(pairsData), 
-        capital: initialCapital,
-        quotePosters: sanitize(quotePostersData) 
+        capital: initialCapital 
     }, { merge: true }); 
+}
+
+async function saveQuotePostersData(showToast = true) {
+    if(!isAdmin) return alert("Chỉ Admin mới được quản lý Poster.");
+    try {
+        await setDoc(doc(db, "system", "quote_posters_master"), {
+            items: sanitize(quotePostersData),
+            last_updated: new Date().toISOString(),
+            updated_by: window.currentUser || "admin"
+        }, { merge: true });
+        if(showToast) console.log("Đã lưu Poster hệ thống");
+    } catch(error) {
+        alert("🚨 LỖI LƯU POSTER:\n" + error.message);
+        console.error(error);
+    }
 }
 
 // Hàm lưu dữ liệu Wiki (Có thông báo lỗi)
@@ -226,7 +268,24 @@ const escapeHtml = (value = "") => String(value)
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
+function updatePosterAccessUI() {
+    const adminPanel = document.getElementById('poster-admin-panel');
+    const readonlyNote = document.getElementById('poster-readonly-note');
+    const badge = document.getElementById('poster-admin-badge');
+    if(adminPanel) adminPanel.classList.toggle('hidden', !isAdmin);
+    if(readonlyNote) readonlyNote.classList.toggle('hidden', isAdmin);
+    if(badge) {
+        badge.innerText = isAdmin ? 'Admin đang quản trị' : 'Chỉ Admin chỉnh sửa';
+        badge.className = isAdmin ? 'admin-badge active' : 'admin-badge readonly';
+    }
+}
+
 window.handlePosterUpload = function(input) {
+    if (!isAdmin) {
+        alert('Chỉ Admin mới được chèn hoặc thay ảnh poster.');
+        if(input) input.value = '';
+        return;
+    }
     if (!input.files || !input.files[0]) return;
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -241,30 +300,75 @@ window.handlePosterUpload = function(input) {
     reader.readAsDataURL(input.files[0]);
 };
 
+window.resetPosterForm = function() {
+    ['poster-edit-id','poster-title','poster-author','poster-quote','poster-image-data'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = '';
+    });
+    const preview = document.getElementById('poster-image-preview');
+    const hint = document.getElementById('poster-upload-hint');
+    const saveBtn = document.getElementById('poster-save-btn');
+    const cancelBtn = document.getElementById('poster-cancel-edit');
+    if (preview) { preview.src = ''; preview.classList.add('hidden'); }
+    if (hint) hint.classList.remove('hidden');
+    if (saveBtn) saveBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Lưu poster';
+    if (cancelBtn) cancelBtn.classList.add('hidden');
+    if(window.lucide) lucide.createIcons();
+};
+
 window.addQuotePoster = function() {
+    if(!isAdmin) return alert('Chỉ Admin mới được thêm hoặc chỉnh sửa Poster.');
+    const editId = document.getElementById('poster-edit-id')?.value?.trim();
     const title = document.getElementById('poster-title')?.value?.trim() || 'Bài học giao dịch';
     const author = document.getElementById('poster-author')?.value?.trim() || 'Trader Legend';
     const quote = document.getElementById('poster-quote')?.value?.trim();
     const image = document.getElementById('poster-image-data')?.value || '';
     if (!quote && !image) return alert('Hãy nhập câu nói hoặc chọn ảnh poster trước khi lưu.');
-    quotePostersData.unshift({ id: Date.now().toString(), title, author, quote, image, theme: 'custom' });
-    saveUserData();
+    if(editId) {
+        const idx = quotePostersData.findIndex(item => item.id === editId);
+        if(idx !== -1) quotePostersData[idx] = { ...quotePostersData[idx], title, author, quote, image, updated_at: new Date().toISOString() };
+    } else {
+        quotePostersData.unshift({ id: Date.now().toString(), title, author, quote, image, theme: 'custom', created_at: new Date().toISOString() });
+    }
+    saveQuotePostersData();
     renderQuotePosters();
-    ['poster-title','poster-author','poster-quote','poster-image-data'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    window.resetPosterForm();
+};
+
+window.editQuotePoster = function(id) {
+    if(!isAdmin) return alert('Chỉ Admin mới được sửa Poster.');
+    const item = quotePostersData.find(x => x.id === id);
+    if(!item) return;
+    const setVal = (field, value) => { const el = document.getElementById(field); if(el) el.value = value || ''; };
+    setVal('poster-edit-id', item.id);
+    setVal('poster-title', item.title);
+    setVal('poster-author', item.author);
+    setVal('poster-quote', item.quote);
+    setVal('poster-image-data', item.image);
     const preview = document.getElementById('poster-image-preview');
     const hint = document.getElementById('poster-upload-hint');
-    if (preview) { preview.src = ''; preview.classList.add('hidden'); }
-    if (hint) hint.classList.remove('hidden');
+    const saveBtn = document.getElementById('poster-save-btn');
+    const cancelBtn = document.getElementById('poster-cancel-edit');
+    if(item.image && preview) { preview.src = item.image; preview.classList.remove('hidden'); if(hint) hint.classList.add('hidden'); }
+    else { if(preview) preview.classList.add('hidden'); if(hint) hint.classList.remove('hidden'); }
+    if(saveBtn) saveBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Cập nhật poster';
+    if(cancelBtn) cancelBtn.classList.remove('hidden');
+    const panel = document.getElementById('poster-admin-panel');
+    if(panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if(window.lucide) lucide.createIcons();
 };
 
 window.deleteQuotePoster = function(id) {
+    if(!isAdmin) return alert('Chỉ Admin mới được xóa Poster.');
     if (!confirm('Xóa poster/câu nói này?')) return;
     quotePostersData = quotePostersData.filter(item => item.id !== id);
-    saveUserData();
+    saveQuotePostersData();
     renderQuotePosters();
+    window.resetPosterForm();
 };
 
 function renderQuotePosters() {
+    updatePosterAccessUI();
     const grid = document.getElementById('quote-poster-grid');
     if (!grid) return;
     const items = quotePostersData && quotePostersData.length ? quotePostersData : DEFAULT_QUOTE_POSTERS;
@@ -276,7 +380,10 @@ function renderQuotePosters() {
                 <h4>“${escapeHtml(item.quote || 'Thêm ảnh hoặc câu nói để nhắc nhở bản thân mỗi ngày.')}”</h4>
                 <div class="poster-footer">
                     <span>— ${escapeHtml(item.author || 'Legend')}</span>
-                    <button onclick="event.stopPropagation(); deleteQuotePoster('${item.id}')" class="poster-delete" title="Xóa"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    ${isAdmin ? `<div class="poster-actions">
+                        <button onclick="event.stopPropagation(); editQuotePoster('${item.id}')" class="poster-edit" title="Sửa"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button onclick="event.stopPropagation(); deleteQuotePoster('${item.id}')" class="poster-delete" title="Xóa"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>` : ``}
                 </div>
             </div>
         </article>
@@ -477,7 +584,8 @@ window.closeModal = (id) => { const el = document.getElementById(id); if(el) el.
 window.switchTab = (id) => { 
     document.querySelectorAll('main > div').forEach(e=>e.classList.add('hidden')); 
     const tab = document.getElementById('tab-'+id); 
-    if(tab) tab.classList.remove('hidden'); 
+    if(tab) tab.classList.remove('hidden');
+    document.querySelectorAll('[data-tab-btn]').forEach(btn => btn.classList.toggle('active', btn.dataset.tabBtn === id));
     if(id==='dashboard') renderDashboard(); 
     if(id==='mistakes') { renderMistakesPreview(); setTimeout(renderMistakeCharts, 50); }
     if(id==='discipline') renderDisciplineModules();

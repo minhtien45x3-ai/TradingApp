@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CACON STOCK JOURNAL PRO v39.0 Minimal</title>
+    <title>CACON STOCK JOURNAL PRO v40.0 Admin Poster</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{slate:{850:'#1e293b'}}}}}</script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -28,7 +28,7 @@
             <div class="relative mb-12"><i data-lucide="quote" class="absolute -top-4 -left-6 w-6 h-6 text-emerald-500/50"></i><p class="text-lg md:text-xl text-slate-300 font-light italic leading-relaxed">"Hành trình vạn dặm bắt đầu bằng một bước chân."</p><i data-lucide="quote" class="absolute -bottom-4 -right-6 w-6 h-6 text-emerald-500/50 rotate-180"></i><p class="text-xs text-slate-500 mt-4 uppercase tracking-widest font-bold">— Lão Tử —</p></div>
             <button onclick="enterSystem()" class="group relative w-full py-4 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 hover:text-white rounded-2xl font-bold border border-emerald-500/50 transition-all duration-300 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)] backdrop-blur-md"><span class="flex items-center justify-center gap-2">BẮT ĐẦU <i data-lucide="arrow-right" class="w-5 h-5 transition-transform group-hover:translate-x-1"></i></span></button>
         </div>
-        <div class="absolute bottom-8 text-[10px] text-slate-500 font-mono z-10 opacity-70">v38.0 • Discipline Dashboard</div>
+        <div class="absolute bottom-8 text-[10px] text-slate-500 font-mono z-10 opacity-70">v40.0 • Professional Trading OS</div>
     </div>
 
     <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md hidden">
@@ -51,28 +51,31 @@
     </div>
 
     <div id="app-container" class="hidden flex-col h-screen relative z-10">
-        <header class="app-header border-b border-white/10 sticky top-0 z-50 h-16 flex items-center justify-between px-6">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('dashboard')"><div class="bg-emerald-500/20 p-2 rounded-xl border border-emerald-500/30"><i data-lucide="layers" class="text-emerald-400 w-5 h-5"></i></div><h1 class="font-bold font-mono text-lg tracking-wide text-white hidden md:block">CACON STOCK</h1></div>
-            <nav class="flex gap-2 overflow-x-auto no-scrollbar">
-                <button onclick="switchTab('dashboard')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Tổng Quan</button>
-                <button onclick="switchTab('journal')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Nhật Ký</button>
-                <button onclick="switchTab('mistakes')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-rose-300 hover:text-rose-100 transition border border-rose-500/20 bg-rose-500/5">Sai Lầm</button>
-                <button onclick="switchTab('discipline')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-emerald-300 hover:text-emerald-100 transition border border-emerald-500/20 bg-emerald-500/5">Kỷ Luật</button>
-                <button onclick="switchTab('analysis')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Phân Tích</button>
-                <button onclick="switchTab('training')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-amber-400 hover:text-amber-200 transition border border-amber-500/30 bg-amber-500/10">Rèn Luyện</button>
-                
-                <button onclick="switchTab('wiki')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Wiki AI</button>
-                <button onclick="switchTab('library')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition text-blue-400">Thư Viện</button>
-                <button onclick="switchTab('psychology')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition text-purple-400">Tâm Lý</button>
-                <button onclick="switchTab('capital')" class="px-4 py-2 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 hover:text-white transition">Vốn</button>
-                <button id="btn-admin-panel" onclick="openAdminPanel()" class="hidden px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/50 rounded-xl text-xs font-bold uppercase ml-2">DUYỆT</button>
+        <header class="app-header sticky top-0 z-50 h-16 flex items-center justify-between px-4 lg:px-6">
+            <div class="brand-lockup cursor-pointer" onclick="switchTab('dashboard')">
+                <div class="brand-mark"><i data-lucide="candlestick-chart" class="w-5 h-5"></i></div>
+                <div class="hidden sm:block">
+                    <h1>CACON STOCK</h1>
+                    <p>Trading Journal Pro</p>
+                </div>
+            </div>
+            <nav class="app-nav no-scrollbar">
+                <button data-tab-btn="dashboard" onclick="switchTab('dashboard')" class="nav-pill active">Dashboard</button>
+                <button data-tab-btn="journal" onclick="switchTab('journal')" class="nav-pill">Nhật ký</button>
+                <button data-tab-btn="discipline" onclick="switchTab('discipline')" class="nav-pill priority">Kỷ luật</button>
+                <button data-tab-btn="mistakes" onclick="switchTab('mistakes')" class="nav-pill danger">Sai lầm</button>
+                <button data-tab-btn="analysis" onclick="switchTab('analysis')" class="nav-pill">Phân tích</button>
+                <button data-tab-btn="training" onclick="switchTab('training')" class="nav-pill warm">Rèn luyện</button>
+                <button data-tab-btn="wiki" onclick="switchTab('wiki')" class="nav-pill">Wiki</button>
+                <button data-tab-btn="library" onclick="switchTab('library')" class="nav-pill">Thư viện</button>
+                <button data-tab-btn="psychology" onclick="switchTab('psychology')" class="nav-pill">Tâm lý</button>
+                <button data-tab-btn="capital" onclick="switchTab('capital')" class="nav-pill">Vốn</button>
+                <button id="btn-admin-panel" onclick="openAdminPanel()" class="hidden nav-pill admin">Duyệt</button>
             </nav>
-           <div class="flex items-center gap-4">
-                <button onclick="toggleTheme()" id="theme-toggle-btn" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition shadow-sm">
-                    <i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i>
-                </button>
-                
-                <button onclick="authLogout()" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition"><i data-lucide="log-out" class="w-5 h-5 text-rose-400"></i></button>
+            <div class="header-actions">
+                <div class="user-chip hidden md:flex"><span id="current-user-chip">User</span><b id="role-chip">Member</b></div>
+                <button onclick="toggleTheme()" id="theme-toggle-btn" class="icon-btn"><i data-lucide="sun" class="w-5 h-5 text-yellow-400"></i></button>
+                <button onclick="authLogout()" class="icon-btn danger"><i data-lucide="log-out" class="w-5 h-5"></i></button>
             </div>
         </header>
 
@@ -80,16 +83,29 @@
             
             
             <div id="tab-dashboard" class="space-y-6 fade-in">
-                <section class="dashboard-hero glass-panel p-6 overflow-hidden relative">
-                    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                        <div>
-                            <p class="eyebrow">CACON STOCK JOURNAL PRO</p>
-                            <h2 class="text-3xl md:text-5xl font-bold text-white tracking-tight mt-2">Dashboard kỷ luật giao dịch</h2>
-                            <p class="text-slate-400 mt-3 max-w-2xl">Theo dõi vốn, hiệu suất, setup mạnh nhất, sai lầm phổ biến và các câu nói nhắc nhở để trader không phá vỡ nguyên tắc.</p>
+                <section class="dashboard-hero pro-command-center glass-panel p-6 overflow-hidden relative">
+                    <div class="command-left">
+                        <p class="eyebrow">CACON STOCK JOURNAL PRO</p>
+                        <h2 class="text-3xl md:text-5xl font-bold text-white tracking-tight mt-2">Trading Command Center</h2>
+                        <p class="text-slate-400 mt-3 max-w-2xl">Một màn hình điều hành rõ ràng: kiểm tra thị trường, quản trị rủi ro, ghi nhật ký, nhận diện sai lầm và ôn lại câu nói kỷ luật trước khi vào lệnh.</p>
+                        <div class="workflow-steps mt-6">
+                            <span><b>1</b> Market</span>
+                            <span><b>2</b> Setup</span>
+                            <span><b>3</b> Risk</span>
+                            <span><b>4</b> Execute</span>
+                            <span><b>5</b> Review</span>
                         </div>
+                    </div>
+                    <div class="command-right">
                         <div class="hero-discipline-card">
                             <span class="text-[10px] uppercase tracking-[0.3em] text-emerald-300 font-bold">Daily Reminder</span>
                             <div id="dashboard-marquee" class="mt-3 text-lg font-medium italic text-white">Connecting...</div>
+                        </div>
+                        <div class="quick-action-grid">
+                            <button onclick="switchTab('journal'); openEntryModal()" class="quick-action-card"><i data-lucide="plus-circle"></i><span>Ghi lệnh</span></button>
+                            <button onclick="switchTab('analysis')" class="quick-action-card"><i data-lucide="scan-line"></i><span>Phân tích</span></button>
+                            <button onclick="switchTab('discipline')" class="quick-action-card"><i data-lucide="shield-check"></i><span>Checklist</span></button>
+                            <button onclick="switchTab('mistakes')" class="quick-action-card"><i data-lucide="alert-triangle"></i><span>Sai lầm</span></button>
                         </div>
                     </div>
                 </section>
@@ -114,19 +130,35 @@
 
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
                     <section class="xl:col-span-7 glass-panel p-6">
-                        <div class="section-heading mb-5"><div><p class="eyebrow">Trader Legends Board</p><h3>Ảnh & câu nói bất hủ</h3></div><i data-lucide="image-plus" class="w-5 h-5 text-amber-300"></i></div>
-                        <div class="poster-form">
-                            <label class="poster-uploader">
-                                <input type="file" accept="image/*" onchange="handlePosterUpload(this)">
-                                <span id="poster-upload-hint"><i data-lucide="upload-cloud" class="w-7 h-7"></i><b>Chèn ảnh poster</b><small>Ảnh câu nói / huyền thoại trader</small></span>
-                                <img id="poster-image-preview" class="hidden">
-                                <input type="hidden" id="poster-image-data">
-                            </label>
-                            <div class="poster-inputs">
-                                <input id="poster-title" placeholder="Tiêu đề: Kỷ luật là lợi thế">
-                                <input id="poster-author" placeholder="Tác giả: Mark Minervini / Livermore...">
-                                <textarea id="poster-quote" placeholder="Nhập câu nói bất hủ hoặc ghi chú nhắc nhở trader..."></textarea>
-                                <button onclick="addQuotePoster()"><i data-lucide="plus" class="w-4 h-4"></i> Lưu poster</button>
+                        <div class="section-heading mb-5">
+                            <div><p class="eyebrow">Trader Legends Board</p><h3>Poster câu nói bất hủ</h3></div>
+                            <div class="poster-admin-toolbar">
+                                <span id="poster-admin-badge" class="admin-badge readonly">Chỉ Admin chỉnh sửa</span>
+                                <i data-lucide="image-plus" class="w-5 h-5 text-amber-300"></i>
+                            </div>
+                        </div>
+                        <div id="poster-readonly-note" class="poster-readonly-note hidden">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                            <span>Người dùng thường chỉ xem poster. Chỉ tài khoản admin mới được thêm, sửa hoặc xóa nội dung này.</span>
+                        </div>
+                        <div id="poster-admin-panel" class="poster-admin-panel hidden">
+                            <input type="hidden" id="poster-edit-id">
+                            <div class="poster-form">
+                                <label class="poster-uploader">
+                                    <input type="file" accept="image/*" onchange="handlePosterUpload(this)">
+                                    <span id="poster-upload-hint"><i data-lucide="upload-cloud" class="w-7 h-7"></i><b>Chèn ảnh poster</b><small>Ảnh câu nói / huyền thoại trader</small></span>
+                                    <img id="poster-image-preview" class="hidden">
+                                    <input type="hidden" id="poster-image-data">
+                                </label>
+                                <div class="poster-inputs">
+                                    <input id="poster-title" placeholder="Tiêu đề: Kỷ luật là lợi thế">
+                                    <input id="poster-author" placeholder="Tác giả: Mark Minervini / Livermore...">
+                                    <textarea id="poster-quote" placeholder="Nhập câu nói bất hủ hoặc ghi chú nhắc nhở trader..."></textarea>
+                                    <div class="poster-form-actions">
+                                        <button id="poster-save-btn" onclick="addQuotePoster()"><i data-lucide="save" class="w-4 h-4"></i> Lưu poster</button>
+                                        <button id="poster-cancel-edit" onclick="resetPosterForm()" class="secondary-btn hidden" type="button">Hủy sửa</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div id="quote-poster-grid" class="poster-grid mt-5"></div>
