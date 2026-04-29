@@ -1,124 +1,524 @@
 <!DOCTYPE html>
 <html lang="vi" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CACON STOCK JOURNAL PRO v42 — Content Quality Upgrade</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config={darkMode:'class'}</script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css?v=42">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#060b14">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CACON STOCK JOURNAL PRO v42</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class'}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="style.css?v=42">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#060b14">
 </head>
-<body class="text-slate-800 dark:text-slate-200 min-h-screen flex flex-col overflow-hidden">
+<body class="text-slate-200 min-h-screen flex flex-col overflow-hidden">
 
-<!-- LANDING PAGE -->
-<div id="landing-page" class="fixed inset-0 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden" style="background:var(--bg-base)">
-    <div class="intro-glass relative z-10 p-12 rounded-[40px] max-w-lg w-full flex flex-col items-center fade-in">
-        <div class="mb-8 p-5 bg-white/5 rounded-3xl border border-white/10 shadow-2xl animate-float">
-            <i data-lucide="footprints" class="w-16 h-16" style="color:var(--green)"></i>
-        </div>
-        <h1 style="font-family:var(--font-display);font-size:3rem;font-weight:900;color:white;margin-bottom:24px;letter-spacing:-.02em">CACON<span style="color:var(--green)">_STOCK</span></h1>
-        <div class="relative mb-12">
-            <p style="font-size:1.1rem;color:var(--tx-mid);font-weight:300;font-style:italic;line-height:1.8">"Hành trình vạn dặm bắt đầu bằng một bước chân."</p>
-            <p style="font-size:.75rem;color:var(--tx-lo);margin-top:16px;text-transform:uppercase;letter-spacing:.15em;font-weight:700">— Lão Tử —</p>
-        </div>
-        <button id="btn-enter-system" style="width:100%;padding:16px;background:rgba(0,229,160,.15);border:1px solid var(--green);border-radius:16px;color:var(--green);font-weight:700;cursor:pointer;transition:.3s ease" onmouseover="this.style.background='rgba(0,229,160,.25)'" onmouseout="this.style.background='rgba(0,229,160,.15)'">
-            BẮT ĐẦU <i data-lucide="arrow-right" style="width:16px;height:16px;display:inline-block;margin-left:8px"></i>
-        </button>
+<!-- ═══ LANDING PAGE ═══ -->
+<div id="landing-page" class="fixed inset-0 z-[300] flex flex-col items-center justify-center p-6 text-center" style="background:var(--bg-base)">
+  <div class="intro-glass relative z-10 p-12 rounded-[40px] max-w-lg w-full flex flex-col items-center">
+    <div class="mb-8 p-5 bg-white/5 rounded-3xl border border-white/10 shadow-2xl">
+      <i data-lucide="footprints" class="w-16 h-16" style="color:var(--green)"></i>
     </div>
-    <div style="position:absolute;bottom:32px;font-size:.65rem;color:var(--tx-lo);font-family:var(--font-mono);z-index:10;opacity:.7">v42 — Professional Trading Journal OS</div>
+    <h1 style="font-family:var(--font-display);font-size:3rem;font-weight:900;color:white;margin-bottom:24px;letter-spacing:-.02em">CACON<span style="color:var(--green)">_STOCK</span></h1>
+    <p style="font-size:1.1rem;color:var(--tx-mid);font-style:italic;line-height:1.8;margin-bottom:8px">"Hành trình vạn dặm bắt đầu bằng một bước chân."</p>
+    <p style="font-size:.75rem;color:var(--tx-lo);margin-bottom:32px;text-transform:uppercase;letter-spacing:.15em;font-weight:700">— Lão Tử —</p>
+    <button id="btn-enter-system" style="width:100%;padding:16px;background:rgba(0,229,160,.15);border:1px solid var(--green);border-radius:16px;color:var(--green);font-weight:700;cursor:pointer">
+      BẮT ĐẦU →
+    </button>
+  </div>
+  <div style="position:absolute;bottom:32px;font-size:.65rem;color:var(--tx-lo);font-family:var(--font-mono);opacity:.7">v42 — Trading Operating System</div>
 </div>
 
-<!-- AUTH SCREEN -->
+<!-- ═══ AUTH SCREEN ═══ -->
 <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 hidden" style="background:rgba(0,0,0,.5);backdrop-filter:blur(8px)">
-    <div style="background:var(--bg-raised);border:1px solid var(--border-mid);border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 25px 50px -12px rgba(0,0,0,.5)">
-        <div style="text-align:center;margin-bottom:32px">
-            <h1 style="font-size:1.5rem;font-weight:700;color:var(--tx-hi)">Xác Thực</h1>
-            <p style="font-size:.75rem;color:var(--tx-lo);margin-top:4px">Đăng nhập hệ thống Cloud</p>
-        </div>
-        <div id="login-form" style="display:flex;flex-direction:column;gap:16px">
-            <input type="text" id="login-user" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem;outline:none" placeholder="Tên đăng nhập" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'">
-            <input type="password" id="login-pass" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem;outline:none" placeholder="Mật khẩu" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'">
-            <button onclick="authLogin()" style="width:100%;background:var(--green);color:#022a1e;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;transition:.2s">VÀO HỆ THỐNG</button>
-            <p style="text-align:center;font-size:.85rem;color:var(--tx-mid);margin-top:12px;cursor:pointer" onclick="toggleAuth()">Chưa có tài khoản? <b style="color:var(--green)">Đăng ký</b></p>
-        </div>
-        <div id="register-form" style="display:none;flex-direction:column;gap:16px">
-            <input type="text" id="reg-user" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem;outline:none" placeholder="Tên đăng nhập">
-            <input type="email" id="reg-email" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem;outline:none" placeholder="Email">
-            <input type="password" id="reg-pass" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem;outline:none" placeholder="Mật khẩu">
-            <button onclick="authRegister()" style="width:100%;background:var(--blue);color:white;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer">GỬI YÊU CẦU</button>
-            <p style="text-align:center;font-size:.85rem;color:var(--tx-mid);margin-top:12px;cursor:pointer" onclick="toggleAuth()">← Quay lại</p>
-        </div>
+  <div style="background:var(--bg-raised);border:1px solid var(--border-mid);border-radius:16px;padding:32px;width:100%;max-width:400px">
+    <div style="text-align:center;margin-bottom:32px">
+      <h1 style="font-size:1.5rem;font-weight:700;color:var(--tx-hi)">Xác Thực</h1>
+      <p style="font-size:.75rem;color:var(--tx-lo);margin-top:4px">Đăng nhập hệ thống Cloud</p>
     </div>
+    <div id="login-form" style="display:flex;flex-direction:column;gap:16px">
+      <input type="text" id="login-user" placeholder="Tên đăng nhập" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem">
+      <input type="password" id="login-pass" placeholder="Mật khẩu" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem">
+      <button onclick="authLogin()" style="width:100%;background:var(--green);color:#022a1e;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer">VÀO HỆ THỐNG</button>
+      <p style="text-align:center;font-size:.85rem;color:var(--tx-mid);cursor:pointer" onclick="toggleAuth()">Chưa có tài khoản? <b style="color:var(--green)">Đăng ký</b></p>
+    </div>
+    <div id="register-form" style="display:none;flex-direction:column;gap:16px">
+      <input type="text" id="reg-user" placeholder="Tên đăng nhập" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem">
+      <input type="email" id="reg-email" placeholder="Email" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem">
+      <input type="password" id="reg-pass" placeholder="Mật khẩu" style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--tx-hi);font-size:.9rem">
+      <button onclick="authRegister()" style="width:100%;background:var(--blue);color:white;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer">GỬI YÊU CẦU</button>
+      <p style="text-align:center;font-size:.85rem;color:var(--tx-mid);cursor:pointer" onclick="toggleAuth()">← Quay lại</p>
+    </div>
+  </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- ═══ MAIN APP ═══ -->
 <div id="app-container" class="hidden flex flex-col h-screen relative z-10" style="background:var(--bg-base)">
-    <header style="height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;background:var(--bg-surface)">
-        <div onclick="switchTab('dashboard')" style="display:flex;align-items:center;gap:12px;cursor:pointer">
-            <div style="width:32px;height:32px;border-radius:8px;background:rgba(0,229,160,.15);border:1px solid var(--green);display:flex;align-items:center;justify-content:center">
-                <i data-lucide="candlestick-chart" style="width:16px;height:16px;color:var(--green)"></i>
-            </div>
-            <div class="hidden sm:block">
-                <p style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--tx-lo)">Trading OS</p>
-                <p style="font-size:.95rem;font-weight:700;color:var(--tx-hi)">CACON STOCK</p>
-            </div>
-        </div>
-        
-        <div style="display:flex;align-items:center;gap:12px;padding:0 12px;border-radius:8px;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.1)">
-            <span style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--tx-lo)">User</span>
-            <span id="current-user-chip" style="font-size:.85rem;font-weight:700;color:var(--tx-hi)">Loading...</span>
-            <span id="role-chip" style="font-size:.65rem;background:rgba(59,130,246,.2);color:var(--blue);padding:2px 6px;border-radius:4px;font-weight:700">Member</span>
-        </div>
 
-        <div style="display:flex;align-items:center;gap:8px">
-            <button id="theme-toggle-btn" onclick="toggleTheme()" style="width:32px;height:32px;border-radius:8px;background:transparent;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
-                <i data-lucide="moon" style="width:16px;height:16px;color:var(--tx-mid)"></i>
-            </button>
-            <button id="btn-admin-panel" onclick="openAdminPanel()" style="width:32px;height:32px;border-radius:8px;background:transparent;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;display:none" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
-                <i data-lucide="shield-alert" style="width:16px;height:16px;color:var(--amber)"></i>
-            </button>
-            <button onclick="authLogout()" style="width:32px;height:32px;border-radius:8px;background:transparent;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
-                <i data-lucide="log-out" style="width:16px;height:16px;color:var(--tx-mid)"></i>
-            </button>
+  <!-- HEADER -->
+  <header style="height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg-surface)">
+    <div onclick="switchTab('dashboard')" style="display:flex;align-items:center;gap:12px;cursor:pointer">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(0,229,160,.15);border:1px solid var(--green);display:flex;align-items:center;justify-content:center">
+        <i data-lucide="candlestick-chart" style="width:16px;height:16px;color:var(--green)"></i>
+      </div>
+      <div class="hidden sm:block">
+        <p style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--tx-lo)">Trading OS</p>
+        <p style="font-size:.95rem;font-weight:700;color:var(--tx-hi)">CACON STOCK</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:6px 12px;border-radius:8px;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.1)">
+      <span style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--tx-lo)">User</span>
+      <span id="current-user-chip" style="font-size:.85rem;font-weight:700;color:var(--tx-hi)">—</span>
+      <span id="role-chip" style="font-size:.65rem;background:rgba(59,130,246,.2);color:var(--blue);padding:2px 6px;border-radius:4px;font-weight:700">Member</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="theme-toggle-btn" onclick="toggleTheme()" style="width:32px;height:32px;border-radius:8px;background:transparent;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="moon" style="width:16px;height:16px;color:var(--tx-mid)"></i></button>
+      <button id="btn-admin-panel" onclick="openAdminPanel()" style="width:32px;height:32px;border-radius:8px;background:transparent;border:1px solid var(--border);cursor:pointer;align-items:center;justify-content:center;display:none"><i data-lucide="shield-alert" style="width:16px;height:16px;color:var(--amber)"></i></button>
+      <button onclick="authLogout()" style="width:32px;height:32px;border-radius:8px;background:transparent;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="log-out" style="width:16px;height:16px;color:var(--tx-mid)"></i></button>
+    </div>
+  </header>
+
+  <!-- NAV TABS -->
+  <nav style="display:flex;gap:8px;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--bg-surface);overflow-x:auto">
+    <button data-tab-btn="dashboard" onclick="switchTab('dashboard')" class="tab-btn">📊 Dashboard</button>
+    <button data-tab-btn="journal" onclick="switchTab('journal')" class="tab-btn">📓 Journal</button>
+    <button data-tab-btn="analysis" onclick="switchTab('analysis')" class="tab-btn">🔍 Phân Tích</button>
+    <button data-tab-btn="wiki" onclick="switchTab('wiki')" class="tab-btn">📚 Wiki Setup</button>
+    <button data-tab-btn="library" onclick="switchTab('library')" class="tab-btn">📖 Thư Viện</button>
+    <button data-tab-btn="mistakes" onclick="switchTab('mistakes')" class="tab-btn">⚠️ Sai Lầm</button>
+    <button data-tab-btn="psychology" onclick="switchTab('psychology')" class="tab-btn">🧠 Tâm Lý</button>
+    <button data-tab-btn="discipline" onclick="switchTab('discipline')" class="tab-btn">💪 Kỷ Luật</button>
+    <button data-tab-btn="quotes" onclick="switchTab('quotes')" class="tab-btn">💎 Nguyên Tắc</button>
+    <button data-tab-btn="training" onclick="switchTab('training')" class="tab-btn">🎯 Training</button>
+    <button data-tab-btn="settings" onclick="switchTab('settings')" class="tab-btn">⚙️ Settings</button>
+  </nav>
+
+  <main style="flex:1;overflow-y:auto;padding:24px">
+
+    <!-- ═══ TAB DASHBOARD ═══ -->
+    <div id="tab-dashboard" style="display:flex;flex-direction:column;gap:20px">
+      <!-- 4 Stats -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">
+        <div class="stat-box"><p class="stat-label">💰 Balance</p><p id="dash-balance" class="stat-value" style="color:var(--green)">$20,000</p></div>
+        <div class="stat-box"><p class="stat-label">📈 P&L</p><p id="dash-pnl" class="stat-value" style="color:var(--green)">$0</p></div>
+        <div class="stat-box"><p class="stat-label">🎯 Winrate</p><p id="dash-winrate" class="stat-value" style="color:var(--blue)">0%</p></div>
+        <div class="stat-box"><p class="stat-label">🔻 Max DD</p><p id="dash-dd" class="stat-value" style="color:var(--red)">0%</p></div>
+      </div>
+
+      <!-- Mistake Alerts Banner -->
+      <div id="mistake-alerts-banner" style="display:none;padding:16px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.3);border-radius:12px"></div>
+
+      <!-- Daily Principle -->
+      <div id="daily-principle"></div>
+
+      <!-- Market Regime Badge -->
+      <div id="market-regime-badge" style="display:none;padding:12px 16px;border-radius:10px;border:2px solid;font-weight:700;text-align:center;font-size:.9rem;text-transform:uppercase"></div>
+
+      <!-- Charts Grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card-box">
+          <p class="card-label">📈 EQUITY CURVE</p>
+          <div style="height:220px"><canvas id="chart-equity"></canvas></div>
         </div>
-    </header>
+        <div class="card-box">
+          <p class="card-label">⚖️ WIN/LOSS</p>
+          <div style="height:220px"><canvas id="chart-winloss"></canvas></div>
+        </div>
+      </div>
 
-    <nav style="display:flex;gap:8px;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--bg-surface);overflow-x:auto;align-items:center">
-        <button data-tab-btn="dashboard" onclick="switchTab('dashboard')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">📊 Dashboard</button>
-        <button data-tab-btn="journal" onclick="switchTab('journal')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">📓 Journal</button>
-        <button data-tab-btn="analysis" onclick="switchTab('analysis')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">🔍 Phân Tích</button>
-        <button data-tab-btn="wiki" onclick="switchTab('wiki')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">📚 Wiki Setup</button>
-        <button data-tab-btn="library" onclick="switchTab('library')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">📖 Thư Viện</button>
-        <button data-tab-btn="mistakes" onclick="switchTab('mistakes')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">⚠️ Sai Lầm</button>
-        <button data-tab-btn="psychology" onclick="switchTab('psychology')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">🧠 Tâm Lý</button>
-        <button data-tab-btn="discipline" onclick="switchTab('discipline')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">💪 Kỷ Luật</button>
-        <button data-tab-btn="quotes" onclick="switchTab('quotes')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">💎 Nguyên Tắc</button>
-        <button data-tab-btn="training" onclick="switchTab('training')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">🎯 Training</button>
-        <button data-tab-btn="settings" onclick="switchTab('settings')" style="padding:6px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--tx-mid);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.05em">⚙️ Settings</button>
-    </nav>
+      <!-- Mistakes Preview + Monthly + Pattern -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card-box">
+          <p class="card-label">⚠️ TOP SAI LẦM CỦA BẠN</p>
+          <div id="mistakes-preview-list" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div style="margin-top:12px"><canvas id="chart-mistake-distribution" style="max-height:180px"></canvas></div>
+        </div>
+        <div class="card-box">
+          <p class="card-label">🏆 TOP SETUP THEO PnL</p>
+          <div id="stats-pattern-body" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
 
-    <main style="flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column">
-        <!-- TABS CONTENT WILL BE INSERTED BY JS -->
-        <div id="tab-dashboard"></div>
-        <div id="tab-journal" class="hidden"></div>
-        <div id="tab-analysis" class="hidden"></div>
-        <div id="tab-wiki" class="hidden"></div>
-        <div id="tab-library" class="hidden"></div>
-        <div id="tab-mistakes" class="hidden"></div>
-        <div id="tab-psychology" class="hidden"></div>
-        <div id="tab-discipline" class="hidden"></div>
-        <div id="tab-quotes" class="hidden"></div>
-        <div id="tab-training" class="hidden"></div>
-        <div id="tab-settings" class="hidden"></div>
-    </main>
+      <div class="card-box">
+        <p class="card-label">📅 THỐNG KÊ THEO THÁNG</p>
+        <table style="width:100%;font-size:.85rem">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:8px;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Tháng</th>
+            <th style="text-align:center;padding:8px;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Tổng</th>
+            <th style="text-align:center;padding:8px;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Win</th>
+            <th style="text-align:center;padding:8px;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Loss</th>
+            <th style="text-align:right;padding:8px;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">PnL</th>
+          </tr></thead>
+          <tbody id="stats-monthly-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ TAB JOURNAL ═══ -->
+    <div id="tab-journal" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:12px;align-items:center;padding:12px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px">
+        <i data-lucide="book-open" style="width:18px;height:18px;color:var(--blue)"></i>
+        <span style="font-size:.85rem;font-weight:700;color:var(--tx-hi)">Sổ Nhật Ký Giao Dịch</span>
+        <button onclick="openEntryModal()" style="margin-left:auto;padding:8px 16px;background:var(--green);color:#022a1e;border:none;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer">+ ENTRY MỚI</button>
+      </div>
+      <div class="card-box" style="padding:0;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+          <thead style="background:var(--bg-hover);border-bottom:1px solid var(--border)">
+            <tr>
+              <th style="padding:12px;text-align:left;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Date</th>
+              <th style="padding:12px;text-align:left;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Pair</th>
+              <th style="padding:12px;text-align:center;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Chart</th>
+              <th style="padding:12px;text-align:left;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Setup</th>
+              <th style="padding:12px;text-align:center;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">R:R</th>
+              <th style="padding:12px;text-align:center;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Status</th>
+              <th style="padding:12px;text-align:right;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">PnL</th>
+              <th style="padding:12px;text-align:center;color:var(--tx-lo);font-weight:700;font-size:.7rem;text-transform:uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="journal-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ TAB ANALYSIS ═══ -->
+    <div id="tab-analysis" class="hidden" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card-box">
+        <p class="card-label">📚 1. CHỌN SETUP TỪ THƯ VIỆN</p>
+        <div id="analysis-empty-state" style="padding:24px;text-align:center;color:var(--tx-lo);border:1px dashed var(--border);border-radius:10px;font-size:.85rem">↓ Chọn 1 setup từ danh sách bên dưới</div>
+        <div id="strategy-list-container" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-top:12px"></div>
+      </div>
+      <div class="card-box">
+        <p class="card-label">🔬 2. PHÂN TÍCH</p>
+        <div style="margin-bottom:12px">
+          <p style="font-size:.7rem;text-transform:uppercase;color:var(--tx-lo);font-weight:700;margin-bottom:6px">Setup Đang Chọn</p>
+          <p id="current-setup-name" style="font-weight:700;color:var(--tx-hi);padding:8px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px">— Chưa chọn —</p>
+        </div>
+        <div style="margin-bottom:12px">
+          <p style="font-size:.7rem;text-transform:uppercase;color:var(--tx-lo);font-weight:700;margin-bottom:6px">Lý Thuyết</p>
+          <img id="ana-theory-img" src="" style="width:100%;border-radius:8px;margin-bottom:8px;display:none;max-height:180px;object-fit:contain;background:var(--bg-base)">
+          <div id="ana-theory-content" style="font-size:.78rem;color:var(--tx-mid);line-height:1.6;background:var(--bg-base);padding:10px;border-radius:8px;border:1px solid var(--border);min-height:60px;white-space:pre-wrap"></div>
+        </div>
+        <div style="margin-bottom:12px">
+          <p style="font-size:.7rem;text-transform:uppercase;color:var(--tx-lo);font-weight:700;margin-bottom:6px">Thực Tế (Chart Của Bạn)</p>
+          <img id="ana-real-img" src="" style="width:100%;border-radius:8px;margin-bottom:8px;display:none;max-height:180px;object-fit:contain;background:var(--bg-base)">
+          <input type="file" id="ana-file-input" accept="image/*" onchange="handleAnalysisRealUpload(this)" style="display:none">
+          <button onclick="document.getElementById('ana-file-input').click()" style="width:100%;padding:8px;background:var(--bg-hover);border:1px dashed var(--border);border-radius:8px;color:var(--tx-mid);font-size:.78rem;cursor:pointer">📸 Tải Chart Thực Tế</button>
+        </div>
+        <div style="margin-bottom:12px">
+          <p style="font-size:.7rem;text-transform:uppercase;color:var(--tx-lo);font-weight:700;margin-bottom:6px">Checklist</p>
+          <div id="ana-checklist-container" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <button onclick="transferAnalysisToJournal()" style="width:100%;padding:10px;background:var(--green);color:#022a1e;border:none;border-radius:8px;font-weight:700;cursor:pointer">→ Chuyển Vào Journal</button>
+      </div>
+    </div>
+
+    <!-- ═══ TAB WIKI ═══ -->
+    <div id="tab-wiki" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:8px">
+        <input type="text" id="wiki-search" oninput="filterWiki()" placeholder="🔍 Tìm setup..." style="flex:1;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--tx-hi);font-size:.9rem">
+        <button onclick="openWikiEditor()" id="btn-add-wiki" style="padding:10px 14px;background:var(--green);color:#022a1e;border:none;border-radius:10px;font-weight:700;cursor:pointer;display:none">+ NEW</button>
+      </div>
+      <div id="wiki-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px"></div>
+    </div>
+
+    <!-- ═══ TAB LIBRARY ═══ -->
+    <div id="tab-library" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:8px">
+        <input type="text" id="library-search" oninput="filterLibrary()" placeholder="🔍 Tìm tài liệu..." style="flex:1;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--tx-hi);font-size:.9rem">
+        <button onclick="openWikiEditor(null,'library')" id="btn-add-library" style="padding:10px 14px;background:var(--blue);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;display:none">+ NEW</button>
+      </div>
+      <div id="library-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px"></div>
+    </div>
+
+    <!-- ═══ TAB MISTAKES ═══ -->
+    <div id="tab-mistakes" class="hidden" style="display:grid;grid-template-columns:380px 1fr;gap:14px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <p class="card-label">⚠️ 7 SAI LẦM CỦA BẠN</p>
+        <div id="mistake-card-grid" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+      <div class="card-box" style="max-height:80vh;overflow-y:auto">
+        <div id="mistake-detail-panel" style="padding:8px"></div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB PSYCHOLOGY ═══ -->
+    <div id="tab-psychology" class="hidden" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card-box">
+        <p class="card-label">🧘 BREATHING TIMER 4-7-8</p>
+        <div style="text-align:center;padding:30px 20px">
+          <div id="breathing-text" style="font-size:2.2rem;font-weight:900;color:var(--green);margin-bottom:10px;font-family:var(--font-display)">HÍT VÀO</div>
+          <div id="breathing-sub" style="font-size:.85rem;color:var(--tx-lo);margin-bottom:24px">(Phình bụng từ từ qua mũi)</div>
+          <div id="breathing-counter" style="font-family:var(--font-mono);font-size:.95rem;color:var(--tx-mid);margin-bottom:20px;letter-spacing:.1em">4s · Chu kỳ 1/4</div>
+          <button id="breathing-start-btn" onclick="startBreathing()" style="padding:14px 32px;background:var(--green);color:#022a1e;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:.9rem">▶ Bắt Đầu</button>
+        </div>
+      </div>
+      <div class="card-box">
+        <p class="card-label">💡 LỜI KHUYÊN TÂM LÝ</p>
+        <div id="psychology-advice-box" style="font-size:.85rem;color:var(--tx-mid);line-height:1.8;padding:8px"></div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB DISCIPLINE ═══ -->
+    <div id="tab-discipline" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+      <p class="card-label">💪 8 MODULE KỶ LUẬT</p>
+      <div id="discipline-module-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px"></div>
+      <div id="discipline-grid-full" style="display:none"></div>
+    </div>
+
+    <!-- ═══ TAB QUOTES ═══ -->
+    <div id="tab-quotes" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+      <span id="poster-admin-badge" style="display:none"></span>
+      <span id="poster-readonly-note" style="display:none"></span>
+      <div id="poster-admin-panel" style="display:none;background:var(--bg-raised);border:1px solid var(--border);border-radius:12px;padding:16px">
+        <p style="font-size:.7rem;text-transform:uppercase;color:var(--green);font-weight:700;margin-bottom:12px;letter-spacing:.1em">📝 ADMIN — QUẢN LÝ NGUYÊN TẮC</p>
+        <input type="hidden" id="poster-edit-id">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <input type="text" id="poster-title" placeholder="Tiêu đề nguyên tắc" class="form-input">
+          <input type="text" id="poster-author" placeholder="Tác giả" class="form-input">
+        </div>
+        <textarea id="poster-quote" placeholder="Câu nói (quote)" class="form-input" style="height:60px;margin-bottom:8px;font-style:italic"></textarea>
+        <textarea id="poster-why-true" placeholder="Tại sao đúng (giải thích)" class="form-input" style="height:60px;margin-bottom:8px"></textarea>
+        <textarea id="poster-action-list" placeholder="Hành động (mỗi dòng 1 mục)" class="form-input" style="height:80px;margin-bottom:8px;font-family:var(--font-mono);font-size:.8rem"></textarea>
+        <textarea id="poster-self-check" placeholder="Câu tự kiểm tra cuối ngày" class="form-input" style="height:50px;margin-bottom:8px"></textarea>
+        <input type="hidden" id="poster-image-data">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <input type="file" id="poster-file-input" accept="image/*" onchange="handlePosterUpload(this)" style="display:none">
+          <button onclick="document.getElementById('poster-file-input').click()" style="flex:1;padding:8px;background:var(--bg-hover);border:1px dashed var(--border);border-radius:8px;color:var(--tx-mid);font-size:.78rem;cursor:pointer">📸 Chọn Ảnh Bìa</button>
+          <span id="poster-upload-hint" style="font-size:.7rem;color:var(--tx-lo)">(không bắt buộc)</span>
+        </div>
+        <img id="poster-image-preview" src="" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:none">
+        <div style="display:flex;gap:8px">
+          <button id="poster-save-btn" onclick="addQuotePoster()" style="flex:1;padding:10px;background:var(--green);color:#022a1e;border:none;border-radius:8px;font-weight:700;cursor:pointer">💾 Lưu</button>
+          <button id="poster-cancel-edit" onclick="resetPosterForm()" style="padding:10px 14px;background:var(--bg-hover);border:1px solid var(--border);border-radius:8px;color:var(--tx-hi);cursor:pointer;display:none">Hủy</button>
+        </div>
+      </div>
+      <div id="quote-poster-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"></div>
+    </div>
+
+    <!-- ═══ TAB TRAINING ═══ -->
+    <div id="tab-training" class="hidden" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card-box">
+        <p class="card-label">🎯 CHART CẦN ĐOÁN</p>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <select id="training-filter" onchange="loadRandomTraining()" class="form-input" style="flex:1">
+            <option value="all">Tất cả</option>
+          </select>
+          <button onclick="loadRandomTraining()" style="padding:8px 14px;background:var(--blue);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer">🔄</button>
+        </div>
+        <img id="training-image" src="" style="width:100%;border-radius:8px;display:none;max-height:340px;object-fit:contain;background:var(--bg-base)">
+        <div id="training-empty" style="padding:60px 20px;text-align:center;color:var(--tx-lo);border:1px dashed var(--border);border-radius:10px">📭 Chưa có dữ liệu training. Hãy thêm setups vào Wiki trước.</div>
+      </div>
+      <div class="card-box">
+        <p class="card-label">❓ CÂU HỎI</p>
+        <div id="quiz-interface" style="display:flex;flex-direction:column;gap:10px">
+          <p style="font-size:.85rem;color:var(--tx-mid);margin-bottom:6px">Đây là setup nào?</p>
+          <div id="quiz-options-grid" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <div id="quiz-result-panel" class="hidden" style="display:flex;flex-direction:column;gap:10px;padding:14px;background:var(--bg-base);border-radius:10px;border:1px solid var(--border)">
+          <div id="result-status" style="font-weight:900;font-size:1.2rem;font-family:var(--font-display)"></div>
+          <div id="result-title" style="font-weight:700;color:var(--tx-hi);font-size:1rem"></div>
+          <div id="result-content" style="font-size:.82rem;color:var(--tx-mid);line-height:1.6;white-space:pre-wrap"></div>
+          <button onclick="loadRandomTraining()" style="padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer">→ Câu Tiếp</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB SETTINGS ═══ -->
+    <div id="tab-settings" class="hidden" style="display:flex;flex-direction:column;gap:14px;max-width:800px">
+      <div class="card-box">
+        <p class="card-label">💰 VỐN GỐC</p>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="real-init-capital" value="20000" class="form-input" style="flex:1">
+          <button onclick="saveInitialCapital()" style="padding:10px 18px;background:var(--green);color:#022a1e;border:none;border-radius:8px;font-weight:700;cursor:pointer">💾 Lưu</button>
+        </div>
+        <p style="font-size:.7rem;color:var(--tx-lo);margin-top:8px">Số tiền bắt đầu để tính P&L và Drawdown</p>
+      </div>
+      <div class="card-box">
+        <p class="card-label">📊 MÔ PHỎNG POSITION SIZING</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div><label class="lbl-sm">Vốn bắt đầu ($)</label><input type="number" id="cap-sim-start" value="10000" class="form-input"></div>
+          <div><label class="lbl-sm">Risk/lệnh (%)</label><input type="number" id="cap-risk-pct" value="1" step="0.1" class="form-input"></div>
+          <div><label class="lbl-sm">R:R</label><input type="number" id="cap-rr" value="2" step="0.1" class="form-input"></div>
+          <div><label class="lbl-sm">Số lệnh mô phỏng</label><input type="number" id="cap-sim-count" value="20" class="form-input"></div>
+        </div>
+        <button onclick="updateCapitalCalc()" style="width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-bottom:12px">▶ Tính</button>
+        <div style="overflow-x:auto;max-height:300px;overflow-y:auto">
+          <table style="width:100%;font-size:.78rem">
+            <thead style="background:var(--bg-hover);position:sticky;top:0">
+              <tr>
+                <th style="padding:8px;text-align:center;color:var(--tx-lo);font-size:.65rem;text-transform:uppercase">Lệnh</th>
+                <th style="padding:8px;text-align:right;color:var(--tx-lo);font-size:.65rem;text-transform:uppercase">Balance</th>
+                <th style="padding:8px;text-align:right;color:var(--tx-lo);font-size:.65rem;text-transform:uppercase">Risk</th>
+                <th style="padding:8px;text-align:right;color:var(--tx-lo);font-size:.65rem;text-transform:uppercase">Profit</th>
+                <th style="padding:8px;text-align:right;color:var(--tx-lo);font-size:.65rem;text-transform:uppercase">End</th>
+              </tr>
+            </thead>
+            <tbody id="cap-projection-list"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
-<!-- MODALS WILL BE INSERTED BY CSS -->
+<!-- ═══ MODAL: MOOD CHECK ═══ -->
+<div id="mood-check-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(6px)">
+  <div class="modal-card" style="max-width:500px">
+    <h2 style="font-size:1.2rem;font-weight:800;color:var(--tx-hi);margin-bottom:12px;font-family:var(--font-display)">🧠 Tâm Trạng Hiện Tại?</h2>
+    <p style="font-size:.85rem;color:var(--tx-mid);margin-bottom:16px">App sẽ điều chỉnh risk dựa trên tâm trạng của bạn</p>
+    <div id="mood-loss-warning" class="hidden" style="padding:10px;background:rgba(245,158,11,.1);border:1px solid var(--amber);border-radius:8px;color:var(--amber);font-size:.8rem;margin-bottom:14px;font-weight:700"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onclick="selectMood('calm')" class="mood-btn" style="border-color:var(--green);color:var(--green);background:rgba(0,229,160,.05)"><span style="font-size:1.5rem">🧘</span><span style="font-weight:700;font-size:.85rem">BÌNH TÂM</span><span style="font-size:.7rem;opacity:.8">Risk 100% · Vào bình thường</span></button>
+      <button onclick="selectMood('fomo')" class="mood-btn" style="border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.05)"><span style="font-size:1.5rem">🔥</span><span style="font-weight:700;font-size:.85rem">HƯNG PHẤN</span><span style="font-size:.7rem;opacity:.8">Risk -50% · FOMO</span></button>
+      <button onclick="selectMood('fear')" class="mood-btn" style="border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.05)"><span style="font-size:1.5rem">😨</span><span style="font-weight:700;font-size:.85rem">SỢ HÃI</span><span style="font-size:.7rem;opacity:.8">Risk -50% · Cảnh báo</span></button>
+      <button onclick="selectMood('revenge')" class="mood-btn" style="border-color:var(--red);color:var(--red);background:rgba(244,63,94,.05)"><span style="font-size:1.5rem">😡</span><span style="font-weight:700;font-size:.85rem">CAY CÚ</span><span style="font-size:.7rem;opacity:.8">⛔ Có thể bị chặn</span></button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <button onclick="closeModal('mood-check-modal')" style="padding:8px 16px;background:var(--bg-hover);border:1px solid var(--border);border-radius:8px;color:var(--tx-mid);cursor:pointer;font-size:.8rem">Hủy</button>
+    </div>
+  </div>
+</div>
 
-<script type="module" src="app.js"></script>
+<!-- ═══ MODAL: ENTRY ═══ -->
+<div id="entry-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(6px);overflow-y:auto">
+  <div class="modal-card" style="max-width:640px;margin:24px auto">
+    <h2 style="font-size:1.2rem;font-weight:800;color:var(--tx-hi);margin-bottom:14px;font-family:var(--font-display)">📊 Mở Lệnh Mới</h2>
+    <div id="mood-risk-note" class="hidden" style="padding:10px;background:rgba(245,158,11,.1);border:1px solid var(--amber);border-radius:8px;color:var(--amber);font-size:.78rem;margin-bottom:10px;font-weight:700"></div>
+    <div id="risk-guardrail-warn" class="hidden" style="padding:10px;background:rgba(244,63,94,.1);border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:.78rem;margin-bottom:10px;font-weight:700"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label class="lbl-sm">Ngày</label><input type="date" id="inp-date" class="form-input"></div>
+      <div><label class="lbl-sm">Cặp / Ticker</label><select id="inp-pair" class="form-input"></select></div>
+      <div><label class="lbl-sm">Hướng</label><select id="inp-dir" class="form-input"><option value="BUY">🟢 BUY</option><option value="SELL">🔴 SELL</option></select></div>
+      <div><label class="lbl-sm">Phiên</label><select id="inp-session" class="form-input"><option>SYDNEY</option><option>TOKYO</option><option>LONDON</option><option>NEW YORK</option></select></div>
+      <div><label class="lbl-sm">Setup</label><select id="inp-strategy" class="form-input"></select></div>
+      <div><label class="lbl-sm">Risk</label><div style="display:flex;gap:4px"><input type="number" id="inp-risk" value="100" oninput="calcRiskPreview()" class="form-input" style="flex:1"><select id="inp-risk-mode" onchange="calcRiskPreview()" class="form-input" style="width:60px"><option value="$">$</option><option value="%">%</option></select></div></div>
+      <div><label class="lbl-sm">R:R</label><input type="number" id="inp-rr" value="2" step="0.1" class="form-input"></div>
+    </div>
+    <!-- Pre-Trade Checklist -->
+    <div style="margin-bottom:12px">
+      <p style="font-size:.7rem;text-transform:uppercase;color:var(--tx-lo);font-weight:700;margin-bottom:8px;letter-spacing:.1em">📋 PRE-TRADE CHECKLIST</p>
+      <div id="pretrade-checklist" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;padding:8px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px"></div>
+      <div style="margin-top:8px;padding:10px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:.78rem;color:var(--tx-mid);font-weight:600">Quality Score</span>
+        <span style="display:flex;gap:8px;align-items:center">
+          <span id="quality-grade" style="font-weight:900;font-size:1.4rem;font-family:var(--font-display);color:var(--red)">D</span>
+          <span id="quality-pct" style="font-family:var(--font-mono);color:var(--tx-lo);font-size:.85rem">(0%)</span>
+        </span>
+      </div>
+    </div>
+    <textarea id="inp-note" placeholder="📝 Lý do vào lệnh, tâm trạng, ghi chú..." class="form-input" style="height:70px;margin-bottom:10px"></textarea>
+    <input type="file" id="entry-file-input" accept="image/*" onchange="handleEntryImage(this)" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="document.getElementById('entry-file-input').click()" style="flex:1;padding:10px;background:var(--bg-hover);border:1px dashed var(--border);border-radius:8px;color:var(--tx-mid);cursor:pointer;font-size:.8rem">📸 Tải Ảnh Chart</button>
+      <span id="entry-upload-hint" style="font-size:.7rem;color:var(--tx-lo);align-self:center">(không bắt buộc)</span>
+    </div>
+    <img id="entry-img-preview" src="" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;display:none;background:var(--bg-base);margin-bottom:10px">
+    <div style="display:flex;gap:8px">
+      <button id="save-entry-btn" onclick="saveEntry()" style="flex:1;padding:10px;background:var(--green);color:#022a1e;border:none;border-radius:8px;font-weight:700;cursor:pointer">💾 LƯU</button>
+      <button onclick="closeModal('entry-modal')" style="padding:10px 18px;background:var(--bg-hover);border:1px solid var(--border);border-radius:8px;color:var(--tx-hi);cursor:pointer">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: LOSS AUTOPSY ═══ -->
+<div id="loss-autopsy-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(6px)">
+  <div class="modal-card" style="max-width:520px">
+    <h2 style="font-size:1.2rem;font-weight:800;color:var(--red);margin-bottom:8px;font-family:var(--font-display)">🔬 MỔ XẺ LỆNH THUA</h2>
+    <p style="font-size:.85rem;color:var(--tx-mid);margin-bottom:14px">Lệnh thua = bài học. Hãy mổ xẻ để không lặp lại.</p>
+    <input type="hidden" id="autopsy-entry-id">
+    <p style="font-size:.7rem;text-transform:uppercase;color:var(--tx-lo);font-weight:700;margin-bottom:8px;letter-spacing:.1em">1. CHỌN NGUYÊN NHÂN</p>
+    <div id="autopsy-mistake-grid" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:14px"></div>
+    <p style="font-size:.7rem;text-transform:uppercase;color:var(--tx-lo);font-weight:700;margin-bottom:6px;letter-spacing:.1em">2. BÀI HỌC (≥20 ký tự)</p>
+    <textarea id="autopsy-lesson" placeholder="VD: Lần sau phải đợi pullback về EMA20 + signal candle trước khi vào..." class="form-input" style="height:90px;margin-bottom:14px"></textarea>
+    <div style="display:flex;gap:8px">
+      <button onclick="submitLossAutopsy()" style="flex:1;padding:10px;background:var(--green);color:#022a1e;border:none;border-radius:8px;font-weight:700;cursor:pointer">✓ XÁC NHẬN LOSS</button>
+      <button onclick="closeModal('loss-autopsy-modal')" style="padding:10px 18px;background:var(--bg-hover);border:1px solid var(--border);border-radius:8px;color:var(--tx-hi);cursor:pointer">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: MARKET REGIME ═══ -->
+<div id="market-regime-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(6px)">
+  <div class="modal-card" style="max-width:420px;text-align:center">
+    <h2 style="font-size:1.2rem;font-weight:800;color:var(--tx-hi);margin-bottom:8px;font-family:var(--font-display)">📈 Market Regime Hôm Nay?</h2>
+    <p style="font-size:.85rem;color:var(--tx-mid);margin-bottom:20px">Xác định xu hướng chính trước khi giao dịch</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="setMarketRegime('up')" style="padding:14px;background:rgba(0,229,160,.1);border:2px solid var(--green);border-radius:10px;color:var(--green);font-weight:800;font-size:.95rem;cursor:pointer">↗ UPTREND</button>
+      <button onclick="setMarketRegime('side')" style="padding:14px;background:rgba(245,158,11,.1);border:2px solid var(--amber);border-radius:10px;color:var(--amber);font-weight:800;font-size:.95rem;cursor:pointer">↔ SIDEWAY</button>
+      <button onclick="setMarketRegime('down')" style="padding:14px;background:rgba(244,63,94,.1);border:2px solid var(--red);border-radius:10px;color:var(--red);font-weight:800;font-size:.95rem;cursor:pointer">↘ DOWNTREND</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: PRINCIPLE DETAIL ═══ -->
+<div id="principle-detail-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(6px);overflow-y:auto">
+  <div class="modal-card" style="max-width:560px;margin:24px auto" id="principle-modal-content"></div>
+</div>
+
+<!-- ═══ MODAL: WIKI EDITOR ═══ -->
+<div id="wiki-editor-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(6px);overflow-y:auto">
+  <div class="modal-card" style="max-width:600px;margin:24px auto">
+    <h2 id="wiki-editor-title" style="font-size:1.2rem;font-weight:800;color:var(--tx-hi);margin-bottom:14px;font-family:var(--font-display)">Editor Setup</h2>
+    <input type="hidden" id="edit-mode" value="wiki">
+    <input type="hidden" id="edit-id">
+    <input type="hidden" id="edit-image-url">
+    <div style="display:grid;grid-template-columns:1fr 120px;gap:8px;margin-bottom:8px">
+      <input type="text" id="edit-title" placeholder="Tên Setup (VD: Pin Bar)" class="form-input">
+      <input type="text" id="edit-code" placeholder="Mã (L1-01)" class="form-input">
+    </div>
+    <input type="text" id="edit-cat" placeholder="Danh mục" list="cat-suggestions" class="form-input" style="margin-bottom:8px">
+    <datalist id="cat-suggestions"></datalist>
+    <textarea id="edit-content" placeholder="Mô tả setup, điều kiện, entry/SL/TP, winrate..." class="form-input" style="height:140px;margin-bottom:10px;font-family:var(--font-mono);font-size:.82rem"></textarea>
+    <input type="file" id="wiki-file-input" accept="image/*" onchange="handleWikiImageUpload(this)" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="document.getElementById('wiki-file-input').click()" style="flex:1;padding:10px;background:var(--bg-hover);border:1px dashed var(--border);border-radius:8px;color:var(--tx-mid);cursor:pointer;font-size:.8rem">📸 Tải Ảnh Chart Mẫu</button>
+      <span id="wiki-upload-hint" style="font-size:.7rem;color:var(--tx-lo);align-self:center">(không bắt buộc)</span>
+    </div>
+    <img id="wiki-image-preview" src="" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-base);margin-bottom:10px;display:none">
+    <div style="display:flex;gap:8px">
+      <button onclick="saveWiki()" style="flex:1;padding:10px;background:var(--green);color:#022a1e;border:none;border-radius:8px;font-weight:700;cursor:pointer">💾 LƯU</button>
+      <button onclick="closeModal('wiki-editor-modal')" style="padding:10px 18px;background:var(--bg-hover);border:1px solid var(--border);border-radius:8px;color:var(--tx-hi);cursor:pointer">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: WIKI DETAIL ═══ -->
+<div id="wiki-detail-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(6px);overflow-y:auto">
+  <div class="modal-card" style="max-width:560px;margin:24px auto">
+    <h2 id="view-title" style="font-size:1.3rem;font-weight:800;color:var(--tx-hi);margin-bottom:12px;font-family:var(--font-display)"></h2>
+    <img id="view-image" src="" style="width:100%;border-radius:8px;margin-bottom:12px;display:none;max-height:280px;object-fit:contain;background:var(--bg-base)">
+    <div id="view-content" style="font-size:.88rem;color:var(--tx-mid);line-height:1.7;margin-bottom:14px;white-space:pre-wrap;background:var(--bg-base);padding:14px;border:1px solid var(--border);border-radius:8px"></div>
+    <div style="display:flex;gap:8px">
+      <button id="btn-edit-entry" onclick="openWikiEditor()" style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;display:none">✏️ Chỉnh Sửa</button>
+      <button id="btn-delete-entry" onclick="deleteWiki()" style="flex:1;padding:10px;background:var(--red);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;display:none">🗑️ Xóa</button>
+      <button onclick="closeModal('wiki-detail-modal')" style="flex:1;padding:10px;background:var(--bg-hover);border:1px solid var(--border);border-radius:8px;color:var(--tx-hi);cursor:pointer">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADMIN ═══ -->
+<div id="admin-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(6px)">
+  <div class="modal-card" style="max-width:600px">
+    <h2 style="font-size:1.2rem;font-weight:800;color:var(--amber);margin-bottom:14px;font-family:var(--font-display)">🔐 Admin Panel — Quản Lý User</h2>
+    <table style="width:100%;font-size:.85rem">
+      <thead style="background:var(--bg-hover)"><tr>
+        <th style="padding:10px;text-align:left;color:var(--tx-lo);font-size:.7rem;text-transform:uppercase">User</th>
+        <th style="padding:10px;text-align:right;color:var(--tx-lo);font-size:.7rem;text-transform:uppercase">Hành Động</th>
+      </tr></thead>
+      <tbody id="admin-user-list"></tbody>
+    </table>
+    <button onclick="closeModal('admin-modal')" style="width:100%;padding:10px;background:var(--bg-hover);border:1px solid var(--border);border-radius:8px;color:var(--tx-hi);cursor:pointer;margin-top:14px">Đóng</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL: IMAGE VIEWER ═══ -->
+<div id="image-viewer-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.95)" onclick="closeModal('image-viewer-modal')">
+  <img id="image-viewer-img" src="" style="max-width:95%;max-height:95%;border-radius:8px" onclick="event.stopPropagation()">
+</div>
+
+<!-- SCRIPTS -->
+<script type="module" src="app.js?v=42"></script>
+
 </body>
 </html>

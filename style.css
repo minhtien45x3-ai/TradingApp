@@ -666,14 +666,710 @@ textarea:focus {
     display: none !important;
 }
 
+/* ═══ COMPONENT CLASSES ═══ */
+
+/* Tab Buttons in Nav */
+.tab-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--tx-mid);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.tab-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-hi);
+    color: var(--tx-hi);
+}
+.tab-btn.active {
+    background: rgba(0, 229, 160, 0.12);
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 12px -4px rgba(0, 229, 160, 0.4);
+}
+
+/* Stat Boxes (Dashboard) */
+.stat-box {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+.stat-box:hover {
+    border-color: var(--border-hi);
+}
+.stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--tx-lo);
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    letter-spacing: -0.02em;
+}
+
+/* Card Boxes (Generic) */
+.card-box {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+.card-box:hover {
+    border-color: var(--border-mid);
+}
+.card-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--tx-lo);
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: block;
+}
+
+/* Modal Cards */
+.modal-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border-mid);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    animation: modalIn 0.2s ease-out;
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Form Inputs */
+.form-input {
+    width: 100%;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--tx-hi);
+    font-size: 0.85rem;
+    font-family: var(--font-sans);
+    outline: none;
+    transition: all 0.15s ease;
+}
+.form-input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 10px -3px rgba(0, 229, 160, 0.3);
+}
+.form-input::placeholder {
+    color: var(--tx-lo);
+}
+
+/* Small Labels */
+.lbl-sm {
+    display: block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--tx-lo);
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+/* Mood Buttons */
+.mood-btn {
+    padding: 14px;
+    border-radius: 10px;
+    border: 1.5px solid;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+.mood-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -8px currentColor;
+}
+
+/* Intro Glass */
+.intro-glass {
+    background: rgba(15, 24, 36, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 229, 160, 0.2);
+}
+
+/* Daily Principle Banner */
+.daily-principle-content {
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(0,229,160,.06) 0%, rgba(0,229,160,.01) 100%);
+    border: 1px solid rgba(0,229,160,.2);
+    border-radius: 12px;
+}
+.daily-principle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.daily-principle-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    color: var(--green);
+}
+.daily-principle-author {
+    font-size: 0.75rem;
+    color: var(--tx-lo);
+    font-style: italic;
+}
+.daily-principle-quote {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--tx-hi);
+    line-height: 1.5;
+    margin-bottom: 10px;
+    font-family: var(--font-display);
+}
+.daily-principle-why {
+    font-size: 0.85rem;
+    color: var(--tx-mid);
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+.daily-principle-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,229,160,.15);
+}
+.daily-principle-actions-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 6px;
+}
+.daily-principle-actions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.daily-principle-actions li {
+    font-size: 0.82rem;
+    color: var(--tx-mid);
+    padding-left: 18px;
+    position: relative;
+    margin-bottom: 4px;
+}
+.daily-principle-actions li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-weight: 700;
+}
+
+/* Mistake Cards (Tab Mistakes) */
+.mistake-mini-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    width: 100%;
+}
+.mistake-mini-card:hover {
+    border-color: var(--red);
+    background: rgba(244,63,94,.05);
+    transform: translateX(2px);
+}
+.mistake-rank {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(244,63,94,.15);
+    color: var(--red);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Discipline Cards */
+.discipline-card {
+    padding: 16px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+.discipline-card:hover {
+    border-color: var(--amber);
+    box-shadow: 0 0 24px -10px rgba(245,158,11,.4);
+}
+.discipline-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: rgba(245,158,11,.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--amber);
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+.discipline-content h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--tx-hi);
+    margin-bottom: 4px;
+}
+.discipline-content p {
+    font-size: 0.78rem;
+    color: var(--tx-mid);
+    line-height: 1.5;
+}
+.discipline-content small {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: var(--green);
+    font-weight: 700;
+}
+.discipline-meta {
+    margin-top: 10px;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--amber);
+    font-weight: 700;
+}
+
+/* Wiki Cards */
+.wiki-card {
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.wiki-card:hover {
+    border-color: var(--green);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -10px rgba(0,229,160,.3);
+}
+.wiki-card.library:hover {
+    border-color: var(--blue);
+    box-shadow: 0 8px 20px -10px rgba(59,130,246,.3);
+}
+.wiki-card-thumb {
+    width: 100%;
+    height: 130px;
+    background: var(--bg-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.wiki-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.wiki-card-placeholder {
+    color: var(--tx-lo);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.wiki-card-body {
+    padding: 12px;
+}
+.wiki-card-body h4 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--tx-hi);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wiki-card-meta {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+.wiki-code {
+    font-size: 0.6rem;
+    background: rgba(0,229,160,.12);
+    color: var(--green);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+.wiki-cat {
+    font-size: 0.6rem;
+    background: rgba(59,130,246,.12);
+    color: var(--blue);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* Poster Cards */
+.poster-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    cursor: pointer;
+    height: 240px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+.poster-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--green);
+}
+.poster-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.poster-card-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--tx-lo);
+    padding: 16px;
+    text-align: center;
+}
+.poster-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,.92) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 14px;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.poster-card:hover .poster-card-overlay {
+    opacity: 1;
+}
+.poster-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 6px;
+}
+.poster-card-overlay h4 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+.poster-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    opacity: 0.85;
+}
+.poster-actions {
+    display: flex;
+    gap: 4px;
+}
+.poster-edit, .poster-delete {
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+.poster-edit:hover { background: var(--blue); border-color: var(--blue); }
+.poster-delete:hover { background: var(--red); border-color: var(--red); }
+
+/* Pre-Trade Checklist Items */
+.pretrade-check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--tx-mid);
+    transition: all 0.15s ease;
+}
+.pretrade-check-item:hover {
+    border-color: var(--green);
+    color: var(--tx-hi);
+}
+.pretrade-check-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--green);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Self Test Items */
+.self-test-list { display: flex; flex-direction: column; gap: 8px; }
+.self-test-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px;
+    cursor: pointer;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+.self-test-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    accent-color: var(--amber);
+    flex-shrink: 0;
+}
+.self-test-item span {
+    font-size: 0.82rem;
+    color: var(--tx-mid);
+    line-height: 1.5;
+}
+.self-test-result {
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+/* Mistake Detail Sections */
+.mistake-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+.mistake-section-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--tx-lo);
+    margin-bottom: 10px;
+}
+.mistake-detail-box {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-base);
+    margin-bottom: 8px;
+}
+.mistake-detail-box.danger { background: rgba(244,63,94,.05); border-color: var(--red); }
+.mistake-detail-box.success { background: rgba(0,229,160,.05); border-color: var(--green); }
+.mistake-detail-box p {
+    font-size: 0.82rem;
+    color: var(--tx-mid);
+    line-height: 1.6;
+}
+.case-study-box {
+    padding: 12px;
+    background: rgba(245,158,11,.05);
+    border: 1px solid var(--amber);
+    border-radius: 8px;
+    margin-top: 8px;
+}
+.mistake-fix-box {
+    padding: 12px;
+    background: rgba(0,229,160,.05);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+/* Mistake Card Pro */
+.mistake-card-pro {
+    padding: 14px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    width: 100%;
+}
+.mistake-card-pro:hover {
+    border-color: var(--red);
+    transform: translateX(2px);
+}
+
+/* Autopsy Mistake Cards */
+.autopsy-mistake-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.autopsy-mistake-card:hover {
+    border-color: var(--amber);
+}
+.autopsy-mistake-card.selected {
+    background: rgba(245,158,11,.1);
+    border-color: var(--amber);
+}
+
+/* Principle Modal */
+.principle-modal-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--green);
+    font-weight: 700;
+}
+.principle-modal-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--tx-hi);
+    margin-top: 8px;
+    margin-bottom: 4px;
+    font-family: var(--font-display);
+}
+.principle-modal-author {
+    font-size: 0.85rem;
+    color: var(--tx-lo);
+    font-style: italic;
+    display: block;
+    margin-bottom: 18px;
+}
+.principle-modal-quote {
+    padding: 16px;
+    background: rgba(0,229,160,.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+.principle-modal-quote p {
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--tx-hi);
+    line-height: 1.6;
+}
+.principle-modal-section {
+    margin-bottom: 14px;
+    padding: 12px;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.principle-modal-section-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--tx-lo);
+    margin-bottom: 8px;
+}
+.principle-action-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.principle-action-list li {
+    font-size: 0.85rem;
+    color: var(--tx-mid);
+    padding-left: 20px;
+    position: relative;
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+.principle-action-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-weight: 700;
+}
+
 /* RESPONSIVE */
-@media (max-width: 768px) {
-    [style*="grid-template-columns"]:not([style*="1fr 1fr"]) {
+@media (max-width: 1024px) {
+    #tab-mistakes {
         grid-template-columns: 1fr !important;
     }
-    
+    #tab-analysis, #tab-psychology, #tab-training {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    main {
+        padding: 16px !important;
+    }
     nav {
         overflow-x: auto;
         scroll-behavior: smooth;
+    }
+    .stat-value {
+        font-size: 1.4rem;
+    }
+    [style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
     }
 }
